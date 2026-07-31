@@ -1,0 +1,22 @@
+# Normalize everything to LF in the repo and on checkout unless overridden below.
+* text=auto eol=lf
+
+# SVGs are XML — keep them diffable as text.
+*.svg text eol=lf
+
+# Binary assets: never normalize line endings, never diff as text.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.mp3 binary
+*.wav binary
+*.mp4 binary
+*.pdf binary
+*.zip binary
