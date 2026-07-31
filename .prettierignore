@@ -1,0 +1,11 @@
+node_modules
+.next
+.turbo
+dist
+build
+coverage
+pnpm-lock.yaml
+
+# Frozen architecture documentation — hand-formatted for git-friendly
+# diffs (semantic linebreaks). Not to be auto-reformatted.
+docs
