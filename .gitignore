@@ -1,0 +1,44 @@
+# dependencies
+node_modules/
+
+# turborepo
+.turbo/
+
+# next.js
+.next/
+out/
+
+# build outputs
+dist/
+build/
+
+# testing
+coverage/
+playwright-report/
+test-results/
+
+# env
+.env
+.env.local
+.env.*.local
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# typescript / eslint caches
+*.tsbuildinfo
+.eslintcache
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# claude code local settings
+.claude/settings.local.json
