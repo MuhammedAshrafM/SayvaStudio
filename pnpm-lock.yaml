@@ -39,6 +39,15 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/domain:
+    devDependencies:
+      '@sayva/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/eslint-config:
     dependencies:
       '@eslint/js':
