@@ -1,0 +1,31 @@
+{
+  "name": "@sayva/design-system",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@sayva/typescript-config": "workspace:*",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "^7.0.2"
+  }
+}
