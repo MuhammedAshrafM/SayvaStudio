@@ -1,0 +1,39 @@
+name: Feature request / scope change
+description: Propose new work, or a change to already-approved scope.
+title: '[Feature]: '
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Per the project's No Scope Creep rule, new scope is never silently absorbed into an
+        in-progress phase. This issue is the "explain it, request approval" step — opening it
+        is not a commitment to build it.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / motivation
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Relationship to the Implementation Roadmap
+      options:
+        - Fits an existing, not-yet-started Roadmap phase
+        - Extends a phase already in progress (needs explicit approval before scope expands)
+        - Not on the Roadmap at all (needs a new phase / roadmap amendment)
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+    validations:
+      required: false

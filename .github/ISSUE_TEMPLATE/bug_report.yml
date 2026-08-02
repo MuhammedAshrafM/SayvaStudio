@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a verified defect in an already-frozen feature.
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Per the project's Feature Freeze rule, only a **verified production bug** may reopen a frozen feature.
+        Use this template for that — not for ideas or improvements (use a Feature request for those).
+  - type: input
+    id: affected-area
+    attributes:
+      label: Affected package / phase
+      placeholder: 'e.g. @sayva/domain, Phase 8 — Lesson Management'
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's broken?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: 'OS, Node version, pnpm version, browser (if relevant)'
+    validations:
+      required: false
