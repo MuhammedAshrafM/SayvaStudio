@@ -1,0 +1,26 @@
+{
+  "name": "@sayva/application",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@sayva/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@sayva/typescript-config": "workspace:*",
+    "typescript": "^7.0.2"
+  }
+}

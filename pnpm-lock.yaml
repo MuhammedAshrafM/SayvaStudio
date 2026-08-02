@@ -18,6 +18,19 @@ importers:
         specifier: ^3.9.6
         version: 3.9.6
 
+  packages/application:
+    dependencies:
+      '@sayva/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      '@sayva/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/design-system:
     devDependencies:
       '@sayva/typescript-config':
@@ -71,6 +84,22 @@ importers:
       typescript-eslint:
         specifier: ^8.65.0
         version: 8.65.0(eslint@9.39.5(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)
+
+  packages/infrastructure:
+    dependencies:
+      '@sayva/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@sayva/pack-schema':
+        specifier: workspace:*
+        version: link:../pack-schema
+    devDependencies:
+      '@sayva/typescript-config':
+        specifier: workspace:*
+        version: link:../typescript-config
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
 
   packages/pack-schema:
     devDependencies:
