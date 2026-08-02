@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/domain" },
+    { "path": "packages/pack-schema" },
+    { "path": "packages/design-system" },
+    { "path": "packages/application" },
+    { "path": "packages/infrastructure" }
+  ]
+}
