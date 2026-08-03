@@ -9,6 +9,7 @@ Grounded in the frozen Domain Model, Architecture Blueprint, Pack Specification,
 - [Sequence Overview](#sequence-overview)
 - [Phases](#phases)
 - [Cross-Cutting Notes](#cross-cutting-notes)
+- [Technical Debt Log](#technical-debt-log)
 - [Status](#status)
 
 ---
@@ -313,6 +314,20 @@ Each phase above still runs the full ten-step Development Workflow on its own �
 > Read literally per-feature, that's 14×3 phases — not what's built here.
 > Instead: each phase's own freeze point *is* its stabilization (nothing moves on with known-broken acceptance criteria), and Phase 13 is the one project-wide Stabilization + Cleanup pass the policy calls for, run once against the whole product rather than fragmented across every feature.
 > If a specific phase turns out to need its own dedicated stabilization sub-phase once real work starts, that's a roadmap amendment to propose then — not assumed here.
+
+## Technical Debt Log
+
+Deliberately accepted tooling debt, recorded so it's revisited on purpose rather than forgotten. Distinct from the Decision Logs in the frozen architecture documents — these are execution-time tooling calls, not architectural decisions.
+
+### TD-01 — TypeScript pinned to 6.0.3, not the 7.x line
+
+**Accepted during:** Phase 0, Slice 9 (`apps/studio` scaffolding).
+
+**What:** the workspace runs TypeScript `^6.0.3` everywhere, not the newer 7.x (native, Go-based) line.
+
+**Why:** two independent, major pieces of tooling didn't yet support TypeScript 7 when this was decided. `next build` failed outright — Next.js's build-time type-checking has no path to TS7's native compiler API without the experimental `useTypeScriptCli` flag. Separately, `typescript-eslint@8.65.0` and its `@typescript-eslint/*` family declare peer support only for TypeScript `<6.1.0`. Building Phase 0's foundation on an experimental Next.js flag was judged worse than pinning to a slightly older, fully-supported compiler version — see the Phase 0 amendment commit for the full comparison.
+
+**Revisit when:** Next.js ships non-experimental support for the TypeScript 7 compiler API, *and* `typescript-eslint` declares support for TypeScript 7 in its peer ranges. Check both before upgrading — either alone re-creates one of the two original problems.
 
 ## Status
 
