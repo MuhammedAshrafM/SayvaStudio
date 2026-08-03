@@ -5,6 +5,7 @@
     { "path": "packages/pack-schema" },
     { "path": "packages/design-system" },
     { "path": "packages/application" },
-    { "path": "packages/infrastructure" }
+    { "path": "packages/infrastructure" },
+    { "path": "apps/studio" }
   ]
 }
