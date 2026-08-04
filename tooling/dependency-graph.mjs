@@ -1,8 +1,9 @@
 /**
  * The single source of truth for Sayva Studio's package dependency graph
- * (ADR-002 DR-10). ESLint's boundaries config reads this file directly;
- * dependency-cruiser will too, once it's wired in a later slice. Neither
- * encodes the graph on its own — this file does, once.
+ * (ADR-002 DR-10). Both ESLint's boundaries config (packages/eslint-config/
+ * boundaries.js) and dependency-cruiser (.dependency-cruiser.mjs, root)
+ * read this file directly. Neither encodes the graph on its own — this
+ * file does, once.
  *
  * Do not add or change an edge here without a corresponding ADR-002
  * amendment (DR-11). This file makes an already-approved graph

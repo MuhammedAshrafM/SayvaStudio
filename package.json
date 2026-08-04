@@ -11,11 +11,14 @@
     "format:check": "prettier --check .",
     "prepare": "husky",
     "changeset": "changeset",
-    "version-packages": "changeset version"
+    "version-packages": "changeset version",
+    "depcruise": "depcruise packages apps tooling",
+    "graph": "depcruise --output-type mermaid --collapse \"^(packages|apps)/[^/]+\" -x \"^node_modules|\\.next|next-env|next\\.config|(^|/)path$|(^|/)url$|typescript-eslint\" packages apps"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.1",
     "@sayva/eslint-config": "workspace:*",
+    "dependency-cruiser": "^18.1.1",
     "eslint": "^9.39.5",
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",

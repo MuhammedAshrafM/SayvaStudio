@@ -2,7 +2,9 @@
 
 ## `dependency-graph.mjs`
 
-The single source of truth for Sayva Studio's package dependency graph (ADR-002 DR-10). `packages/eslint-config/boundaries.js` reads it directly; dependency-cruiser will too, once it's wired in a later slice. Neither file should ever redefine an edge — only translate this one file's data into its own tool's config shape.
+The single source of truth for Sayva Studio's package dependency graph (ADR-002 DR-10). `packages/eslint-config/boundaries.js` and the root `.dependency-cruiser.mjs` both read it directly. Neither file should ever redefine an edge — only translate this one file's data into its own tool's config shape.
+
+Two tools enforcing the same graph is deliberate (ADR-002's layered enforcement), not redundant: boundaries catches a violation at edit-time, per package; dependency-cruiser catches it whole-repo, including transitive edges and circular dependencies neither tool's per-file view would otherwise show. Both read the same data, so they can't drift apart on _what_ the graph is — only differ in _when_ and _how broadly_ they check it.
 
 ## Adding a new package to the graph
 
