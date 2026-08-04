@@ -14,16 +14,19 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "eslint ."
   },
   "peerDependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@sayva/eslint-config": "workspace:*",
     "@sayva/typescript-config": "workspace:*",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
+    "eslint": "^9.39.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "typescript": "^6.0.3"

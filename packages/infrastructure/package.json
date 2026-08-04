@@ -14,14 +14,17 @@
   },
   "scripts": {
     "build": "tsc -b",
-    "clean": "rm -rf dist *.tsbuildinfo"
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@sayva/domain": "workspace:*",
     "@sayva/pack-schema": "workspace:*"
   },
   "devDependencies": {
+    "@sayva/eslint-config": "workspace:*",
     "@sayva/typescript-config": "workspace:*",
+    "eslint": "^9.39.5",
     "typescript": "^6.0.3"
   }
 }
