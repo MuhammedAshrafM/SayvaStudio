@@ -1,0 +1,16 @@
+{
+  "name": "@sayva/vitest-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "base.js"
+  ],
+  "exports": {
+    "./base": "./base.js"
+  },
+  "dependencies": {
+    "vitest": "^4.1.10"
+  }
+}

@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sayva/domain": "workspace:*"
@@ -23,7 +24,9 @@
   "devDependencies": {
     "@sayva/eslint-config": "workspace:*",
     "@sayva/typescript-config": "workspace:*",
+    "@sayva/vitest-config": "workspace:*",
     "eslint": "^9.39.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }
