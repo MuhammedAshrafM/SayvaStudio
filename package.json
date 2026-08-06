@@ -7,6 +7,10 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "check-types": "turbo run check-types",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "prepare": "husky",
@@ -23,6 +27,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.2.0",
     "prettier": "^3.9.6",
+    "turbo": "^2.10.8",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }
