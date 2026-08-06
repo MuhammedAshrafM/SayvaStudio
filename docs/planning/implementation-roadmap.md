@@ -329,15 +329,15 @@ Deliberately accepted tooling debt, recorded so it's revisited on purpose rather
 
 **Revisit when:** Next.js ships non-experimental support for the TypeScript 7 compiler API, *and* `typescript-eslint` declares support for TypeScript 7 in its peer ranges. Check both before upgrading — either alone re-creates one of the two original problems.
 
-### TD-02 — `test` has an undeclared dependency on `^build`
+### TD-02 — `test` has an undeclared dependency on `^build` — RESOLVED (Slice 14)
 
 **Accepted during:** Phase 0, Slice 13 (Testing Setup).
 
 **What:** `@sayva/application`'s smoke test loads `src/index.ts`, which imports `@sayva/domain` by its public package name. Vitest resolves that the same way Node does — through `@sayva/domain`'s `package.json` `exports` map, which points at `dist/index.js` (DR-05). If `@sayva/domain` hasn't been built, `pnpm test` inside `@sayva/application` fails with a module-resolution error, not a test failure. Verified directly: removing `packages/domain/dist` and rerunning `application`'s test reproduces exactly this failure; restoring it fixes the test again with no other change.
 
-**Why accepted now:** this is the same build-order requirement `tsc -b`'s project references already have (Slice 8) — nothing new is being introduced, just newly observable because `test` is the first script that resolves the built dist of a *dependency* package rather than only its own. There's no `turbo.json` yet to encode task ordering (that's Slice 14), so nothing enforces "build dependencies before testing dependents" today; running package scripts directly in the wrong order will hit this.
+**Why accepted then:** this is the same build-order requirement `tsc -b`'s project references already have (Slice 8) — nothing new was being introduced, just newly observable because `test` is the first script that resolves the built dist of a *dependency* package rather than only its own. There was no `turbo.json` yet to encode task ordering, so nothing enforced "build dependencies before testing dependents"; running package scripts directly in the wrong order would hit this.
 
-**Revisit when:** Slice 14 wires `turbo.json`. The `test` task must declare `"dependsOn": ["^build"]`, the same way `build` already implicitly relies on its own dependency's `build` having run first via project references.
+**Resolution:** `turbo.json`'s `test` task declares `"dependsOn": ["^build"]`, exactly as planned. The same real gap turned up a second time during Slice 14 for `check-types` (`tsc --noEmit` also needs a dependency's built `.d.ts` to resolve its types) and got the same fix. Verified live: `turbo run test` and `turbo run check-types` from a fully clean workspace (no dist anywhere) both auto-build every dependency first, with zero manual steps — see the Slice 14 review for the full verification transcript.
 
 ## Status
 
