@@ -1,3 +1,8 @@
+// TEMPORARY — Slice 15 deliberate CI-failure test. Forbidden per ADR-002
+// DR-02 (domain depends on nothing). Reverted immediately after CI proves
+// it fails for this reason.
+import '@sayva/application';
+
 /**
  * Entities, Value Objects, Repository interfaces, and Domain Services land
  * here incrementally, starting with Implementation Roadmap Phase 2

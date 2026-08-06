@@ -19,6 +19,9 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@sayva/application": "workspace:*"
+  },
   "devDependencies": {
     "@sayva/eslint-config": "workspace:*",
     "@sayva/typescript-config": "workspace:*",
