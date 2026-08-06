@@ -141,10 +141,6 @@ importers:
         version: 6.0.3
 
   packages/domain:
-    dependencies:
-      '@sayva/application':
-        specifier: workspace:*
-        version: link:../application
     devDependencies:
       '@sayva/eslint-config':
         specifier: workspace:*
