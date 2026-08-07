@@ -97,6 +97,8 @@ flowchart TD
 
 **Freeze point:** CI is green and the illegal-import test fails as designed — proof the enforcement from ADR-002 is live, not just configured. No feature code yet.
 
+**Frozen:** 2026-08-08, at commit `fd6d8ee` (`feat(phase-0): amend DR-05 so lint/depcruise resolve independently of build`). All acceptance criteria met and verified on real GitHub Actions CI, including a live deliberate-failure test (forbidden dependency pushed, confirmed CI-red, reverted, confirmed CI-green) and a final architectural audit (ADR compliance, invariants, technical debt, complexity, Phase 1 readiness) — see the Slice 15 review and audit in project history. One architectural amendment made during the phase: ADR-002 DR-14. Two technical debt items carried forward, both accepted and documented: TD-01 (TypeScript pinned to 6.0.3) and the TS6305/`check-types` build dependency noted under TD-02. No infrastructure decisions from this phase are to be reopened absent a future ADR.
+
 ### Phase 1 — Design System Foundation
 
 **Depends on:** Bootstrap
@@ -344,4 +346,6 @@ Deliberately accepted tooling debt, recorded so it's revisited on purpose rather
 ## Status
 
 **Approved.**
-Folder Structure, then Turborepo Scaffolding, then Initial Project Bootstrap (Phase 0 above) is the current execution path.
+Folder Structure, then Turborepo Scaffolding, then Initial Project Bootstrap (Phase 0 above) were the execution path to get here.
+
+**Phase 0 — Frozen/Complete as of 2026-08-08** (commit `fd6d8ee`). See Phase 0's own entry above for the full freeze record. Phase 1 (Design System Foundation) is next, as its own phase with its own scope, decisions, and verification — not started as part of this freeze.
