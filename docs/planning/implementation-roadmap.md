@@ -339,6 +339,8 @@ Deliberately accepted tooling debt, recorded so it's revisited on purpose rather
 
 **Resolution:** `turbo.json`'s `test` task declares `"dependsOn": ["^build"]`, exactly as planned. The same real gap turned up a second time during Slice 14 for `check-types` (`tsc --noEmit` also needs a dependency's built `.d.ts` to resolve its types) and got the same fix. Verified live: `turbo run test` and `turbo run check-types` from a fully clean workspace (no dist anywhere) both auto-build every dependency first, with zero manual steps — see the Slice 14 review for the full verification transcript.
 
+**Note (Slice 15):** ADR-002 DR-14 later changed *why* `check-types` needs `^build`. DR-14 pointed `exports["."].types` at TypeScript source instead of `dist`, which fixed resolution for a package with no dependencies of its own — but for a package with a real cross-package dependency (e.g. `application` → `domain`), `tsc --noEmit` still fails on an unbuilt checkout, with a *different* error (`TS6305`): TypeScript's own project-reference consistency check, unrelated to module resolution. `check-types` keeps `dependsOn: ["^build"]` globally rather than special-casing the three dependency-free packages — see DR-14's "Known limitation" note for the full reasoning.
+
 ## Status
 
 **Approved.**

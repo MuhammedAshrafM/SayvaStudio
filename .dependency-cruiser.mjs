@@ -55,14 +55,36 @@ export default {
   ],
   options: {
     tsPreCompilationDeps: true,
+    // DR-14: resolve cross-package imports via each package's
+    // `exports["."].types` condition (source, e.g. packages/domain/
+    // src/index.ts) instead of `default` (dist/index.js). Without
+    // this, every cross-package edge — allowed or forbidden — silently
+    // fails to resolve on a checkout that hasn't been built yet, so
+    // this rule set never gets the chance to run against it. Verified
+    // empirically: with zero dist/ anywhere in the workspace, this
+    // combination correctly flagged a deliberately-forbidden import
+    // and correctly passed a legitimate one. `tsConfig` alone isn't
+    // enough — dependency-cruiser doesn't consult `exports` maps at
+    // all unless `exportsFields` says to, and doesn't prefer `types`
+    // over `default` unless `conditionNames` says so explicitly.
+    tsConfig: {
+      fileName: 'tsconfig.json',
+    },
+    enhancedResolveOptions: {
+      exportsFields: ['exports'],
+      conditionNames: ['types', 'import', 'require', 'default'],
+      extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
+      mainFields: ['types', 'typings', 'module', 'main'],
+    },
     // `doNotFollow` still resolves the target (so an edge to it is
     // recorded and checked against the rules above) but doesn't
     // recurse into *its* dependencies — the right primitive for both
     // of these, and distinct from `exclude` below, which hides a path
-    // entirely. Using `exclude` for `dist` here originally broke
-    // detection completely: @sayva/domain resolves to
-    // packages/domain/dist/index.js, so excluding `dist` excluded the
-    // one thing every cross-package edge actually needs to resolve to.
+    // entirely. `dist` stays here (not `exclude`) for the same reason
+    // as before DR-14: some resolutions still land on compiled output
+    // (e.g. genuine node_modules packages with no `types` condition of
+    // their own), and excluding `dist` outright would hide those edges
+    // completely rather than just not recursing into them.
     doNotFollow: {
       path: '(^|/)(node_modules|dist)(/|$)',
     },

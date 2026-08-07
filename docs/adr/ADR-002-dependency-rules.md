@@ -1,8 +1,9 @@
 # ADR-002 — Dependency Rules
 
-**Status:** Frozen v1.0 · Approved
+**Status:** Frozen v1.1 · Approved
 **Scope:** Making [ADR-001](./ADR-001-module-strategy.md)'s package graph **enforceable**, not just documented.
 Package names below (`@sayva/domain` etc.) are illustrative — final naming is a Folder Structure decision, not this one.
+Amended once (DR-14) during Phase 0, Slice 15 — see the changelog at the bottom of this file.
 
 ## Contents
 
@@ -17,6 +18,7 @@ Package names below (`@sayva/domain` etc.) are illustrative — final naming is 
   - [Guardrails against drift](#guardrails-against-drift)
 - [Alternatives Considered](#alternatives-considered)
 - [Consequences](#consequences)
+- [Amendments](#amendments)
 - [Status](#status)
 
 ---
@@ -109,12 +111,14 @@ Four independent layers, each catching a gap the others leave open — not redun
 | Layer | Mechanism | Catches | Doesn't catch |
 |---|---|---|---|
 | DR-04 | pnpm workspace + `package.json` `dependencies` | An unlisted package can't be imported at all — module resolution fails | Deep imports into an allowed package's internals; nothing at edit time |
-| DR-05 | `package.json` `exports` map | Deep/internal imports into an allowed package — only the declared public surface resolves | Wrong packages being allowed as dependencies in the first place |
+| DR-05 | `package.json` `exports` map (dual-condition since DR-14 — `types` → source, `default` → dist) | Deep/internal imports into an allowed package — only the declared public surface resolves | Wrong packages being allowed as dependencies in the first place |
 | DR-06 | TypeScript Project References (`composite` + `references`) | Compile-time violations, in correct build order; also gives Turborepo an accurate incremental build graph | Edit-time feedback — only surfaces at `tsc -b` |
-| DR-07 | ESLint boundaries rule, reading the DR-02/DR-03 graph from one shared config | Edit-time feedback (before save); also catches an unauthorized edge even if someone already added it to `package.json` | Nothing structural — this is the fast-feedback layer, not the backstop |
-| DR-08 | dependency-cruiser, run in CI against the whole resolved graph | Transitive/indirect violations and cycles that a single package's own config might miss; produces a graph diagram to diff against ADR-001's | Nothing at edit time — CI-only, last line of defense |
+| DR-07 | ESLint boundaries rule, reading the DR-02/DR-03 graph from one shared config | Edit-time feedback (before save), independent of build state (DR-14); also catches an unauthorized edge even if someone already added it to `package.json` | Nothing structural — this is the fast-feedback layer, not the backstop |
+| DR-08 | dependency-cruiser, run in CI against the whole resolved graph | Transitive/indirect violations and cycles that a single package's own config might miss, independent of build state (DR-14); produces a graph diagram to diff against ADR-001's | Nothing at edit time — CI-only, last line of defense |
 
 All four run in CI on every PR (**DR-09**) — a violation caught by any layer fails the build, not just a local warning a contributor can ignore.
+
+> DR-07 and DR-08's "independent of build state" wasn't true until DR-14 (Phase 0, Slice 15) — see the Amendments section. Before that, both silently passed on a freshly cloned, unbuilt checkout, because their resolvers followed DR-05's `exports` map to `dist/`, which doesn't exist yet at that point.
 
 ### Guardrails against drift
 
@@ -168,7 +172,28 @@ The decision is the combination, not any one layer — each of DR-04 through DR-
 
 > **Explicitly not decided here:** exact ESLint plugin choice, dependency-cruiser rule syntax, and where the shared graph config physically lives are Turborepo Scaffolding decisions — this ADR fixes the graph and the strategy, not the config files implementing it.
 
+## Amendments
+
+### DR-14 — DR-05's exports map: dual-condition (`types` → source, `default` → dist)
+
+- **Decision:** every workspace package's `exports["."]` map splits its conditions: `types` points directly at the package's TypeScript source entry point (`./src/index.ts`); `default` continues to point at the compiled entry point (`./dist/index.js`), unchanged. Static-analysis tooling — `tsc`, ESLint (via `eslint-import-resolver-typescript`), dependency-cruiser (via its TypeScript-aware resolution options) — resolves cross-package imports through `types`, straight to source. Anything that actually executes a package — Node.js at runtime, Vitest, the built Next.js app — resolves through `default`, to compiled output. One `exports["."]` entry, one file, two conditions pointing at two different targets by design.
+- **Reason:** discovered during Phase 0 Slice 15's deliberate-failure CI verification. On a freshly cloned, never-built checkout, DR-07 (ESLint boundaries) and DR-08 (dependency-cruiser) both silently passed a deliberately-introduced, unambiguous DR-02 violation — not because either tool is broken, but because both resolve `exports` maps exactly the way Node.js does, and DR-05's original single-condition map (`types`/`default` both pointing at `dist/`) meant *any* cross-package resolution — allowed or forbidden — failed until a build had already happened. Confirmed this wasn't specific to the one violation that surfaced it: a second, non-cyclic violation (`pack-schema` importing `design-system`) sailed through every single pipeline step — lint, dependency-cruiser, check-types, test, build — on a clean checkout. Real GitHub Actions CI only went red at all because that first violation happened to also create a genuine circular workspace dependency, an unrelated failure Turborepo's own graph-cycle detection caught independently.
+- **Alternatives considered:**
+  - Make `lint` (and CI's `dependency-cruiser` step) depend on a prior `^build` — rejected. This resequences around the gap instead of closing it: enforcement stays coupled to build state, and a contributor running `eslint .` directly on a fresh clone — outside Turbo, outside CI — would still see nothing.
+  - Reorder CI so `build` runs before the static-analysis steps — rejected for the identical reason, and it additionally forfeits DR-07's whole stated purpose (edit-time feedback, before a build ever runs).
+  - Turborepo's "Just-in-Time Packages" pattern — `exports` pointing only at source, no per-package `dist`/`tsc -b` at all — rejected as disproportionate. It would discard Slice 8's TypeScript Project References and Turborepo's own incremental build caching for every package, a much larger change than this problem justifies.
+- **Verification:** confirmed empirically in isolated scratch clones (never on a committed branch) before implementation, not assumed from documentation — with zero `dist/` anywhere in the workspace: ESLint (reconfigured to `eslint-import-resolver-typescript`) resolved cross-package imports via `types` → source and correctly flagged a deliberately-forbidden edge; dependency-cruiser (with `tsConfig` plus explicit `enhancedResolveOptions`) did the same. A legitimate edge continued to resolve and pass cleanly in the same tests — no false positives introduced.
+- **Known limitation — TS6305:** `tsc --noEmit` on a package with a real `references` entry (any package with an actual DR-02 dependency — `application`, `infrastructure`, `studio`) still fails on an unbuilt checkout, with `error TS6305: Output file '<dep>/dist/index.d.ts' has not been built from source file '<dep>/src/index.ts'`. This is a *different* check than module resolution — TypeScript's own project-reference consistency validation, which verifies a referenced project's declared build output regardless of whether `exports.types` can already resolve the source directly. It's a documented TypeScript limitation ([microsoft/TypeScript#40431](https://github.com/microsoft/TypeScript/issues/40431)), not a gap in this project's resolver configuration — confirmed by testing a package with zero declared dependencies (`pack-schema`, no `references` entry at all), where plain `tsc --noEmit` passes with zero `dist/` anywhere. **Decision: accepted, not worked around.** `check-types` keeps `dependsOn: ["^build"]` in `turbo.json`, globally, rather than introducing per-package `turbo.json` overrides or a second `references`-free `tsconfig.json` per package just to decouple the 3 packages (`domain`, `pack-schema`, `design-system`) where it would actually be possible — Phase 0 favors simple, predictable infrastructure over optimizing around a compiler edge case. Revisit only if TypeScript changes this behavior, or if a real scalability problem justifies the added complexity.
+- **Consequences:** DR-05's "only the declared public surface resolves" still holds — it's now one surface with two condition-specific targets, not two competing surfaces. `packages/eslint-config/boundaries.js` depends on `eslint-import-resolver-typescript` instead of `eslint-import-resolver-node`. `.dependency-cruiser.mjs` gains a `tsConfig` block and explicit `enhancedResolveOptions`. `lint` and CI's `dependency-cruiser` step are now genuinely independent of build state — this was the actual goal. `check-types` and `test` both keep `dependsOn: ["^build"]`, for two different reasons: `test` because Vitest genuinely executes compiled/runtime code (unchanged since Slice 13's TD-02); `check-types` because of the TS6305 limitation above, not because of anything this amendment could fix.
+
 ## Status
 
-**Approved and frozen (v1.0).**
+**Approved and frozen (v1.1).**
 On approval: Folder Structure, then Turborepo Scaffolding, then Initial Project Bootstrap — implementation begins only after the Domain Model, Architecture Blueprint, Pack Specification, ADR-001, and ADR-002 are all frozen.
+
+---
+
+**Changelog**
+
+- **v1.1** — DR-14 added (DR-05's exports map: dual-condition, `types` → source) during Phase 0, Slice 15, approved.
+- **v1.0** — Initial freeze. DR-01 through DR-13 resolved and approved.
