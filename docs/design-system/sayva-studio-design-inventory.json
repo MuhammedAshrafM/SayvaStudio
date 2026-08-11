@@ -1,0 +1,4133 @@
+{
+  "$meta": {
+    "project": "Sayva Studio",
+    "document": "Design handoff — machine-readable inventory",
+    "version": "1.0",
+    "extracted": "2026-08-09",
+    "extractionMode": "extraction-first — no interpretation, no gap-filling",
+    "authoritativeSources": [
+      {
+        "file": "Sayva Studio Foundations.dc.html",
+        "version": "v0.2",
+        "role": "Philosophy, IA, domain model, lifecycle, tokens, register, layout, accessibility"
+      },
+      {
+        "file": "Sayva Studio Design System.dc.html",
+        "version": "v0.2",
+        "role": "Component contracts (canonical naming authority), workspace recipe, screen briefs"
+      },
+      {
+        "file": "Sayva Studio Screens.dc.html",
+        "version": "canonical",
+        "role": "Vocabulary + Sign Editor at full fidelity, design review"
+      },
+      {
+        "file": "Sayva Studio Scale Review.dc.html",
+        "version": "canonical",
+        "role": "Amendments A1–A3, cardinality, optimistic boundary"
+      },
+      {
+        "file": "Sayva Studio Handoff Audit.dc.html",
+        "version": "v1.1",
+        "role": "Inventory, Phase 1 boundary, acceptance criteria"
+      }
+    ],
+    "conflictRule": "Design System wins on component naming; Foundations wins on tokens and IA; Scale Review wins on interaction at scale.",
+    "rule": "If this document and a source document disagree, the source document wins and this document is wrong.",
+    "counts": {
+      "tokens": 93,
+      "foundations": 16,
+      "componentsContracted": 22,
+      "componentsRegistered": 17,
+      "componentsReclassified": 5,
+      "patterns": 8,
+      "principles": 10,
+      "rules": 20,
+      "workspaceRecipes": 8,
+      "screens": 16,
+      "screensCanonical": 2,
+      "accessibility": 27,
+      "openDecisions": 9,
+      "unspecified": 18
+    }
+  },
+  "foundations": [
+    {
+      "id": "philosophy",
+      "name": "Product philosophy — 7 tenets, each with a stated cost",
+      "source": "Sayva Studio Foundations.dc.html §01",
+      "status": "canonical",
+      "items": [
+        {
+          "id": "T1",
+          "name": "The content model is the product",
+          "cost": "Slower to add ad-hoc features that do not fit the graph."
+        },
+        {
+          "id": "T2",
+          "name": "Authoring is a session, not a visit",
+          "cost": "First-time users need real onboarding documentation, not a tour."
+        },
+        {
+          "id": "T3",
+          "name": "Nothing ships unreviewed",
+          "cost": "Every write path carries versioning overhead from v1."
+        },
+        {
+          "id": "T4",
+          "name": "Content and models evolve separately",
+          "cost": "Compatibility ranges must be expressed and tested explicitly."
+        },
+        {
+          "id": "T5",
+          "name": "Accessibility is a domain requirement",
+          "cost": "Some dense visual shortcuts are unavailable to us."
+        },
+        {
+          "id": "T6",
+          "name": "AI proposes, a human disposes",
+          "cost": "Suggestion review is real work, so accepting and rejecting must be almost free."
+        },
+        {
+          "id": "T7",
+          "name": "Media is training data",
+          "cost": "Upload is a pipeline with failure states, not a file copy."
+        }
+      ]
+    },
+    {
+      "id": "non-goals",
+      "name": "Explicit non-goals",
+      "source": "Sayva Studio Foundations.dc.html §01",
+      "status": "canonical",
+      "items": [
+        "Not an admin dashboard",
+        "Not a consumer surface",
+        "Not a replacement for ML Studio",
+        "Not a general CMS"
+      ]
+    },
+    {
+      "id": "planes",
+      "name": "Four-plane domain model",
+      "source": "Sayva Studio Foundations.dc.html §03",
+      "status": "canonical",
+      "items": [
+        {
+          "name": "CONTENT",
+          "note": "Authored per language; versioned as Language Packs."
+        },
+        {
+          "name": "DATA",
+          "note": "Media, pose, annotations, datasets, splits. Cross-language."
+        },
+        {
+          "name": "MODELS",
+          "note": "Trained in ML Studio, registered and evaluated here."
+        },
+        {
+          "name": "DISTRIBUTION",
+          "note": "Releases bind a pack set to a channel with a compatibility range and a rollout."
+        },
+        {
+          "name": "Job",
+          "note": "Cross-plane. Owns a scope, a stage list and an actor."
+        }
+      ]
+    },
+    {
+      "id": "model-rules",
+      "name": "Domain model rules",
+      "source": "Sayva Studio Foundations.dc.html §03",
+      "status": "canonical",
+      "items": [
+        "1:N scoped — nothing global except Media Assets and Model Packs",
+        "Reference, not ownership — Lessons reference Signs; deletion surfaces an impact list",
+        "Categories are facets, not a folder tree",
+        "Media is deduplicated; usage count shown before any destructive action",
+        "Versioning is per entity and per pack",
+        "Assets carry ML metadata",
+        "Annotations are attributed",
+        "Models never point at content — pairing happens only in a Release",
+        "A Job is an entity"
+      ]
+    },
+    {
+      "id": "navigation",
+      "name": "Navigation frame — product rail + scope bar + contextual sidebar",
+      "source": "Sayva Studio Foundations.dc.html §04",
+      "status": "canonical",
+      "rejected": [
+        "Flat global sidebar with language as a filter",
+        "Language is the workspace"
+      ],
+      "rail": [
+        "Content",
+        "Data",
+        "Models",
+        "Validate",
+        "Publish",
+        "Health",
+        "Admin"
+      ]
+    },
+    {
+      "id": "url-contract",
+      "name": "URL contract",
+      "source": "Sayva Studio Foundations.dc.html §04",
+      "status": "canonical",
+      "rule": "Every list state (filters, sort, columns, page) is URL-encoded. Saved views are named URLs.",
+      "routes": [
+        "/l/:lang/vocabulary",
+        "/l/:lang/signs/:id/:tab",
+        "/l/:lang/lessons/:id/edit",
+        "/l/:lang/validate",
+        "/data/assets",
+        "/models/:model/versions/:v",
+        "/publish/releases/:v",
+        "/health?scope=:lang",
+        "/jobs?state=running&actor=@me",
+        "/jobs/:id",
+        "/admin/audit"
+      ]
+    },
+    {
+      "id": "lifecycle",
+      "name": "Editorial lifecycle — 6 states, 9 guarded transitions",
+      "source": "Sayva Studio Foundations.dc.html §05",
+      "status": "canonical",
+      "states": [
+        {
+          "name": "Draft",
+          "glyph": "○",
+          "actor": "Editor"
+        },
+        {
+          "name": "In Review",
+          "glyph": "◐",
+          "actor": "Reviewer"
+        },
+        {
+          "name": "Changes Requested",
+          "glyph": "↩",
+          "actor": "Editor"
+        },
+        {
+          "name": "Approved",
+          "glyph": "✓",
+          "actor": "Reviewer"
+        },
+        {
+          "name": "Published",
+          "glyph": "●",
+          "actor": "Publisher"
+        },
+        {
+          "name": "Deprecated",
+          "glyph": "—",
+          "actor": "Publisher"
+        }
+      ],
+      "invariants": [
+        "A published revision is never mutated",
+        "Approval is bound to a revision, not an entity",
+        "Bulk transitions are logged individually with a single undo for the batch",
+        "State is per language",
+        "Stale review is a badge on the review record, not a state"
+      ],
+      "note": "Not configurable, by decision. A seventh state would be added to the system once, for everyone."
+    },
+    {
+      "id": "ai-rules",
+      "name": "AI workflow — 4 non-negotiable rules",
+      "source": "Sayva Studio Foundations.dc.html §06",
+      "status": "canonical",
+      "items": [
+        {
+          "id": "RULE 1",
+          "name": "Never a silent write",
+          "note": "Model output enters as a suggestion. No exceptions, including bulk."
+        },
+        {
+          "id": "RULE 2",
+          "name": "Always attributed",
+          "note": "Model version, confidence at the time, and who accepted it."
+        },
+        {
+          "id": "RULE 3",
+          "name": "Confidence is a number",
+          "note": "Shown numerically with its threshold and reasons. Never a bare colour."
+        },
+        {
+          "id": "RULE 4",
+          "name": "AI cannot block",
+          "note": "Only deterministic rules can stop a publish."
+        }
+      ],
+      "provenance": [
+        {
+          "level": "Human",
+          "glyph": "◆"
+        },
+        {
+          "level": "Suggested",
+          "glyph": "✦",
+          "note": "Excluded from packs and training sets."
+        },
+        {
+          "level": "Accepted",
+          "glyph": "✦✓"
+        },
+        {
+          "level": "Corrected",
+          "glyph": "✦✎",
+          "note": "The most valuable training signal — the delta is retained."
+        }
+      ],
+      "placement": "AI is not a rail entry. It appears inside the work."
+    },
+    {
+      "id": "ml-asset",
+      "name": "ML asset record — 5 field groups, 7-stage ingest",
+      "source": "Sayva Studio Foundations.dc.html §07",
+      "status": "canonical",
+      "groups": [
+        "IDENTITY",
+        "TECHNICAL",
+        "CAPTURE",
+        "ML",
+        "QUALITY"
+      ],
+      "ingest": [
+        "Uploaded",
+        "Transcoded",
+        "Landmarks extracted",
+        "Quality scored",
+        "Auto-annotated (optional, suggestions only)",
+        "Indexed",
+        "Failed"
+      ],
+      "note": "Failure is a stage state; retry resumes rather than restarts."
+    },
+    {
+      "id": "model-registry",
+      "name": "Model registry — immutable versions, mandatory card",
+      "source": "Sayva Studio Foundations.dc.html §08",
+      "status": "canonical",
+      "cardSections": [
+        "Intended use",
+        "Training data",
+        "Evaluation",
+        "Benchmarks",
+        "Inference profile",
+        "Limitations & risks (mandatory, non-empty, human-written)",
+        "Lineage"
+      ],
+      "gate": "A version with an empty limitations section cannot be promoted past beta.",
+      "yankRule": "A yanked version is withdrawn from distribution but remains readable. Nothing is ever deleted from the registry."
+    },
+    {
+      "id": "distribution",
+      "name": "Distribution — 7-step pipeline, 4 channels, compatibility matrix",
+      "source": "Sayva Studio Foundations.dc.html §09",
+      "status": "canonical",
+      "steps": [
+        "Compose",
+        "Validate",
+        "Build",
+        "Sign",
+        "Stage",
+        "Roll out",
+        "Roll back"
+      ],
+      "channels": [
+        "dev",
+        "beta",
+        "stable",
+        "lts"
+      ],
+      "cellStates": [
+        "compatible",
+        "degraded",
+        "incompatible",
+        "untested"
+      ],
+      "note": "Untested is explicit, never a blank — a blank cell reads as safe."
+    },
+    {
+      "id": "validation",
+      "name": "Validation model — 4 severities, 15-rule catalogue",
+      "source": "Sayva Studio Foundations.dc.html §10",
+      "status": "canonical",
+      "severities": [
+        "BLOCKING",
+        "WARNING",
+        "ADVISORY (AI)",
+        "INFO"
+      ],
+      "antiNoise": "Any rule producing results on more than 30% of a scope is flagged as miscalibrated to an Administrator rather than shown to every editor."
+    },
+    {
+      "id": "search",
+      "name": "Search and palette — 6 modes, ranking and safety rules",
+      "source": "Sayva Studio Foundations.dc.html §11",
+      "status": "canonical",
+      "modes": [
+        "— search",
+        "> actions",
+        "@ people",
+        "# facets",
+        ": versions",
+        "? help"
+      ],
+      "ranking": [
+        "Scoped results first, cross-language below a labelled divider, never silently mixed",
+        "Your own recent edits outrank global popularity",
+        "Destructive and approval-gated actions are labelled and never the default highlighted row",
+        "Actions the current role cannot perform are shown but disabled with the reason"
+      ]
+    },
+    {
+      "id": "health",
+      "name": "Operational health — 6 figures, 6 rules, 6-card cap",
+      "source": "Sayva Studio Foundations.dc.html §12",
+      "status": "canonical",
+      "cards": [
+        "Dataset coverage",
+        "Validation health",
+        "Pending reviews",
+        "Content completeness",
+        "Model readiness",
+        "Publishing health"
+      ],
+      "note": "Learner analytics explicitly deferred to a second tab."
+    },
+    {
+      "id": "layout-templates",
+      "name": "Layout templates L1–L7",
+      "source": "Sayva Studio Foundations.dc.html §15",
+      "status": "canonical",
+      "items": [
+        {
+          "id": "L1",
+          "name": "List / Data"
+        },
+        {
+          "id": "L2",
+          "name": "Detail / Editor"
+        },
+        {
+          "id": "L3",
+          "name": "Workbench"
+        },
+        {
+          "id": "L4",
+          "name": "Pipeline / Wizard"
+        },
+        {
+          "id": "L5",
+          "name": "Focus"
+        },
+        {
+          "id": "L6",
+          "name": "Health / Overview"
+        },
+        {
+          "id": "L7",
+          "name": "Matrix"
+        }
+      ]
+    },
+    {
+      "id": "growth-hooks",
+      "name": "Growth hooks with prerequisites",
+      "source": "Sayva Studio Foundations.dc.html §17",
+      "status": "canonical",
+      "items": [
+        "Comments & collaboration",
+        "Approval workflow",
+        "Permissions",
+        "Notifications",
+        "Audit log",
+        "Analytics",
+        "AI-assisted authoring",
+        "Dataset & experiment views",
+        "Moderation & contributions"
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "surface.canvas",
+      "group": "surface",
+      "light": "#f4f4f4",
+      "dark": "#17181a",
+      "meaning": "App background behind panes.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.default",
+      "group": "surface",
+      "light": "#ffffff",
+      "dark": "#1f2124",
+      "meaning": "Cards, tables, editors.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.subtle",
+      "group": "surface",
+      "light": "#fafafa",
+      "dark": "#26282c",
+      "meaning": "Toolbars, table headers, footers.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.selected",
+      "group": "surface",
+      "light": "#eef3f0",
+      "dark": "#1e3329",
+      "meaning": "Selected rows, active nav.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "border.default",
+      "group": "border",
+      "light": "#e4e4e4",
+      "dark": "#33363a",
+      "meaning": "Pane and card separation.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "border.strong",
+      "group": "border",
+      "light": "#cfcfcf",
+      "dark": "#4a4e54",
+      "meaning": "Input borders, focusable edges.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.primary",
+      "group": "color",
+      "light": "#1a1a1a",
+      "dark": "#eceded",
+      "meaning": "Body and headings. 15.3:1 on white.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.secondary",
+      "group": "color",
+      "light": "#4a4a4a",
+      "dark": "#b9bcc0",
+      "meaning": "Supporting prose. 8.9:1.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.tertiary",
+      "group": "color",
+      "light": "#6b6b6b",
+      "dark": "#8f9296",
+      "meaning": "Metadata and labels. 5.4:1 on white, 4.9:1 on subtle and selected surfaces — passes AA on every ground in the system. Never for body copy.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.default",
+      "group": "color",
+      "light": "#2f6b52",
+      "dark": "#6ab894",
+      "meaning": "Primary action, focus ring, selection.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.hover",
+      "group": "color",
+      "light": "#255744",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Pressed and hovered primary.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai",
+      "group": "color",
+      "light": "#5b4b8a",
+      "dark": "#a394d8",
+      "meaning": "AI/ML domain only. Same lightness as accent.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "control.disabled.bg",
+      "group": "control-state",
+      "light": "#ebebeb",
+      "dark": "#2b2e32",
+      "meaning": "Disabled control ground. Never a dimmed version of the enabled fill.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "control.disabled.fg",
+      "group": "control-state",
+      "light": "#6b6b6b",
+      "dark": "#8f9296",
+      "meaning": "Disabled control label. 4.6:1 on control.disabled.bg — a disabled control must still be readable.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.subtle",
+      "group": "icon",
+      "light": "#858585",
+      "dark": "#8f9296",
+      "meaning": "Resting state of non-text affordances: row menus, unstarred views, chevrons. 3.3:1 on every surface — WCAG 1.4.11 floor for UI components.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.fg",
+      "group": "semantic-state",
+      "light": "#4a4a4a",
+      "dark": "#b9bcc0",
+      "meaning": "Draft, deprecated, unset. The absence of a signal is itself a state.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.bg",
+      "group": "semantic-state",
+      "light": "#f4f4f4",
+      "dark": "#26282c",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.border",
+      "group": "semantic-state",
+      "light": "#dcdcdc",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.fg",
+      "group": "semantic-state",
+      "light": "#1f7a3d",
+      "dark": "#5fbd7d",
+      "meaning": "Approved, published, passed validation.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.bg",
+      "group": "semantic-state",
+      "light": "#eef7f1",
+      "dark": "#1a2b21",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.border",
+      "group": "semantic-state",
+      "light": "#cfe6d8",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.fg",
+      "group": "semantic-state",
+      "light": "#a05a1e",
+      "dark": "#d99a4e",
+      "meaning": "Changes requested, non-blocking validation, degraded compatibility.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.bg",
+      "group": "semantic-state",
+      "light": "#fdf6ec",
+      "dark": "#2e2519",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.border",
+      "group": "semantic-state",
+      "light": "#eeddc2",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.fg",
+      "group": "semantic-state",
+      "light": "#b91c1c",
+      "dark": "#e8736b",
+      "meaning": "Blocking errors, destructive actions, incompatible.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.bg",
+      "group": "semantic-state",
+      "light": "#fdf2f2",
+      "dark": "#2e1d1c",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.border",
+      "group": "semantic-state",
+      "light": "#f0d4d4",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.fg",
+      "group": "semantic-state",
+      "light": "#1e5a8a",
+      "dark": "#6aa8db",
+      "meaning": "In review, informational, untested.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.bg",
+      "group": "semantic-state",
+      "light": "#eef4f9",
+      "dark": "#1a252e",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.border",
+      "group": "semantic-state",
+      "light": "#cfe0ee",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.subtle",
+      "group": "color",
+      "light": "#eef3f0",
+      "dark": "#1e3329",
+      "meaning": "Selected rows, active nav, accent-tinted grounds. Same value as surface.selected by intent, not coincidence.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.border",
+      "group": "color",
+      "light": "#cfe0d8",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Border companion for accent grounds.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai.subtle",
+      "group": "color",
+      "light": "#f3f1f8",
+      "dark": "#241f33",
+      "meaning": "Suggestion wrappers, ghost annotation lanes, advisory findings.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai.border",
+      "group": "color",
+      "light": "#cfc6e0",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Border companion for the AI register.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.track",
+      "group": "visualisation",
+      "light": "#f0f0f0",
+      "dark": "#2b2e32",
+      "meaning": "Unfilled portion of any quantitative bar. The only neutral in the viz ramp.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.default",
+      "group": "visualisation",
+      "light": "#cfe3d8",
+      "dark": "#3d6b54",
+      "meaning": "At or above target — coverage, quality, rollout, budget.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.warning",
+      "group": "visualisation",
+      "light": "#f0dcc0",
+      "dark": "#7a5a2e",
+      "meaning": "Below target, above floor.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.danger",
+      "group": "visualisation",
+      "light": "#f0cccc",
+      "dark": "#7a3733",
+      "meaning": "Below floor — landmark gaps, critical coverage shortfall.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.ai",
+      "group": "visualisation",
+      "light": "#efecf6",
+      "dark": "#3a3352",
+      "meaning": "Machine-produced spans: suggested annotation lanes.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.stroke.default",
+      "group": "visualisation",
+      "light": "#a9cbb9",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Segment edge on a filled span, so adjacent spans stay countable.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.stroke.ai",
+      "group": "visualisation",
+      "light": "#b6acd2",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Dashed segment edge on suggested spans.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "display",
+      "group": "typography",
+      "light": "28/1.15 700",
+      "dark": "n/a",
+      "meaning": "Page-level titles",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.lg",
+      "group": "typography",
+      "light": "20/1.25 600",
+      "dark": "n/a",
+      "meaning": "Entity header titles",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.md",
+      "group": "typography",
+      "light": "16/1.3 600",
+      "dark": "n/a",
+      "meaning": "Section headings",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.sm",
+      "group": "typography",
+      "light": "14/1.35 600",
+      "dark": "n/a",
+      "meaning": "Panel headings",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "body",
+      "group": "typography",
+      "light": "13/1.55 400",
+      "dark": "n/a",
+      "meaning": "Default reading size",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "body.strong",
+      "group": "typography",
+      "light": "13/1.55 600",
+      "dark": "n/a",
+      "meaning": "Emphasis in body",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "caption",
+      "group": "typography",
+      "light": "11.5/1.4 400",
+      "dark": "n/a",
+      "meaning": "Metadata, helper text, counts",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "label",
+      "group": "typography",
+      "light": "10.5/1.3 500",
+      "dark": "n/a",
+      "meaning": "Tracked uppercase section labels",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "mono",
+      "group": "typography",
+      "light": "11.5/1.5 400",
+      "dark": "n/a",
+      "meaning": "IDs, glosses, versions, timecodes — never prose",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.050",
+      "group": "spacing",
+      "light": "2px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.100",
+      "group": "spacing",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.200",
+      "group": "spacing",
+      "light": "8px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.300",
+      "group": "spacing",
+      "light": "12px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.400",
+      "group": "spacing",
+      "light": "16px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.600",
+      "group": "spacing",
+      "light": "24px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.800",
+      "group": "spacing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.1200",
+      "group": "spacing",
+      "light": "48px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.xs",
+      "group": "radius",
+      "light": "2px",
+      "dark": "n/a",
+      "meaning": "Checkboxes, small chips",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.sm",
+      "group": "radius",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "Default for controls",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.md",
+      "group": "radius",
+      "light": "6px",
+      "dark": "n/a",
+      "meaning": "Palette, elevated cards",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.lg",
+      "group": "radius",
+      "light": "10px",
+      "dark": "n/a",
+      "meaning": "UNSPECIFIED USAGE — defined, never drawn (F8)",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.full",
+      "group": "radius",
+      "light": "999px",
+      "dark": "n/a",
+      "meaning": "Avatar only; not referenced by any component contract (F8)",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.0",
+      "group": "elevation",
+      "light": "none",
+      "dark": "n/a",
+      "meaning": "Panes, tables, everything default",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.1",
+      "group": "elevation",
+      "light": "0 1px 2px rgba(0,0,0,0.07)",
+      "dark": "n/a",
+      "meaning": "Dropdowns, popovers, tooltips",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.2",
+      "group": "elevation",
+      "light": "0 6px 16px rgba(0,0,0,0.10)",
+      "dark": "n/a",
+      "meaning": "Drawers, sheets, side panels",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.3",
+      "group": "elevation",
+      "light": "0 14px 34px rgba(0,0,0,0.14)",
+      "dark": "n/a",
+      "meaning": "Modal dialogs, command palette",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.instant",
+      "group": "motion",
+      "light": "80ms",
+      "dark": "n/a",
+      "meaning": "Hover, focus, checkbox, toggle",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.fast",
+      "group": "motion",
+      "light": "120ms",
+      "dark": "n/a",
+      "meaning": "Popover and menu entry, tab change",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.base",
+      "group": "motion",
+      "light": "180ms",
+      "dark": "n/a",
+      "meaning": "Drawer and sheet slide, dialog scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "ease.standard",
+      "group": "motion",
+      "light": "cubic(.2,0,0,1)",
+      "dark": "n/a",
+      "meaning": "Entering elements",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "ease.exit",
+      "group": "motion",
+      "light": "cubic(.4,0,1,1)",
+      "dark": "n/a",
+      "meaning": "Leaving elements — always faster",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.compact",
+      "group": "sizing",
+      "light": "28px (Foundations §15) / 26px (Design System) — CONFLICT C1",
+      "dark": "n/a",
+      "meaning": "Compact density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.default",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Default density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.relaxed",
+      "group": "sizing",
+      "light": "40px",
+      "dark": "n/a",
+      "meaning": "Relaxed density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.rail",
+      "group": "sizing",
+      "light": "60px",
+      "dark": "n/a",
+      "meaning": "Product rail",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.sidebar",
+      "group": "sizing",
+      "light": "208–360px",
+      "dark": "n/a",
+      "meaning": "Contextual sidebar, resizable, persisted",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.inspector",
+      "group": "sizing",
+      "light": "280–420px",
+      "dark": "n/a",
+      "meaning": "Inspector, resizable, persisted",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.sm",
+      "group": "sizing",
+      "light": "28px",
+      "dark": "n/a",
+      "meaning": "Small button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.md",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Default button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.lg",
+      "group": "sizing",
+      "light": "40px",
+      "dark": "n/a",
+      "meaning": "Large button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "hit.min",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Minimum hit area",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "hit.touch",
+      "group": "sizing",
+      "light": "44px",
+      "dark": "n/a",
+      "meaning": "Minimum hit area on touch",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.dense",
+      "group": "sizing",
+      "light": "16px",
+      "dark": "n/a",
+      "meaning": "Icons in dense contexts",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.toolbar",
+      "group": "sizing",
+      "light": "20px",
+      "dark": "n/a",
+      "meaning": "Icons in toolbars",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.grid",
+      "group": "sizing",
+      "light": "24px",
+      "dark": "n/a",
+      "meaning": "Icon design grid",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.stroke",
+      "group": "sizing",
+      "light": "1.5px",
+      "dark": "n/a",
+      "meaning": "Icon stroke width",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "rhythm",
+      "group": "sizing",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "Vertical rhythm",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.sm",
+      "group": "breakpoint",
+      "light": "< 900px",
+      "dark": "n/a",
+      "meaning": "Read and review only; editors disabled with an explanation",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.md",
+      "group": "breakpoint",
+      "light": "900–1279px",
+      "dark": "n/a",
+      "meaning": "Rail + one pane; sidebar and inspector become overlays",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.lg",
+      "group": "breakpoint",
+      "light": "1280–1727px",
+      "dark": "n/a",
+      "meaning": "Rail + sidebar + content; inspector on demand — the design target",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.xl",
+      "group": "breakpoint",
+      "light": "≥ 1728px",
+      "dark": "n/a",
+      "meaning": "All panes visible; extra width goes to the data view",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "focus.ring",
+      "group": "focus",
+      "light": "UNSPECIFIED BY DESIGN",
+      "dark": "n/a",
+      "meaning": "Rule stated in prose: 2px accent ring at 2px offset, never removed. No token trio exists (F9)",
+      "source": "Foundations §13"
+    }
+  ],
+  "components": [
+    {
+      "name": "SyButton",
+      "classification": "Design System primitive",
+      "contractArticle": "Primitives",
+      "source": "Sayva Studio Design System.dc.html §Primitives",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Commits an action; the label is the verb, never a generic confirmation.",
+      "anatomy": "label (required, verb) · optional leading icon · optional shortcut hint",
+      "variants": [
+        "primary",
+        "secondary",
+        "ghost",
+        "danger",
+        "icon-only (label required)"
+      ],
+      "sizes": [
+        "28",
+        "32",
+        "40"
+      ],
+      "states": [
+        "default",
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "loading"
+      ],
+      "loading": "Label persists, spinner replaces the icon, aria-busy set, focus kept.",
+      "disabled": "Uses control.disabled.bg/fg, still clears 3:1, always paired with a stated reason.",
+      "validation": "n/a",
+      "keyboard": "Enter / Space; never a tabindex trap.",
+      "accessibility": "Native button; 32px hit area, 44px on touch; aria-busy when loading.",
+      "reuse": [
+        "Every screen",
+        "SyDialog",
+        "bulk bar",
+        "SyStateBlock",
+        "SyFindingList"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyField",
+      "classification": "Design System primitive",
+      "contractArticle": "Primitives",
+      "source": "Sayva Studio Design System.dc.html §Primitives",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "One labelled value of any type.",
+      "anatomy": "visible label · control · helper or error text",
+      "variants": [
+        "text",
+        "mono",
+        "number",
+        "textarea",
+        "select",
+        "combobox",
+        "multi-facet",
+        "date"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "empty",
+        "filled",
+        "focus",
+        "invalid",
+        "warning",
+        "readonly",
+        "disabled",
+        "loading",
+        "suggested"
+      ],
+      "loading": "Loading options state on combobox/select.",
+      "disabled": "control.disabled.*",
+      "validation": "Invalid renders border + icon + text, never colour alone; message tied by aria-describedby.",
+      "keyboard": "Tab order = visual order; Esc reverts an in-progress inline edit; ⌘S saves the form.",
+      "accessibility": "Visible label always.",
+      "reuse": [
+        "Every editor and inspector",
+        "SyFilterBar",
+        "SyDialog forms",
+        "inline grid editing"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyStatusBadge",
+      "classification": "Design System primitive",
+      "contractArticle": "Primitives",
+      "source": "Sayva Studio Design System.dc.html §Primitives",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Lifecycle state of any entity.",
+      "anatomy": "glyph (aria-hidden) · label (accessible name) · optional modifier suffix",
+      "variants": [
+        "inline (rows)",
+        "detail (header)",
+        "with modifier suffix"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "Draft",
+        "In Review",
+        "Changes Requested",
+        "Approved",
+        "Published",
+        "Deprecated",
+        "stale modifier",
+        "blocked modifier"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Not interactive by default; as a filter chip it is a toggle button.",
+      "accessibility": "Glyph aria-hidden; label is the accessible name; actor and time on focus, never colour-only.",
+      "reuse": [
+        "Grid rows",
+        "entity headers",
+        "review queue",
+        "palette results",
+        "release composer"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyEntityRef",
+      "classification": "Design System primitive",
+      "contractArticle": "Primitives",
+      "source": "Sayva Studio Design System.dc.html §Primitives",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "A pointer to any entity. The single way one entity refers to another.",
+      "anatomy": "type glyph · ID · name · state",
+      "variants": [
+        "chip",
+        "row",
+        "inline text",
+        "with thumbnail (assets)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "resolved",
+        "loading",
+        "deleted",
+        "no-permission",
+        "deprecated (with replacement)"
+      ],
+      "loading": "Loading state on the reference itself.",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Enter opens; ⌘Enter opens in a side peek without losing the current context.",
+      "accessibility": "Accessible name = type + name + ID; state announced; never a bare ID link.",
+      "reuse": [
+        "Lesson contents",
+        "validation results",
+        "audit log",
+        "palette",
+        "impact previews",
+        "dataset membership"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyMetric",
+      "classification": "Design System primitive",
+      "contractArticle": "Primitives",
+      "source": "Sayva Studio Design System.dc.html §Primitives",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "A figure with its denominator, trend and target.",
+      "anatomy": "figure · denominator · trend · target · optional decorative bar",
+      "variants": [
+        "lg",
+        "md with delta",
+        "sm inline",
+        "budget bar"
+      ],
+      "sizes": [
+        "lg",
+        "md",
+        "sm"
+      ],
+      "states": [
+        "ok",
+        "warning",
+        "error",
+        "no-data",
+        "loading",
+        "stale"
+      ],
+      "loading": "Card keeps its title and denominator visible while the figure loads.",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Focusable when it links to its underlying list; Enter opens that list.",
+      "accessibility": "Tabular figures; the denominator is part of the accessible name; bars are aria-hidden decoration.",
+      "reuse": [
+        "Health cards",
+        "model metric tables",
+        "coverage",
+        "pack size budget",
+        "quality scores"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyStateBlock",
+      "classification": "Design System primitive",
+      "contractArticle": "Structure",
+      "source": "Sayva Studio Design System.dc.html §Structure",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Every non-populated state, anywhere.",
+      "anatomy": "heading (real heading) · explanatory line · one named next action",
+      "variants": [
+        "pane",
+        "panel",
+        "inline row"
+      ],
+      "sizes": [
+        "pane",
+        "panel",
+        "inline"
+      ],
+      "states": [
+        "first-run",
+        "filtered-empty",
+        "loading",
+        "error",
+        "no-permission",
+        "offline"
+      ],
+      "loading": "Skeleton, not spinner.",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Its action receives focus on appearance only when the user's action caused the state.",
+      "accessibility": "Heading is real; errors are assertive live regions, empties polite; no decorative illustration.",
+      "reuse": [
+        "Every collection",
+        "inspector section",
+        "overlay",
+        "matrix",
+        "canvas"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyMenu",
+      "classification": "Design System primitive",
+      "contractArticle": "Overlays",
+      "source": "Sayva Studio Design System.dc.html §Overlays",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Contextual actions. Eight fixed groups in fixed order on every entity type.",
+      "anatomy": "8 groups: Open · Edit · Relate · Lifecycle · Validate · Duplicate · Copy link · Destructive (last)",
+      "variants": [
+        "elev.1 popover"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "open",
+        "loading",
+        "submitting",
+        "error-in-place"
+      ],
+      "loading": "Loading state in place.",
+      "disabled": "Unpermitted items shown disabled with the reason.",
+      "validation": "n/a",
+      "keyboard": "Esc closes; focus returns to trigger.",
+      "accessibility": "menu role; destructive items last and labelled; shortcut shown per item.",
+      "composition": "Contents come from the entity action registry, not per-screen code. Shares the overlay substrate (focus trap, Esc, stacking, focus restore) — that substrate is a hook, not a component.",
+      "reuse": [
+        "Every row",
+        "every toolbar",
+        "every entity header ⋯"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyDrawer",
+      "classification": "Design System primitive",
+      "contractArticle": "Overlays",
+      "source": "Sayva Studio Design System.dc.html §Overlays",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Work beside context, never on top of it.",
+      "anatomy": "title · body · footer actions",
+      "variants": [
+        "right drawer",
+        "bottom sheet (narrow widths)"
+      ],
+      "sizes": [
+        "elev.2"
+      ],
+      "states": [
+        "closed",
+        "open",
+        "resizing",
+        "dirty (blocks close)",
+        "stacked max 2"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "Dirty state prompts before discard.",
+      "keyboard": "Esc closes; ⌘Enter submits.",
+      "accessibility": "dialog role; labelled by title.",
+      "reuse": [
+        "Bulk edit",
+        "media picker",
+        "review threads",
+        "job detail"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyDialog",
+      "classification": "Design System primitive",
+      "contractArticle": "Overlays",
+      "source": "Sayva Studio Design System.dc.html §Overlays",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Blocking decisions only. The confirm button names the action and its count.",
+      "anatomy": "title · body (impact preview as text) · named confirm + cancel",
+      "variants": [
+        "default",
+        "destructive"
+      ],
+      "sizes": [
+        "elev.3"
+      ],
+      "states": [
+        "default",
+        "destructive",
+        "loading",
+        "error-in-place"
+      ],
+      "loading": "Loading state in place.",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Esc cancels; focus trapped and restored.",
+      "accessibility": "alertdialog for destructive; impact preview is text, not a warning icon alone.",
+      "rule": "Never a modal for work that takes more than one decision — that is a drawer or a workspace.",
+      "reuse": [
+        "Delete",
+        "publish",
+        "promote",
+        "rollback",
+        "auto-fix",
+        "permission escalation"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyConfidence",
+      "classification": "Design System primitive",
+      "contractArticle": "AI",
+      "source": "Sayva Studio Design System.dc.html §AI",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Confidence figure with a band label and the threshold that applies.",
+      "anatomy": "number (first) · band label · threshold · decorative bar",
+      "variants": [
+        "inline",
+        "column",
+        "detail"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "high",
+        "medium",
+        "low",
+        "unavailable",
+        "stale (computed by an older model version)"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Not independently interactive.",
+      "accessibility": "Numeric value always in the accessible name; the bar is decorative and aria-hidden.",
+      "composition": "Documented inside the SySuggestion article but independently usable — it appears in the asset grid with no suggestion present, so it is its own module.",
+      "reuse": [
+        "Sign editor model view",
+        "asset grid",
+        "evaluation runs",
+        "AI advisories"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyAppShell",
+      "classification": "Design System pattern",
+      "contractArticle": "Structure",
+      "source": "Sayva Studio Design System.dc.html §Structure",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Rail, scope bar, sidebar, content, inspector.",
+      "anatomy": "rail 60 · scope bar · sidebar 208–360 · content · inspector 280–420",
+      "variants": [
+        "two-pane",
+        "three-pane",
+        "focus (shell hidden, Esc restores)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "ready",
+        "scope loading",
+        "scope restricted",
+        "offline",
+        "resizing"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "⌥1…7 rail · ⌘L scope · ⌘\\ toggle sidebar · ⌘/ toggle inspector · F6 cycles panes",
+      "accessibility": "Each pane is a landmark with a name; skip links to content and inspector; scope changes announced assertively.",
+      "composition": "Panes resizable, persisted per user. Owns responsive behaviour — no screen defines its own breakpoint handling.",
+      "reuse": [
+        "Every screen"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyEntityHeader",
+      "classification": "Design System pattern",
+      "contractArticle": "Structure",
+      "source": "Sayva Studio Design System.dc.html §Structure",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "The primary entity, stated: identity, state, version, actor, one primary action.",
+      "anatomy": "breadcrumb · title (document h1) · status badge · revision + actor · secondary actions · one primary action",
+      "variants": [
+        "detail",
+        "collection (entity type as subject)",
+        "multi-select (n selected)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "ready",
+        "loading (title skeleton only)",
+        "unsaved changes",
+        "locked",
+        "no-permission",
+        "deleted"
+      ],
+      "loading": "Title skeleton only — never a full-screen spinner; the entity identity is the first thing painted.",
+      "disabled": "Blocked primary action rendered with control.disabled.* plus a banner naming the blocking rule and a fix link.",
+      "validation": "n/a",
+      "keyboard": "Primary action has a named shortcut shown in the label; ⌘⌥C copies a deep link.",
+      "accessibility": "The title is the document h1; breadcrumb is a nav landmark; state change is a live region.",
+      "composition": "Owns the queue cursor (A3).",
+      "reuse": [
+        "Every workspace, without exception"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyTabSet",
+      "classification": "Design System pattern",
+      "contractArticle": "Structure",
+      "source": "Sayva Studio Design System.dc.html §Structure",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Facet navigation within a single entity. Each tab is a route segment, so every facet is deep-linkable.",
+      "anatomy": "tab label · optional count badge",
+      "variants": [
+        "with counts",
+        "without counts",
+        "overflowing (scrolls, never wraps to two rows)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "default",
+        "active",
+        "with count",
+        "count-is-blocking",
+        "disabled with reason",
+        "loading count"
+      ],
+      "loading": "Loading count state.",
+      "disabled": "Disabled tabs stay visible with their stated reason.",
+      "validation": "A blocking count renders in status.danger and is in the accessible name.",
+      "keyboard": "1…n jump to tab; ← → traverse when focused; Home / End to the ends. Never traps arrow keys once focus leaves the tablist.",
+      "accessibility": "tablist / tab / tabpanel; the active tab is the URL so browser back works.",
+      "composition": "Owns navigation only, never content. Tab names and order are screen data.",
+      "reuse": [
+        "Every L2 detail template: sign, asset, model version, lesson, release, dataset"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyInspector",
+      "classification": "Design System pattern",
+      "contractArticle": "Structure",
+      "source": "Sayva Studio Design System.dc.html §Structure",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Computed context for the focused entity.",
+      "anatomy": "4 universal sections in fixed order (State · Validation · Usage · History), then type-specific sections appended",
+      "variants": [
+        "docked",
+        "overlay (bp.md)",
+        "peek (⌘Enter from a reference)"
+      ],
+      "sizes": [
+        "280–420px"
+      ],
+      "states": [
+        "populated",
+        "multi-select summary",
+        "no selection",
+        "loading",
+        "restricted"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "Validation is the 2nd universal section.",
+      "keyboard": "⌘/ toggles; F6 enters; sections collapse with Enter on the header.",
+      "accessibility": "Complementary landmark; section headers are real headings; collapse state announced.",
+      "composition": "Type-specific sections are appended, never interleaved. Currently: Model view, Capture, Compatibility. Never the only path to a value.",
+      "reuse": [
+        "All 7 workspaces"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyCollection",
+      "classification": "Design System pattern",
+      "contractArticle": "Data",
+      "source": "Sayva Studio Design System.dc.html §Data",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Grid, filter bar, saved views, bulk bar and pagination as one composed unit.",
+      "anatomy": "filter bar · saved views · bulk bar (in layout flow) · grid header · rows · footer",
+      "variants": [
+        "table",
+        "gallery (assets)",
+        "tree-table (lessons)",
+        "queue (review, validation)"
+      ],
+      "sizes": [
+        "compact",
+        "default",
+        "relaxed"
+      ],
+      "states": [
+        "populated",
+        "loading skeleton",
+        "first-run empty",
+        "filtered empty",
+        "partial error",
+        "offline",
+        "read-only"
+      ],
+      "loading": "Skeleton matching the real row grid at the remembered row count; filter bar and saved view stay interactive.",
+      "disabled": "Read-only state.",
+      "validation": "n/a",
+      "keyboard": "J/K move · X select · ⇧J extend · E edit · Enter open · / filter · ⌘A all in view",
+      "accessibility": "role=grid, arrow navigation, sort direction announced, selection count in a live region. aria-rowcount reflects the full match count, not the rendered window.",
+      "composition": "Virtualised ~24 rows; server-side sort, filter and count. Hands a cursor to SyEntityHeader for walk selection.",
+      "reuse": [
+        "Vocabulary",
+        "Media",
+        "Validation",
+        "Model registry",
+        "Release history",
+        "Job list"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyMatrix",
+      "classification": "Design System pattern",
+      "contractArticle": "Data",
+      "source": "Sayva Studio Design System.dc.html §Data",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Any two-axis relationship with a small set of cell states.",
+      "anatomy": "axis headers · cells (glyph + word) · legend · cell detail",
+      "variants": [
+        "state cells (compatibility)",
+        "count cells (coverage)",
+        "boolean cells (permissions)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "ok",
+        "degraded",
+        "blocked",
+        "untested (explicit, never a blank)"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "n/a",
+      "keyboard": "Arrow keys traverse; Enter opens cell detail; Home/End jump to axis ends.",
+      "accessibility": "Glyph + word in every cell; headers associated both ways; a table fallback for screen readers.",
+      "reuse": [
+        "Release compatibility",
+        "dataset coverage",
+        "permissions",
+        "language completeness"
+      ],
+      "phase1": false
+    },
+    {
+      "name": "SyPalette",
+      "classification": "Design System pattern",
+      "contractArticle": "Overlays",
+      "source": "Sayva Studio Design System.dc.html §Overlays",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Find, act, jump. The index of the product.",
+      "anatomy": "input · ACTIONS / PINNED / RECENT sections · footer mode hints",
+      "variants": [
+        "— search",
+        "> actions",
+        "@ people",
+        "# facets",
+        ": versions",
+        "? help"
+      ],
+      "sizes": [
+        "elev.3"
+      ],
+      "states": [
+        "idle",
+        "typing",
+        "results",
+        "no results",
+        "recents",
+        "scoped-vs-global",
+        "executing"
+      ],
+      "loading": "Typing/executing states.",
+      "disabled": "Actions the current role cannot perform are shown but disabled with the reason.",
+      "validation": "n/a",
+      "keyboard": "⌘K scoped · ⇧⌘K global",
+      "accessibility": "combobox pattern, aria-activedescendant listbox, focus trapped and restored.",
+      "composition": "Reads the entity action registry. Empty query shows pinned then recents.",
+      "reuse": [
+        "Global"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SySuggestion",
+      "classification": "Design System pattern",
+      "contractArticle": "AI",
+      "source": "Sayva Studio Design System.dc.html §AI",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Wraps any value a model produced.",
+      "anatomy": "value · ✦ SUGGESTED tag · confidence + threshold + model version · Accept / Edit / Reject",
+      "variants": [
+        "field",
+        "cell",
+        "segment",
+        "record",
+        "bulk (accept n at once, itemised)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "suggested",
+        "accepted",
+        "corrected",
+        "rejected",
+        "expired (model superseded)",
+        "conflicting (human edited meanwhile)"
+      ],
+      "loading": "UNSPECIFIED BY DESIGN",
+      "disabled": "n/a",
+      "validation": "Suggested values are excluded from packs and training exports until accepted.",
+      "keyboard": "⌘⇧A accept · ⌘⇧X reject · Tab moves to the next suggestion, not the next field.",
+      "accessibility": "Announced as a suggestion with its confidence; never focus-stealing; decisions confirmed politely.",
+      "reuse": [
+        "Sign editor",
+        "translation workbench",
+        "annotation timeline",
+        "import review",
+        "validation advisories"
+      ],
+      "phase1": true
+    },
+    {
+      "name": "SyTimeline",
+      "classification": "Design System pattern",
+      "contractArticle": "Domain",
+      "source": "Sayva Studio Design System.dc.html §Domain",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Frame-accurate lanes over a time-based asset.",
+      "anatomy": "transport · time ruler · lanes (human / suggested / landmarks) · segment handles",
+      "variants": [
+        "annotation lanes",
+        "quality lanes",
+        "comment anchors",
+        "read-only review"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "empty",
+        "extracting",
+        "annotated",
+        "suggestions pending",
+        "conflicting lanes",
+        "no track"
+      ],
+      "loading": "Extracting state.",
+      "disabled": "Read-only review variant.",
+      "validation": "n/a",
+      "keyboard": "[ ] frame step · ⇧[ ⇧] segment step · L loop region · Space play · 0.25× speed floor",
+      "accessibility": "Every segment focusable with a spoken time range and label; lanes also render as a table. No autoplay.",
+      "reuse": [
+        "Asset workspace",
+        "sign media tab",
+        "timecoded review",
+        "dataset spot-checks"
+      ],
+      "phase1": false
+    },
+    {
+      "name": "SyPipeline",
+      "classification": "Design System pattern",
+      "contractArticle": "Domain",
+      "source": "Sayva Studio Design System.dc.html §Domain",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Any ordered multi-stage process with per-stage state and a resumable failure.",
+      "anatomy": "stage list · per-stage state · error + resume-from-here",
+      "variants": [
+        "horizontal (status)",
+        "vertical step list (wizard)",
+        "inline row (grid cell)"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "pending",
+        "running",
+        "done",
+        "warning",
+        "failed",
+        "skipped",
+        "blocked (waiting on approval)"
+      ],
+      "loading": "Running state with progress.",
+      "disabled": "n/a",
+      "validation": "Gate steps embed SyFindingList.",
+      "keyboard": "Each stage is a link; every stage is deep-linkable and resumable after a reload.",
+      "accessibility": "Ordered list semantics; current stage marked aria-current; progress announced politely.",
+      "composition": "Irreversible stages say so before they run. Stage state lives in the entity, not the session.",
+      "reuse": [
+        "Asset ingest",
+        "release composer",
+        "CSV import",
+        "evaluation runs",
+        "pack builds",
+        "Job detail"
+      ],
+      "phase1": false
+    },
+    {
+      "name": "SyFindingList",
+      "classification": "Design System pattern",
+      "contractArticle": "Workflow",
+      "source": "Sayva Studio Design System.dc.html §Workflow",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Grouped rule outcomes with severity, count, affected entities and a resolution path.",
+      "anatomy": "severity (first spoken token) · rule · count · affected entities as SyEntityRef · resolution action",
+      "variants": [
+        "inline (inspector)",
+        "queue (workspace)",
+        "gate (pipeline step)",
+        "summary chip"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "clean",
+        "warnings",
+        "blocking",
+        "advisory",
+        "running",
+        "fixing",
+        "fixed",
+        "acknowledged",
+        "override requested"
+      ],
+      "loading": "Running state per rule; rules report as they complete.",
+      "disabled": "Blocking rules cannot be overridden by an Editor.",
+      "validation": "Grouped by rule, not by entity. A rule that times out reports as partial, never silently omitted.",
+      "keyboard": "⌘⇧V run on scope · Enter jumps to the offending field · A acknowledges with a note",
+      "accessibility": "Severity is the first spoken token; auto-fix states its scope before running; results are a landmark region.",
+      "reuse": [
+        "Validation workspace",
+        "sign inspector",
+        "dataset checks",
+        "release gate",
+        "import review"
+      ],
+      "phase1": false
+    },
+    {
+      "name": "SyVersionList",
+      "classification": "Design System pattern",
+      "contractArticle": "Workflow",
+      "source": "Sayva Studio Design System.dc.html §Workflow",
+      "status": "contracted",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "purpose": "Immutable versions of anything.",
+      "anatomy": "version · state · metrics with named split or baseline · deltas as text",
+      "variants": [
+        "model versions",
+        "releases",
+        "entity revisions",
+        "dataset snapshots"
+      ],
+      "sizes": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "current",
+        "superseded",
+        "evaluating",
+        "deployed",
+        "yanked",
+        "rolled back",
+        "comparing two"
+      ],
+      "loading": "Metric tables stream per split with the split named while pending.",
+      "disabled": "n/a",
+      "validation": "A missing evaluation run shows as no-data with the run that would produce it, never as a zero.",
+      "keyboard": "X marks two versions, C compares them, Enter opens the version",
+      "accessibility": "Deltas carry sign and unit as text; the metric column always names its split or baseline.",
+      "reuse": [
+        "Model registry",
+        "release history",
+        "entity History tab",
+        "dataset versioning"
+      ],
+      "phase1": false
+    }
+  ],
+  "componentsRegisteredNotContracted": [
+    {
+      "name": "SyTreeNav",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyScopeBar",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyMediaPlayer",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyMediaPicker",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyModelSelector",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyPoseInspector",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyQualityScore",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyDatasetSplitEditor",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyModelCard",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyMetricTable",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyRolloutControl",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyReviewPanel",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyDiffView",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyPinnedItems",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyHealthCard",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyToast",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    },
+    {
+      "name": "SyInlineBanner",
+      "classification": "Workspace/application component",
+      "status": "registered-not-contracted",
+      "source": "Sayva Studio Foundations.dc.html §14",
+      "purpose": "UNSPECIFIED BY DESIGN",
+      "variants": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "keyboard": "UNSPECIFIED BY DESIGN",
+      "accessibility": "UNSPECIFIED BY DESIGN",
+      "darkTheme": "UNSPECIFIED BY DESIGN",
+      "phase1": false,
+      "note": "One-line register entry only. Not implementable as written. Contract alongside the screen that needs it, never before."
+    }
+  ],
+  "componentsReclassified": [
+    {
+      "name": "SyPackBuilder",
+      "reclassifiedAs": "SyPipeline",
+      "kind": "configuration",
+      "source": "Sayva Studio Design System.dc.html §Domain"
+    },
+    {
+      "name": "SyReleaseComposer",
+      "reclassifiedAs": "SyPipeline",
+      "kind": "configuration",
+      "source": "Sayva Studio Design System.dc.html §Domain"
+    },
+    {
+      "name": "SyCoverageMatrix",
+      "reclassifiedAs": "SyMatrix",
+      "kind": "configuration",
+      "source": "Sayva Studio Design System.dc.html §Data"
+    },
+    {
+      "name": "SyRuleResult",
+      "reclassifiedAs": "SyFindingList",
+      "kind": "row within component",
+      "source": "Sayva Studio Design System.dc.html §Workflow"
+    },
+    {
+      "name": "SyProvenanceTag",
+      "reclassifiedAs": "SySuggestion",
+      "kind": "provenance slot",
+      "source": "Sayva Studio Design System.dc.html §AI"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "canvas-inspector",
+      "name": "Canvas authors, inspector reports",
+      "source": "Sayva Studio Scale Review.dc.html Q3 / A1",
+      "status": "canonical",
+      "rule": "Typed values in the canvas, computed values in the inspector. No value appears in both on the same screen.",
+      "tests": {
+        "canvas": "If a reviewer could ask \"who wrote this and why\", it belongs in the canvas.",
+        "inspector": "If it is computed rather than typed, it belongs in the inspector."
+      },
+      "appliedBy": "Deleting the Sign Editor right column; Used by → Inspector Usage, Variants → its existing tab, Model view → Inspector type-specific section."
+    },
+    {
+      "id": "inspector-order",
+      "name": "Inspector section order",
+      "source": "Sayva Studio Design System.dc.html §SyInspector",
+      "status": "canonical",
+      "universal": [
+        "State",
+        "Validation",
+        "Usage",
+        "History"
+      ],
+      "rule": "Four universal sections always first, in this fixed order. Type-specific sections are appended, never interleaved. History is always the fourth section.",
+      "typeSpecific": [
+        {
+          "name": "Model view",
+          "appliesTo": "Any entity a model scores"
+        },
+        {
+          "name": "Capture",
+          "appliesTo": "Assets"
+        },
+        {
+          "name": "Compatibility",
+          "appliesTo": "Model versions"
+        }
+      ]
+    },
+    {
+      "id": "workspace-recipe",
+      "name": "Workspace recipe — five parts",
+      "source": "Sayva Studio Design System.dc.html §Workspace",
+      "status": "canonical",
+      "parts": [
+        {
+          "n": 1,
+          "part": "SUBJECT",
+          "component": "SyEntityHeader"
+        },
+        {
+          "n": 2,
+          "part": "BODY",
+          "component": "SyCollection or canvas"
+        },
+        {
+          "n": 3,
+          "part": "CONTEXT",
+          "component": "SyInspector"
+        },
+        {
+          "n": 4,
+          "part": "ABSENCE",
+          "component": "SyStateBlock"
+        },
+        {
+          "n": 5,
+          "part": "REACH",
+          "component": "SyPalette + shortcuts"
+        }
+      ],
+      "tests": [
+        "Can you name the primary entity in one word?",
+        "Can a user open, edit and publish that entity from here?",
+        "Does every secondary entity appear as a SyEntityRef, not a copy?",
+        "Is there exactly one primary action?",
+        "Does the screen introduce a component, or only assemble existing ones?",
+        "Would a professional spend an hour here without leaving?"
+      ]
+    },
+    {
+      "id": "selection-queue",
+      "name": "Selection → queue",
+      "source": "Sayva Studio Scale Review.dc.html A3",
+      "status": "canonical",
+      "rule": "Any selection can become a queue.",
+      "verbs": [
+        {
+          "verb": "Bulk edit",
+          "shortcut": "⌘E",
+          "purpose": "Uniform changes"
+        },
+        {
+          "verb": "Walk selection",
+          "shortcut": "↵",
+          "purpose": "Per-entity attention"
+        }
+      ],
+      "stages": [
+        "SELECT — bulk bar offers two verbs",
+        "WALK — editor sidebar becomes the selection; position in the URL",
+        "RETURN — walked entities marked done, rest still selected"
+      ],
+      "cap": "~200 working set with an explicit next batch",
+      "composition": "SyCollection hands a cursor to SyEntityHeader. No new component."
+    },
+    {
+      "id": "overlay-selection",
+      "name": "Overlay selection rule",
+      "source": "Sayva Studio Design System.dc.html §Overlays",
+      "status": "canonical",
+      "map": [
+        {
+          "overlay": "SyMenu",
+          "when": "Pick an action"
+        },
+        {
+          "overlay": "SyDrawer",
+          "when": "Do work beside context"
+        },
+        {
+          "overlay": "SyDialog",
+          "when": "A decision that must not be missed"
+        },
+        {
+          "overlay": "SyPalette",
+          "when": "Reach anything"
+        }
+      ],
+      "hardRule": "Never a modal for work that takes more than one decision — that is a drawer or a workspace.",
+      "maxStackDepth": 2
+    },
+    {
+      "id": "context-menu",
+      "name": "Contextual menu — eight groups, fixed order",
+      "source": "Sayva Studio Screens.dc.html §01",
+      "status": "canonical",
+      "groups": [
+        "Open",
+        "Edit",
+        "Relate",
+        "Lifecycle",
+        "Validate",
+        "Duplicate",
+        "Copy link",
+        "Destructive (last)"
+      ],
+      "rule": "Identical on signs, assets, lessons, releases and datasets. Contents come from the entity action registry."
+    },
+    {
+      "id": "queue-continuity",
+      "name": "Queue continuity",
+      "source": "Sayva Studio Screens.dc.html §02",
+      "status": "canonical",
+      "rule": "A list hands its ordering to the detail view; J/K keeps working after opening an entity. Position lives in the URL and survives reload."
+    },
+    {
+      "id": "ai-register",
+      "name": "AI visual register",
+      "source": "Sayva Studio Screens.dc.html §03",
+      "status": "canonical",
+      "rule": "Violet (accent.ai), ✦ glyph, and a numeric confidence — never a lifecycle colour and never a status badge."
+    }
+  ],
+  "principles": [
+    {
+      "id": "P1",
+      "name": "Density with air where it counts",
+      "forbids": "Oversized cards, 24px paddings in data views, hero sections inside the app."
+    },
+    {
+      "id": "P2",
+      "name": "One primary action per surface",
+      "forbids": "Two filled buttons in one toolbar; ambiguous verb pairs like Save and Apply."
+    },
+    {
+      "id": "P3",
+      "name": "Show state, always",
+      "forbids": "Lists that show only a name; edits with no indication of what is unsaved."
+    },
+    {
+      "id": "P4",
+      "name": "Destruction is reversible or explained",
+      "forbids": "\"Are you sure?\" dialogs with no information in them."
+    },
+    {
+      "id": "P5",
+      "name": "Colour is never the only signal",
+      "forbids": "Red/green-only status dots; legends that map colour to meaning alone."
+    },
+    {
+      "id": "P6",
+      "name": "The keyboard is a first-class input",
+      "forbids": "Drag-only reordering; hover-only affordances; unreachable focus traps."
+    },
+    {
+      "id": "P7",
+      "name": "The system absorbs new features",
+      "forbids": "Bespoke page layouts; one-off components that duplicate an existing pattern."
+    },
+    {
+      "id": "P8",
+      "name": "Machine output is labelled and reversible",
+      "forbids": "Silent AI writes; confidence as a colour bar with no number; suggestions that cannot be undone."
+    },
+    {
+      "id": "P9",
+      "name": "Screens are workspaces, not pages",
+      "forbids": "Dashboard pages that summarise several unrelated things; screens whose title is a noun nobody can open, edit or publish."
+    },
+    {
+      "id": "P10",
+      "name": "Every metric is a door",
+      "forbids": "Dashboard tiles that cannot be clicked; percentages with no denominator; charts nobody can act on."
+    }
+  ],
+  "workspaceRecipes": [
+    {
+      "id": "vocabulary",
+      "name": "Vocabulary",
+      "entity": "SIGN (many)",
+      "template": "L1",
+      "status": "canonical-drawn",
+      "source": "Sayva Studio Screens.dc.html §01",
+      "url": "/l/:lang/vocabulary",
+      "goal": "Move a batch of signs toward publishable state: find what is incomplete, fix it or route it to someone who can.",
+      "layout": "SyAppShell three-pane. Rail 60 · sidebar 216 · inspector 292. Shell minimum 1560px.",
+      "scope": "Scope bar: language switcher (⌘L), palette (⌘K), blocking count, Activity tray (⌘J), avatar. Rail ⌥1–7.",
+      "appBar": "SyEntityHeader collection variant: breadcrumb, title, \"4,812 signs · 318 shown\", Import / ⋯ / New sign N",
+      "columns": [
+        "checkbox",
+        "ID",
+        "Display name (sorted ↑)",
+        "Gloss",
+        "Status",
+        "Media",
+        "Quality (number + band word)",
+        "Updated",
+        "⋯"
+      ],
+      "filters": [
+        "Filter input (/)",
+        "Status",
+        "Media",
+        "Updated",
+        "Reviewer",
+        "+ Filter",
+        "Group: Category",
+        "Columns",
+        "density toggle"
+      ],
+      "savedViews": [
+        "Needs media ★ ⌘1",
+        "My reviews ⌘2",
+        "Blocked for release ⌘3",
+        "Low quality media ⌘4"
+      ],
+      "selection": "Selection bar in the layout flow, not floating. \"3 selected · ⇧J extend · ⌘A all 318 · Walk selection ↵\"",
+      "bulkActions": [
+        "Assign reviewer A",
+        "Set category C",
+        "Request approval ⌘↵",
+        "Add to lesson L",
+        "Validate ⌘⇧V",
+        "Export",
+        "Clear Esc"
+      ],
+      "inspector": "Multi-select summary: Common fields · Validation across selection · Usage",
+      "queues": "Walk selection hands a cursor to the Sign editor.",
+      "jobs": "Bulk operations above 50 become jobs, reported in the Activity tray.",
+      "states": {
+        "empty": "First-run: import CSV or create first sign. Filtered-empty names the active filters.",
+        "loading": "Row skeleton matching the real grid at the remembered row count.",
+        "error": "SyStateBlock in the grid area with trace ID, filters preserved, retry."
+      },
+      "responsive": "≥1280 three panes · 900–1279 inspector overlays · <900 read-only summary list with a stated reason.",
+      "components": [
+        "SyAppShell",
+        "SyEntityHeader",
+        "SyCollection",
+        "SyStatusBadge",
+        "SyEntityRef",
+        "SyField",
+        "SyMenu",
+        "SyDrawer",
+        "SyStateBlock",
+        "SyInspector",
+        "SyButton",
+        "SyMetric"
+      ],
+      "screenSpecific": [
+        "The nine-column default set and their order",
+        "Category grouping semantics",
+        "The 318/4,812 count copy",
+        "Which four saved views ship"
+      ]
+    },
+    {
+      "id": "sign-editor",
+      "name": "Sign Editor",
+      "entity": "SIGN (one)",
+      "template": "L2",
+      "status": "canonical-drawn",
+      "source": "Sayva Studio Screens.dc.html §02",
+      "url": "/l/:lang/signs/:id/:tab",
+      "goal": "Bring one sign to a publishable standard: correct linguistic metadata, sound media, resolved review comments.",
+      "layout": "SyAppShell three-pane. Canvas single-column after A1. Sidebar bound to a queue cursor.",
+      "scope": "Scope bar with QUEUE indicator \"7 of 37 in review · J / K\".",
+      "appBar": "Breadcrumb · title · SyStatusBadge In Review · rev 14 · @nadia · 2h ago · Request changes / ⋯ / Approve ⌘⇧R (disabled)",
+      "tabs": [
+        "Definition",
+        "Media 0 (danger)",
+        "Variants 3",
+        "Usage 4",
+        "History 14"
+      ],
+      "canvas": "Gloss · Display name · Description wrapped in SySuggestion · Handshape/Movement/Location · Reference media panel with SyTimeline",
+      "inspector": "State · Validation · Usage · History · Model view — recognition-arsl 2.4.0",
+      "selection": "n/a — single entity",
+      "bulkActions": [
+        "Accept all suggestions (itemised)",
+        "Apply a variant across translations",
+        "Replace an asset everywhere it is used"
+      ],
+      "queues": "Walking selection sidebar: source view, \"7 of 200 · ~12,400 remaining\", J/K move, ⌘⇧R decide.",
+      "jobs": "Media operations and re-scoring run as jobs.",
+      "states": {
+        "empty": "New sign: only required fields, duplicate detection as the gloss is typed.",
+        "loading": "Header title and status resolve first, then the active tab. Never a full-screen spinner.",
+        "error": "Save conflict shows a field-level diff with keep-mine / take-theirs per field. Media failures are per-asset."
+      },
+      "responsive": "Inspector docks ≥1280, overlays 900–1279, below 900 read-only with review actions still available.",
+      "components": [
+        "SyEntityHeader",
+        "SyTabSet",
+        "SyField",
+        "SySuggestion",
+        "SyConfidence",
+        "SyTimeline",
+        "SyInspector",
+        "SyFindingList",
+        "SyEntityRef",
+        "SyDialog",
+        "SyButton"
+      ],
+      "screenSpecific": [
+        "The five tab names and their order",
+        "Which phonology fields exist for ArSL",
+        "The conflict dialog per-field copy",
+        "The \"Model view\" section title"
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Media workspace",
+      "entity": "ML ASSET",
+      "template": "L1 / L5",
+      "status": "brief-only",
+      "source": "Sayva Studio Design System.dc.html §Briefs",
+      "url": "/data/assets",
+      "goal": "Judge whether assets are usable — by a learner and by a model — and fix or replace the ones that are not.",
+      "layout": "UNSPECIFIED BY DESIGN",
+      "scope": "UNSPECIFIED BY DESIGN",
+      "appBar": "UNSPECIFIED BY DESIGN",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "preprocessing state",
+        "quality threshold"
+      ],
+      "savedViews": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "selection": "UNSPECIFIED BY DESIGN",
+      "bulkActions": [
+        "Re-extract landmarks",
+        "Re-score quality",
+        "Assign split",
+        "Tag capture conditions",
+        "Request recapture",
+        "Export dataset manifest"
+      ],
+      "inspector": "Universal four + Capture (type-specific)",
+      "queues": "UNSPECIFIED BY DESIGN",
+      "jobs": "Ingest is always a job. Per-file pipeline with per-stage failure and resume-from-stage.",
+      "states": {
+        "empty": "First-run: upload or connect a capture session, with required metadata listed before upload begins.",
+        "loading": "Gallery tiles are placeholders at final aspect ratio; ingest stages stream per asset so the grid never reflows.",
+        "error": "Ingest failures are a stage state on the asset, with resume-from-here. Upload errors are per file, never per batch."
+      },
+      "responsive": "Gallery reflows by tile count; focus view unchanged at any width; below 900 playback and review only.",
+      "components": [
+        "SyCollection (gallery)",
+        "SyTimeline",
+        "SyPipeline",
+        "SyMetric",
+        "SySuggestion",
+        "SyInspector",
+        "SyStateBlock",
+        "SyMatrix",
+        "SyMediaPlayer*",
+        "SyPoseInspector*",
+        "SyQualityScore*"
+      ],
+      "screenSpecific": [
+        "Which capture metadata fields are mandatory",
+        "Quality threshold defaults per language",
+        "Gallery tile aspect ratio"
+      ],
+      "blockedBy": "3 uncontracted components"
+    },
+    {
+      "id": "model-registry",
+      "name": "Model Registry",
+      "entity": "MODEL VERSION",
+      "template": "L2 / L7",
+      "status": "brief-only",
+      "source": "Sayva Studio Design System.dc.html §Briefs",
+      "url": "/models/:model/versions/:v",
+      "goal": "Decide whether a model version is fit to ship, and to which channel and languages.",
+      "layout": "UNSPECIFIED BY DESIGN",
+      "scope": "UNSPECIFIED BY DESIGN",
+      "appBar": "UNSPECIFIED BY DESIGN",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "savedViews": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "selection": "UNSPECIFIED BY DESIGN",
+      "bulkActions": [
+        "Compare n versions",
+        "Run an evaluation across splits",
+        "Qualify several languages at once",
+        "Bulk-yank a prerelease line"
+      ],
+      "inspector": "Universal four + Compatibility (type-specific)",
+      "queues": "UNSPECIFIED BY DESIGN",
+      "jobs": "Evaluation runs are jobs.",
+      "states": {
+        "empty": "No versions: explains the ML Studio registration contract rather than offering an upload button Studio does not own.",
+        "loading": "Card renders from metadata immediately; metric tables stream per split with the split named while pending.",
+        "error": "A missing evaluation run shows as no-data with the run that would produce it, never as a zero."
+      },
+      "responsive": "Metric tables scroll horizontally with a sticky version column; matrix becomes a grouped list below 900px.",
+      "components": [
+        "SyEntityHeader",
+        "SyVersionList",
+        "SyMetric",
+        "SyMatrix",
+        "SyPipeline",
+        "SyInspector",
+        "SyStateBlock",
+        "SyDialog",
+        "SyModelCard*",
+        "SyMetricTable*",
+        "SyModelSelector*"
+      ],
+      "screenSpecific": [
+        "Which metrics are headline vs detail",
+        "Device tier names",
+        "The ML Studio registration payload contract",
+        "Promotion gate wording"
+      ],
+      "blockedBy": "3 uncontracted components"
+    },
+    {
+      "id": "validation",
+      "name": "Validation Center",
+      "entity": "FINDING",
+      "template": "L1 queue",
+      "status": "brief-only",
+      "source": "Sayva Studio Design System.dc.html §Briefs",
+      "url": "/l/:lang/validate",
+      "goal": "Get a scope to zero blocking findings, and keep warnings honest.",
+      "layout": "UNSPECIFIED BY DESIGN",
+      "scope": "Scope is the subject of the entity header.",
+      "appBar": "UNSPECIFIED BY DESIGN",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "savedViews": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "selection": "UNSPECIFIED BY DESIGN",
+      "bulkActions": [
+        "Auto-fix all instances of a rule (with a stated count)",
+        "Acknowledge warnings with one note",
+        "Assign a rule's findings to an owner",
+        "Export"
+      ],
+      "inspector": "UNSPECIFIED BY DESIGN",
+      "queues": "The finding list is itself a queue.",
+      "jobs": "Bulk validation is always a job. Rules report as each completes.",
+      "states": {
+        "empty": "Clean scope states what was checked, how many rules ran and when.",
+        "loading": "Rules report as they complete; each row shows its own running state.",
+        "error": "A rule that times out is reported as partial with the entities it did cover, never silently omitted."
+      },
+      "responsive": "Rule groups collapse to a severity-ordered list below 1280; jump-to-fix opens read-only below 900.",
+      "components": [
+        "SyEntityHeader",
+        "SyFindingList",
+        "SyEntityRef",
+        "SyStateBlock",
+        "SyDialog",
+        "SyMetric",
+        "SyButton"
+      ],
+      "screenSpecific": [
+        "The 15-rule catalogue (product data, not UI)",
+        "Rule wording",
+        "The 30% miscalibration threshold",
+        "Which rules offer auto-fix"
+      ],
+      "blockedBy": "none — all components contracted"
+    },
+    {
+      "id": "release",
+      "name": "Release Composer",
+      "entity": "RELEASE",
+      "template": "L4 pipeline",
+      "status": "brief-only",
+      "source": "Sayva Studio Design System.dc.html §Briefs",
+      "url": "/publish/releases/:v",
+      "goal": "Ship a known-good pack set to a channel, and be able to undo it in one action.",
+      "layout": "Persistent step list; each step deep-linkable and resumable.",
+      "scope": "UNSPECIFIED BY DESIGN",
+      "appBar": "UNSPECIFIED BY DESIGN",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "savedViews": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "selection": "UNSPECIFIED BY DESIGN",
+      "bulkActions": [
+        "Include/exclude whole categories, languages or model versions",
+        "Acknowledge all warnings with one note",
+        "Promote several channels in a controlled order"
+      ],
+      "inspector": "UNSPECIFIED BY DESIGN",
+      "queues": "UNSPECIFIED BY DESIGN",
+      "jobs": "Pack build and publish are always jobs. Stage state lives in the release, not the session.",
+      "states": {
+        "empty": "No releases yet: explains channels and what a first release requires.",
+        "loading": "Each stage reports its own progress; resumable after a reload.",
+        "error": "A failed stage keeps the release, names the stage, offers resume-from-here. Signing failures never leave a half-signed artefact in a channel."
+      },
+      "responsive": "Step list becomes a horizontal stepper below 1280; rollout controls desktop-only with an explicit note.",
+      "components": [
+        "SyEntityHeader",
+        "SyPipeline",
+        "SyFindingList",
+        "SyMatrix",
+        "SyVersionList",
+        "SyMetric",
+        "SyDialog",
+        "SyRolloutControl*",
+        "SyToast*",
+        "SyModelSelector*"
+      ],
+      "screenSpecific": [
+        "Channel names and promotion policy",
+        "Signing key management",
+        "Rollout percentage steps",
+        "The 250MB budget figure"
+      ],
+      "blockedBy": "3 uncontracted components"
+    },
+    {
+      "id": "health",
+      "name": "Operational Health",
+      "entity": "OPERATIONAL STATUS",
+      "template": "L6 overview",
+      "status": "brief-only",
+      "source": "Sayva Studio Design System.dc.html §Briefs",
+      "url": "/health?scope=:lang",
+      "goal": "Answer one question in under a minute: is this scope in a shippable state, and if not, what is the next action.",
+      "layout": "Card grid reflowing 3 → 2 → 1 in priority order.",
+      "scope": "Scope follows the scope bar.",
+      "appBar": "UNSPECIFIED BY DESIGN",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "savedViews": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "selection": "none",
+      "bulkActions": [
+        "none — this screen commands nothing directly, it routes"
+      ],
+      "inspector": "UNSPECIFIED BY DESIGN",
+      "queues": "UNSPECIFIED BY DESIGN",
+      "jobs": "UNSPECIFIED BY DESIGN",
+      "states": {
+        "empty": "New scope: cards render with a no-data state naming what must exist before a figure is meaningful. Never a zero that reads as a failure.",
+        "loading": "Cards resolve independently, each keeping its title and denominator visible.",
+        "error": "A card that cannot compute says so with a retry, and does not fall back to a stale number without labelling it stale."
+      },
+      "responsive": "Three columns → two → one. Works fully below 900px because it is read-and-route only.",
+      "components": [
+        "SyEntityHeader",
+        "SyMetric",
+        "SyStateBlock",
+        "SyEntityRef",
+        "SyPalette",
+        "SyHealthCard*"
+      ],
+      "screenSpecific": [
+        "Which six figures",
+        "Their thresholds",
+        "Scope-following behaviour"
+      ],
+      "blockedBy": "1 uncontracted component"
+    },
+    {
+      "id": "palette",
+      "name": "Global Search / Command Palette",
+      "entity": "ANY",
+      "template": "overlay",
+      "status": "partially-drawn",
+      "source": "Sayva Studio Foundations.dc.html §11, Sayva Studio Design System.dc.html §Overlays",
+      "url": "n/a — overlay",
+      "goal": "Find, act, jump. At fifty thousand entities across a hundred languages, search is the navigation.",
+      "layout": "elev.3 overlay: input · ACTIONS / PINNED / RECENT · footer mode hints",
+      "scope": "⌘K scoped to current language · ⇧⌘K global across all languages",
+      "appBar": "n/a",
+      "columns": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "filters": [
+        "— search",
+        "> actions",
+        "@ people",
+        "# facets",
+        ": versions",
+        "? help"
+      ],
+      "savedViews": "Pinned items ⌘1 ⌘2",
+      "selection": "n/a",
+      "bulkActions": [],
+      "inspector": "n/a",
+      "queues": "n/a",
+      "jobs": "n/a",
+      "states": {
+        "empty": "Empty query shows pinned items then recents — the palette is useful before a keystroke.",
+        "loading": "Typing and executing states.",
+        "error": "UNSPECIFIED BY DESIGN"
+      },
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "components": [
+        "SyPalette",
+        "SyEntityRef",
+        "SyPinnedItems*"
+      ],
+      "screenSpecific": [
+        "Ranking weights are UNSPECIFIED BY DESIGN"
+      ],
+      "blockedBy": "1 uncontracted component (SyPinnedItems)"
+    }
+  ],
+  "screens": [
+    {
+      "id": "S01",
+      "name": "Vocabulary",
+      "workspace": "Content",
+      "status": "canonical-drawn",
+      "source": "Sayva Studio Screens.dc.html §01",
+      "purpose": "Move a batch of signs toward publishable state.",
+      "layoutHierarchy": "ScopeBar → [Rail 60 · Sidebar 216 · Content · Inspector 292]; Content = EntityHeader → FilterBar → BulkBar → GridHeader → Groups → Footer",
+      "components": [
+        "SyAppShell",
+        "SyEntityHeader",
+        "SyCollection",
+        "SyStatusBadge",
+        "SyEntityRef",
+        "SyField",
+        "SyMenu",
+        "SyDrawer",
+        "SyStateBlock",
+        "SyInspector",
+        "SyButton",
+        "SyMetric"
+      ],
+      "variants": "SyEntityHeader collection · SyCollection table · SyInspector multi-select",
+      "states": [
+        "populated with selection",
+        "inline edit",
+        "virtualisation boundary",
+        "bulk drawer open",
+        "completion toast"
+      ],
+      "interactions": [
+        "group-by category",
+        "saved views",
+        "selection as predicate",
+        "walk selection",
+        "inline single-field edit",
+        "contextual menu",
+        "density toggle"
+      ],
+      "screenSpecific": [
+        "9-column default set",
+        "category grouping semantics",
+        "count copy",
+        "four saved views"
+      ],
+      "responsive": "≥1280 three panes · 900–1279 inspector overlays · <900 read-only summary list"
+    },
+    {
+      "id": "S02",
+      "name": "Sign Editor",
+      "workspace": "Content",
+      "status": "canonical-drawn",
+      "source": "Sayva Studio Screens.dc.html §02",
+      "purpose": "Bring one sign to a publishable standard.",
+      "layoutHierarchy": "ScopeBar → [Rail 60 · Queue sidebar 216 · Canvas (single column) · Inspector 292]; Canvas = EntityHeader → BlockBanner → TabSet → Fields → Suggestion → Media panel",
+      "components": [
+        "SyEntityHeader",
+        "SyTabSet",
+        "SyField",
+        "SySuggestion",
+        "SyConfidence",
+        "SyTimeline",
+        "SyInspector",
+        "SyFindingList",
+        "SyEntityRef",
+        "SyDialog",
+        "SyButton"
+      ],
+      "variants": "SyEntityHeader detail · SyInspector docked with 5 sections · SySuggestion field",
+      "states": [
+        "In Review with blocked Approve",
+        "AI suggestion pending",
+        "media missing",
+        "save conflict",
+        "impact preview"
+      ],
+      "interactions": [
+        "queue continuity J/K",
+        "blocked primary action with named rule",
+        "accept/reject suggestion",
+        "frame-step media",
+        "field-level conflict resolution",
+        "tab as route segment"
+      ],
+      "screenSpecific": [
+        "five tab names + order",
+        "ArSL phonology fields",
+        "conflict dialog copy",
+        "\"Model view\" section title"
+      ],
+      "responsive": "Inspector docks ≥1280, overlays 900–1279, below 900 read-only with review actions"
+    },
+    {
+      "id": "S03",
+      "name": "Contextual menu",
+      "workspace": "shared",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "One menu, every entity",
+      "layoutHierarchy": "SyMenu, 8 groups, fixed order",
+      "components": [
+        "SyMenu"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "none — contents from the entity action registry"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S04",
+      "name": "Bulk edit drawer",
+      "workspace": "shared",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Uniform change across a selection",
+      "layoutHierarchy": "SyDrawer → checkboxed fields → Apply to n",
+      "components": [
+        "SyDrawer",
+        "SyField",
+        "SyButton"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "mixed-value copy"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S05",
+      "name": "Completion toast",
+      "workspace": "shared",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Report a completed batch with undo",
+      "layoutHierarchy": "inline banner + Undo ⌘Z",
+      "components": [
+        "SyToast*"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "none"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S06",
+      "name": "Save conflict",
+      "workspace": "Sign Editor",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Resolve a concurrent edit per field",
+      "layoutHierarchy": "SyDialog → per-field YOURS/THEIRS",
+      "components": [
+        "SyDialog",
+        "SyButton"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "per-field copy"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S07",
+      "name": "Impact preview",
+      "workspace": "shared",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "State consequences before destruction",
+      "layoutHierarchy": "SyDialog → IMPACT block → 3 actions",
+      "components": [
+        "SyDialog",
+        "SyEntityRef",
+        "SyButton"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "none"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S08",
+      "name": "Command palette",
+      "workspace": "Global",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Find, act, jump",
+      "layoutHierarchy": "SyPalette → ACTIONS / PINNED / RECENT",
+      "components": [
+        "SyPalette"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "none"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S09",
+      "name": "Activity tray",
+      "workspace": "Global",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Watch long operations from anywhere",
+      "layoutHierarchy": "scope-bar tray → job rows with progress",
+      "components": [
+        "SyCollection in overlay"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "none"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S10",
+      "name": "Validation panel",
+      "workspace": "Validation",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Pre-publish gate",
+      "layoutHierarchy": "SyFindingList gate variant",
+      "components": [
+        "SyFindingList"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "rule wording"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S11",
+      "name": "Asset inspector",
+      "workspace": "Media",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Judge an asset ML usability",
+      "layoutHierarchy": "quality score + reasons + capture metadata + 3 actions",
+      "components": [
+        "SyMetric",
+        "SyInspector"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "quality reason names"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S12",
+      "name": "Coverage view",
+      "workspace": "Media",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Find capture gaps",
+      "layoutHierarchy": "labelled bars with counts → capture worklist",
+      "components": [
+        "SyMatrix",
+        "SyMetric"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "target-per-category"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S13",
+      "name": "Model version list",
+      "workspace": "Model Registry",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Compare versions on one split",
+      "layoutHierarchy": "SyVersionList table",
+      "components": [
+        "SyVersionList",
+        "SyMetric"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "metric column choice"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S14",
+      "name": "Compatibility matrix",
+      "workspace": "Release",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "LP × ML pack states",
+      "layoutHierarchy": "SyMatrix, 4 cell states",
+      "components": [
+        "SyMatrix"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "axis labels"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S15",
+      "name": "Rollout control",
+      "workspace": "Release",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Ramp, hold, roll back",
+      "layoutHierarchy": "bar + % + Hold + Roll back",
+      "components": [
+        "SyRolloutControl*",
+        "SyMetric"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "percentage steps"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "id": "S16",
+      "name": "Health cards",
+      "workspace": "Health",
+      "status": "component-specimen",
+      "source": "Sayva Studio Foundations.dc.html / Sayva Studio Design System.dc.html",
+      "purpose": "Route to the work",
+      "layoutHierarchy": "6-card grid",
+      "components": [
+        "SyMetric",
+        "SyHealthCard*"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "interactions": [
+        "UNSPECIFIED BY DESIGN"
+      ],
+      "screenSpecific": [
+        "which six figures"
+      ],
+      "responsive": "UNSPECIFIED BY DESIGN",
+      "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    }
+  ],
+  "rules": [
+    {
+      "id": "R01",
+      "name": "Selection is a predicate",
+      "source": "Sayva Studio Scale Review.dc.html Q2",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Validation",
+        "Model registry",
+        "any SyCollection"
+      ],
+      "definition": "The client holds a filter plus exceptions, never an ID list. ⌘A selects the filtered set; every bulk action sends the predicate and the server resolves it once inside a transaction."
+    },
+    {
+      "id": "R02",
+      "name": "Bulk edit semantics",
+      "source": "Sayva Studio Screens.dc.html §01",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Validation"
+      ],
+      "definition": "Only fields the user touches are applied; untouched fields keep per-entity values. Mixed values are shown as mixed and left unchanged unless explicitly set."
+    },
+    {
+      "id": "R03",
+      "name": "Walk selection",
+      "source": "Sayva Studio Scale Review.dc.html A3",
+      "screens": [
+        "Vocabulary → Sign editor",
+        "every list-to-detail pair"
+      ],
+      "definition": "Any selection becomes an ordered cursor. Bulk bar offers two verbs. Working set capped at ~200 with an explicit next batch."
+    },
+    {
+      "id": "R04",
+      "name": "Queue continuity",
+      "source": "Sayva Studio Screens.dc.html §02",
+      "screens": [
+        "Sign editor",
+        "Media focus",
+        "Validation jump-to-fix"
+      ],
+      "definition": "A list hands its ordering to the detail view; J/K continues working after opening an entity. Position lives in the URL and survives reload."
+    },
+    {
+      "id": "R05",
+      "name": "Keyboard grammar",
+      "source": "Sayva Studio Foundations.dc.html §04",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "One vocabulary product-wide: J/K move, X select, ⇧J extend, E edit, Enter open, ⌘Enter side peek, / filter, Esc dismiss topmost, ⌥1–7 rail, ⌘L scope, ⌘/ inspector, ⌘\\ sidebar, F6 pane cycle."
+    },
+    {
+      "id": "R06",
+      "name": "Inline editing",
+      "source": "Sayva Studio Screens.dc.html §03",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Model registry"
+      ],
+      "definition": "One field, one keystroke, Enter commits, Esc reverts. Two or more fields opens the editor or a drawer instead."
+    },
+    {
+      "id": "R07",
+      "name": "Inspector ownership",
+      "source": "Sayva Studio Scale Review.dc.html A1",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Canvas authors, inspector reports. Four universal sections in fixed order; type-specific appended, never interleaved."
+    },
+    {
+      "id": "R08",
+      "name": "Lifecycle transitions",
+      "source": "Sayva Studio Foundations.dc.html §05",
+      "screens": [
+        "Vocabulary",
+        "Sign editor",
+        "Media",
+        "Validation",
+        "Release"
+      ],
+      "definition": "Six states, nine guarded transitions, one state machine for every content entity. Never optimistic — guards and permissions are server-side facts."
+    },
+    {
+      "id": "R09",
+      "name": "Cardinality decides sync vs job",
+      "source": "Sayva Studio Scale Review.dc.html Q4",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Same operation, same interface; only the feedback changes. Bulk edit ≤50 sync, above becomes a Job. Select-all-filtered, validation, publish, import, export and ingest are always jobs."
+    },
+    {
+      "id": "R10",
+      "name": "Job is an entity",
+      "source": "Sayva Studio Scale Review.dc.html A2",
+      "screens": [
+        "All seven via the shell"
+      ],
+      "definition": "Every job has an ID, state, owner, history and deep link. Surfaced in an Activity tray (⌘J) in the scope bar. Job lists reuse SyCollection; job detail reuses SyPipeline."
+    },
+    {
+      "id": "R11",
+      "name": "Optimistic boundary",
+      "source": "Sayva Studio Scale Review.dc.html Q5",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Optimistic only where the client can deterministically compute the server's answer. Everything else shows a pending state."
+    },
+    {
+      "id": "R12",
+      "name": "Validation blocking",
+      "source": "Sayva Studio Foundations.dc.html §06 rule 4, §10",
+      "screens": [
+        "Sign editor",
+        "Validation",
+        "Release"
+      ],
+      "definition": "Only deterministic rules block publishing. AI findings are advisory, carry a confidence figure, never auto-fix and are always dismissible. Blocking overrides are Administrator-only and logged with a reason."
+    },
+    {
+      "id": "R13",
+      "name": "AI provenance",
+      "source": "Sayva Studio Foundations.dc.html §06",
+      "screens": [
+        "Sign editor",
+        "Media",
+        "Validation",
+        "translation workbench"
+      ],
+      "definition": "Four levels — human, suggested, accepted, corrected — recorded per value with model version and confidence at accept time. Suggested values are excluded from packs and training exports."
+    },
+    {
+      "id": "R14",
+      "name": "Contextual menu",
+      "source": "Sayva Studio Screens.dc.html §01",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Eight groups in one fixed order on every entity type. Contents come from the entity action registry, not per-screen code."
+    },
+    {
+      "id": "R15",
+      "name": "Command palette",
+      "source": "Sayva Studio Foundations.dc.html §11",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Every action reachable on a screen is reachable from the palette, with its shortcut shown. Scoped results first, cross-language below a labelled divider. Unpermitted actions shown disabled with the reason."
+    },
+    {
+      "id": "R16",
+      "name": "Virtualisation",
+      "source": "Sayva Studio Screens.dc.html §01, Sayva Studio Scale Review.dc.html Q1",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Validation",
+        "Model registry",
+        "job lists"
+      ],
+      "definition": "~24 rows rendered regardless of match count. Server-side sort, filter and count. Skeleton matches the real row grid at the remembered row count."
+    },
+    {
+      "id": "R17",
+      "name": "Server-side aggregation",
+      "source": "Sayva Studio Scale Review.dc.html Q1",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Validation",
+        "Health"
+      ],
+      "definition": "Exact counts below 10,000, approximate above with count-precisely on demand. Inspector aggregates up to 1,000 selected, then counts plus an explicit compute action. Denormalised columns are materialised projections."
+    },
+    {
+      "id": "R18",
+      "name": "Group-by constraint",
+      "source": "Sayva Studio Scale Review.dc.html Q1",
+      "screens": [
+        "Vocabulary",
+        "Media",
+        "Validation"
+      ],
+      "definition": "Offered only on facets with cardinality under ~200, declared per field in the schema. Unbounded fields appear as filters instead, and the column picker states why."
+    },
+    {
+      "id": "R19",
+      "name": "Absence states",
+      "source": "Sayva Studio Design System.dc.html §SyStateBlock",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Six named states — first-run, filtered-empty, loading, error, no-permission, offline — written as content, not built per screen. Filtered-empty always names the active filters."
+    },
+    {
+      "id": "R20",
+      "name": "Destructive actions",
+      "source": "Sayva Studio Foundations.dc.html §02 P4, Sayva Studio Screens.dc.html §02",
+      "screens": [
+        "All seven"
+      ],
+      "definition": "Soft delete by default. Impact preview computed server-side from the graph and shown before confirmation. The confirm button names the action and count, never OK."
+    }
+  ],
+  "accessibility": [
+    {
+      "id": "A01",
+      "area": "Contrast — text",
+      "requirement": "Body text AAA where achievable, AA floor everywhere. text.tertiary is the lowest permitted for any text and only for metadata.",
+      "verification": "CI on token pairs",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A02",
+      "area": "Contrast — controls",
+      "requirement": "Disabled controls use control.disabled.* and clear 3:1. A greyed control that cannot be read is a defect, not a state.",
+      "verification": "CI on token pairs",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A03",
+      "area": "Contrast — non-text",
+      "requirement": "Row menus, chevrons, checkboxes, toggles and unstarred icons use icon.subtle at 3.3:1 minimum (WCAG 1.4.11).",
+      "verification": "CI on token pairs",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A04",
+      "area": "Contrast — surfaces",
+      "requirement": "Every semantic pairing tested on all four surfaces: canvas, default, subtle, selected.",
+      "verification": "CI matrix",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A05",
+      "area": "Focus visibility",
+      "requirement": "2px accent ring at 2px offset on every focusable element. Never removed.",
+      "verification": "Manual per template",
+      "source": "Sayva Studio Foundations.dc.html §16",
+      "note": "Not tokenised — audit F9."
+    },
+    {
+      "id": "A06",
+      "area": "Focus order",
+      "requirement": "Follows visual order. Pane order rail → sidebar → content → inspector, with F6 cycling and skip links.",
+      "verification": "Keyboard walkthrough",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A07",
+      "area": "Focus restoration",
+      "requirement": "Every overlay returns focus to its trigger on close. Stacked overlays restore in reverse order, maximum depth two.",
+      "verification": "Automated overlay test",
+      "source": "Sayva Studio Design System.dc.html §Overlays"
+    },
+    {
+      "id": "A08",
+      "area": "Keyboard completeness",
+      "requirement": "No mouse-only action anywhere, including drag reordering, which always has a ⌘↑↓ equivalent.",
+      "verification": "Per-component audit",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A09",
+      "area": "Hover parity",
+      "requirement": "Hover never the only way to reveal an action. Row menus visible at rest via icon.subtle, emphasised on focus.",
+      "verification": "Manual per template",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A10",
+      "area": "Selected state",
+      "requirement": "Selection carried by surface.selected plus a checked control, never colour alone. Selection count in a polite live region.",
+      "verification": "Screen reader pass",
+      "source": "Sayva Studio Design System.dc.html §SyCollection"
+    },
+    {
+      "id": "A11",
+      "area": "Disabled state",
+      "requirement": "Never disabled without an adjacent stated reason. aria-disabled preferred where the reason must remain readable.",
+      "verification": "Per-component audit",
+      "source": "Sayva Studio Design System.dc.html §SyButton"
+    },
+    {
+      "id": "A12",
+      "area": "Grid semantics",
+      "requirement": "role=grid, full arrow navigation, sort direction announced on activation, sticky headers that do not trap focus.",
+      "verification": "NVDA + VoiceOver",
+      "source": "Sayva Studio Design System.dc.html §SyCollection"
+    },
+    {
+      "id": "A13",
+      "area": "Grid virtualisation",
+      "requirement": "aria-rowcount reflects the full match count, not the rendered window. Rows carry aria-rowindex.",
+      "verification": "Automated DOM assert",
+      "source": "Sayva Studio Handoff Audit.dc.html §06"
+    },
+    {
+      "id": "A14",
+      "area": "Palette semantics",
+      "requirement": "combobox pattern with aria-activedescendant listbox; focus trapped and restored; destructive entries never the default highlighted row.",
+      "verification": "Screen reader pass",
+      "source": "Sayva Studio Design System.dc.html §SyPalette"
+    },
+    {
+      "id": "A15",
+      "area": "Inspector semantics",
+      "requirement": "Complementary landmark with an accessible name; section headers are real headings; collapse state announced.",
+      "verification": "Landmark audit",
+      "source": "Sayva Studio Design System.dc.html §SyInspector"
+    },
+    {
+      "id": "A16",
+      "area": "Live regions",
+      "requirement": "Polite for success, selection counts and job progress. Assertive for errors and scope changes. Nothing announces more than once per action.",
+      "verification": "Screen reader pass",
+      "source": "Sayva Studio Handoff Audit.dc.html §06"
+    },
+    {
+      "id": "A17",
+      "area": "Suggestion semantics",
+      "requirement": "Announced as a suggestion with its confidence, never as a value. Never focus-stealing. Accept and reject reachable without leaving the field.",
+      "verification": "Screen reader pass",
+      "source": "Sayva Studio Design System.dc.html §SySuggestion"
+    },
+    {
+      "id": "A18",
+      "area": "Media requirements",
+      "requirement": "Every clip carries a written gloss and plain-language description as required metadata. Missing gloss fails pre-publish validation as blocking.",
+      "verification": "Validation rule test",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A19",
+      "area": "Media controls",
+      "requirement": "Keyboard scrub, frame-step, loop region, 0.25× speed floor. No autoplay anywhere.",
+      "verification": "Manual, media screens",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A20",
+      "area": "Landmark data",
+      "requirement": "Pose overlays always have a table equivalent. The overlay is never the only representation of the data.",
+      "verification": "Manual, Media",
+      "source": "Sayva Studio Design System.dc.html §Briefs"
+    },
+    {
+      "id": "A21",
+      "area": "Colour independence",
+      "requirement": "Status is glyph plus label. Matrix cells carry glyph plus word. Metric deltas carry sign and unit as text. Palette verified against three dichromacy simulations.",
+      "verification": "Simulation review",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A22",
+      "area": "Quantitative colour",
+      "requirement": "Any element using a viz.* fill states its value as text beside it.",
+      "verification": "Lint rule",
+      "source": "Sayva Studio Foundations.dc.html §13"
+    },
+    {
+      "id": "A23",
+      "area": "Reduced motion",
+      "requirement": "prefers-reduced-motion collapses all transforms; opacity capped at 80ms. Nothing loops. No layout-shifting animation in data views.",
+      "verification": "Motion audit",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A24",
+      "area": "Zoom and large text",
+      "requirement": "Usable to 200% zoom and at OS large-text settings. Relative units; no fixed-height text containers.",
+      "verification": "200% pass at bp.lg",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A25",
+      "area": "Input parity",
+      "requirement": "Mouse, trackpad, touch and pen. 44px hit areas on touch. Below bp.sm the product degrades to read-and-review with a stated reason.",
+      "verification": "Tablet pass at bp.md",
+      "source": "Sayva Studio Foundations.dc.html §16"
+    },
+    {
+      "id": "A26",
+      "area": "RTL",
+      "requirement": "All spacing uses logical properties. RTL is a document attribute, not a stylesheet fork.",
+      "verification": "dir=rtl render pass",
+      "source": "Sayva Studio Foundations.dc.html §15",
+      "status": "unverified"
+    },
+    {
+      "id": "A27",
+      "area": "Dark theme parity",
+      "requirement": "Every contrast rule above holds in dark with the remapped tokens. Elevation is expressed by surface lightness, not shadow.",
+      "verification": "CI matrix, both themes",
+      "source": "Sayva Studio Foundations.dc.html §13",
+      "status": "unverified"
+    }
+  ],
+  "openDecisions": [
+    {
+      "id": "O1",
+      "name": "Duplicate merge workflow",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Scale Review.dc.html Q6, Sayva Studio Handoff Audit.dc.html O1",
+      "why": "Deciding two signs are the same requires both glosses, both media sets and both usage graphs at once. Which gloss survives, what happens to the losing media, and whether lesson references are rewritten or redirected are linguistic and data-integrity decisions, not layout ones.",
+      "affects": "An L3 workbench screen, a merge operation in the entity action registry, reference-rewriting in the backend, and the sign.duplicate advisory rule's resolution path — which currently says \"merge or dismiss\" with no merge to point at.",
+      "decidedBy": "Sign language linguist plus data owner. Design follows the decision, not the other way round.",
+      "timing": "Before the Vocabulary workspace ships.",
+      "doNot": [
+        "Do not invent a merge UI",
+        "Do not implement it as a generic CRUD operation"
+      ]
+    },
+    {
+      "id": "O3",
+      "name": "Uncontracted components",
+      "blocksPhase1": false,
+      "blocksScreens": true,
+      "status": "open",
+      "source": "Sayva Studio Handoff Audit.dc.html O3",
+      "why": "Seventeen components have a one-line register entry and no contract. Five screen briefs depend on them. A one-line entry is not implementable — it has no variants, no states, no keyboard, no absence behaviour.",
+      "affects": "Media, Model registry, Validation, Release and Health cannot be built beyond their shell. Phase 1 is unaffected because none of them are in its scope.",
+      "decidedBy": "Design, one screen at a time. Contracting a component before its workspace is designed produces a guess.",
+      "timing": "Each one before the screen that needs it."
+    },
+    {
+      "id": "O7",
+      "name": "Approximate counts above 10,000",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Handoff Audit.dc.html O7",
+      "why": "Correct engineering that may read as imprecision to editors. \"~12,400 match\" is honest; whether professionals trust it is an empirical question, and buying exact counts at that scale has a real cost.",
+      "affects": "SyCollection footer copy and the count query strategy. Reversible, but the threshold should be evidence-based rather than a round number.",
+      "decidedBy": "Product, from user testing. The 10,000 threshold is currently a guess.",
+      "timing": "With the first real dataset."
+    },
+    {
+      "id": "O8",
+      "name": "Walk working-set cap of 200",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Handoff Audit.dc.html O8",
+      "why": "The cap should come from how many decisions a reviewer actually makes in a sitting, not from a number that sounded reasonable. Too low is an irritation; too high recreates the unbounded-queue problem A3 solved.",
+      "affects": "The queue cursor implementation and the \"next batch\" affordance. Trivial to change, worth measuring.",
+      "decidedBy": "Product, from usage data.",
+      "timing": "After the first review sessions."
+    },
+    {
+      "id": "C1",
+      "name": "CONFLICT — compact row height",
+      "blocksPhase1": true,
+      "status": "conflict",
+      "source": "Sayva Studio Foundations.dc.html §15 vs Sayva Studio Design System.dc.html density prop",
+      "why": "Foundations §15 states 28px; the Design System density prop states 26px. Both documents are canonical.",
+      "affects": "SyCollection density modes and every drawn grid.",
+      "decidedBy": "Design owner must pick one. Not resolved by extraction.",
+      "timing": "Before SyCollection is built."
+    },
+    {
+      "id": "C2",
+      "name": "CONFLICT — reclassified component count",
+      "blocksPhase1": false,
+      "status": "conflict",
+      "source": "Sayva Studio Handoff Audit.dc.html §03 vs Sayva Studio Design System.dc.html",
+      "why": "The audit and the handoff state 4 reclassified components. Enumerating them yields 5: SyPackBuilder, SyReleaseComposer, SyCoverageMatrix, SyRuleResult, SyProvenanceTag. Discovered during extraction.",
+      "affects": "Component counts in the audit only. No implementation impact.",
+      "decidedBy": "Design. Likely SyPackBuilder and SyReleaseComposer were counted as one line because both map to SyPipeline.",
+      "timing": "Housekeeping — next audit pass."
+    },
+    {
+      "id": "U1",
+      "name": "Sign variants modelling",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Foundations.dc.html §17",
+      "why": "Variants are modelled as children of a sign. If variants turn out to need independent lifecycles and review, this becomes a peer relationship.",
+      "affects": "Domain model, Variants tab, validation rules.",
+      "decidedBy": "Linguist.",
+      "timing": "Before build."
+    },
+    {
+      "id": "U2",
+      "name": "Cross-language work",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Foundations.dc.html §17",
+      "why": "Aligning an ASL concept to its ArSL equivalent does not fit cleanly inside a language-scoped shell. The scope bar's All languages mode is the escape hatch, but it is untested.",
+      "affects": "SyAppShell scope bar, SyPalette global mode.",
+      "decidedBy": "Design + product.",
+      "timing": "UNSPECIFIED BY DESIGN"
+    },
+    {
+      "id": "U3",
+      "name": "Field-level permissions",
+      "blocksPhase1": false,
+      "status": "open",
+      "source": "Sayva Studio Foundations.dc.html §17",
+      "why": "Permissions are sketched at role level only. Field-level permissions, if required, will pressure the inspector's layout.",
+      "affects": "SyInspector, SyField, entity action registry.",
+      "decidedBy": "Product.",
+      "timing": "UNSPECIFIED BY DESIGN"
+    }
+  ],
+  "unspecifiedByDesign": [
+    {
+      "area": "tokens",
+      "item": "Dark counterparts for 10 light tokens",
+      "detail": "accent.hover · accent.border · accent.ai.border · status.neutral.border · status.success.border · status.warning.border · status.danger.border · status.info.border · viz.stroke.default · viz.stroke.ai"
+    },
+    {
+      "area": "tokens",
+      "item": "Focus ring token trio",
+      "detail": "Rule stated in prose (2px accent, 2px offset). No focus.ring.color / .width / .offset tokens exist. Audit F9."
+    },
+    {
+      "area": "tokens",
+      "item": "Dark elevation values",
+      "detail": "Dark expresses elevation by surface lightness; no values given."
+    },
+    {
+      "area": "tokens",
+      "item": "radius.lg usage",
+      "detail": "Defined, never drawn. Audit F8."
+    },
+    {
+      "area": "tokens",
+      "item": "radius.full contract reference",
+      "detail": "Appears once on an avatar; not referenced by any component contract. Audit F8."
+    },
+    {
+      "area": "tokens",
+      "item": "Motion applied",
+      "detail": "Five motion tokens defined and never exercised on any drawn component. Audit F10."
+    },
+    {
+      "area": "tokens",
+      "item": "Primitive tier ramp",
+      "detail": "The three-tier model names primitive → semantic → component, but no primitive ramp is enumerated."
+    },
+    {
+      "area": "tokens",
+      "item": "Component token tier",
+      "detail": "The naming convention allows table.header.fg-style tokens; none are enumerated."
+    },
+    {
+      "area": "components",
+      "item": "Dark-theme behaviour for every component",
+      "detail": "Token table exists; no component or screen drawn in dark. Audit F10."
+    },
+    {
+      "area": "components",
+      "item": "17 registered components have no contract",
+      "detail": "SyTreeNav SyScopeBar SyMediaPlayer SyMediaPicker SyModelSelector SyPoseInspector SyQualityScore SyDatasetSplitEditor SyModelCard SyMetricTable SyRolloutControl SyReviewPanel SyDiffView SyPinnedItems SyHealthCard SyToast SyInlineBanner"
+    },
+    {
+      "area": "screens",
+      "item": "Five workspaces exist as briefs only",
+      "detail": "Media, Model Registry, Validation Center, Release Composer, Health. A brief is not a design."
+    },
+    {
+      "area": "screens",
+      "item": "Duplicate merge UI",
+      "detail": "No UI exists and none may be invented. See O1."
+    },
+    {
+      "area": "screens",
+      "item": "Variant comparison shared transport",
+      "detail": "Partly covered by SyMediaPlayer side-by-side mode; the shared transport is not specified."
+    },
+    {
+      "area": "behaviour",
+      "item": "Job retention period, tray max rows, mid-run cancellation",
+      "detail": "Only \"closing the tray does not cancel anything\" is stated."
+    },
+    {
+      "area": "behaviour",
+      "item": "Search ranking weights",
+      "detail": "Ordering principles stated; weights are not."
+    },
+    {
+      "area": "behaviour",
+      "item": "Debounce interval for duplicate detection",
+      "detail": "Stated as debounced, cancellable, after three characters. No millisecond value."
+    },
+    {
+      "area": "behaviour",
+      "item": "Virtualisation overscan",
+      "detail": "Only \"~24 rows rendered\" is stated."
+    },
+    {
+      "area": "documentation",
+      "item": "Documents still paint raw hex",
+      "detail": "The 27 tokens added to close F3/F3b/F5 exist in §13, but drawn specimens still use literals. Audit F11. The token table is the source of truth; the drawings illustrate it."
+    }
+  ]
+}

@@ -1,0 +1,893 @@
+{
+  "$meta": {
+    "role": "Design -> code map for @sayva/design-system. Every design token and contracted primitive is either implemented, or explicitly deferred/blocked with a reason. An entry with neither fails CI from Slice 3 onward.",
+    "phase": "Phase 1 - Design System Foundation",
+    "source": {
+      "document": "SAYVA_STUDIO_DESIGN_HANDOFF.md",
+      "inventory": "sayva-studio-design-inventory.json",
+      "project": "Claude Design / Design foundations review (d9a9cd38-f02e-4baf-8fff-4ff9f808b422)",
+      "designExtracted": "2026-08-09",
+      "ingestedAt": "2026-08-11"
+    },
+    "scopeDecision": "D1 - Phase 1 implements the token layer, the 10 Design System primitives and one shared overlay substrate hook. The 12 Design System patterns are out of scope; see outOfScope.patterns. The design's own phase1 flag marks 17 components, 7 of which are patterns this decision defers.",
+    "statusVocabulary": {
+      "deferred": "In Phase 1 scope, not yet implemented.",
+      "blocked": "Cannot be implemented without a design decision. Carries a reason naming the open decision.",
+      "implemented": "Present in code and covered by the parity test.",
+      "out-of-scope": "Deliberately not in Phase 1. Carries a reason."
+    },
+    "counts": {
+      "tokens": 93,
+      "tokensDeferred": 91,
+      "tokensBlocked": 2,
+      "tokensWithoutDarkValue": 10,
+      "components": 10,
+      "outOfScopePatterns": 12,
+      "outOfScopeRegisteredNotContracted": 17,
+      "outOfScopeReclassified": 5
+    }
+  },
+  "tokens": [
+    {
+      "design": "surface.canvas",
+      "group": "surface",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "surface.default",
+      "group": "surface",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "surface.subtle",
+      "group": "surface",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "surface.selected",
+      "group": "surface",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "border.default",
+      "group": "border",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "border.strong",
+      "group": "border",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "text.primary",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "text.secondary",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "text.tertiary",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.default",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.hover",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.ai",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "control.disabled.bg",
+      "group": "control-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "control.disabled.fg",
+      "group": "control-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "icon.subtle",
+      "group": "icon",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.neutral.fg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.neutral.bg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.neutral.border",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.success.fg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.success.bg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.success.border",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.warning.fg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.warning.bg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.warning.border",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.danger.fg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.danger.bg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.danger.border",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.info.fg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.info.bg",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "status.info.border",
+      "group": "semantic-state",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.subtle",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.border",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.ai.subtle",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "accent.ai.border",
+      "group": "color",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.track",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.fill.default",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.fill.warning",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.fill.danger",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.fill.ai",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.stroke.default",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "viz.stroke.ai",
+      "group": "visualisation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "display",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "heading.lg",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "heading.md",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "heading.sm",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "body",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "body.strong",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "caption",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "label",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "mono",
+      "group": "typography",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.050",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.100",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.200",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.300",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.400",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.600",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.800",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "space.1200",
+      "group": "spacing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "radius.xs",
+      "group": "radius",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "radius.sm",
+      "group": "radius",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "radius.md",
+      "group": "radius",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "radius.lg",
+      "group": "radius",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "radius.full",
+      "group": "radius",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "elev.0",
+      "group": "elevation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "elev.1",
+      "group": "elevation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "elev.2",
+      "group": "elevation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "elev.3",
+      "group": "elevation",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "dur.instant",
+      "group": "motion",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "dur.fast",
+      "group": "motion",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "dur.base",
+      "group": "motion",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "ease.standard",
+      "group": "motion",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "ease.exit",
+      "group": "motion",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "row.compact",
+      "group": "sizing",
+      "code": null,
+      "status": "blocked",
+      "reason": "Conflict C1 - Foundations SS15 states 28px, the Design System density prop states 26px. Both documents are canonical; the design owner must pick. Pending open decision D4. No Phase 1 component consumes it."
+    },
+    {
+      "design": "row.default",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "row.relaxed",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "pane.rail",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "pane.sidebar",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "pane.inspector",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "button.sm",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "button.md",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "button.lg",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "hit.min",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "hit.touch",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "icon.dense",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "icon.toolbar",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "icon.grid",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "icon.stroke",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "rhythm",
+      "group": "sizing",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "bp.sm",
+      "group": "breakpoint",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "bp.md",
+      "group": "breakpoint",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "bp.lg",
+      "group": "breakpoint",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "bp.xl",
+      "group": "breakpoint",
+      "code": null,
+      "status": "deferred"
+    },
+    {
+      "design": "focus.ring",
+      "group": "focus",
+      "code": null,
+      "status": "blocked",
+      "reason": "UNSPECIFIED BY DESIGN - audit finding F9. The rule is stated in prose (2px accent ring, 2px offset, never removed) but no focus.ring.{color,width,offset} trio exists. Pending open decision D5. Must not be filled from convention (AC13)."
+    }
+  ],
+  "components": [
+    {
+      "design": "SyButton",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["primary", "secondary", "ghost", "danger", "icon-only (label required)"],
+      "states": ["default", "hover", "active", "focus-visible", "disabled", "loading"],
+      "status": "deferred",
+      "plannedSlice": 6,
+      "sizes": ["28", "32", "40"]
+    },
+    {
+      "design": "SyField",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": [
+        "text",
+        "mono",
+        "number",
+        "textarea",
+        "select",
+        "combobox",
+        "multi-facet",
+        "date"
+      ],
+      "states": [
+        "empty",
+        "filled",
+        "focus",
+        "invalid",
+        "warning",
+        "readonly",
+        "disabled",
+        "loading",
+        "suggested"
+      ],
+      "status": "deferred",
+      "plannedSlice": 14,
+      "sizes": ["UNSPECIFIED BY DESIGN"],
+      "note": "Split across two slices: 14 (text, mono, number, textarea, select, date) and 15 (combobox, multi-facet)."
+    },
+    {
+      "design": "SyStatusBadge",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["inline (rows)", "detail (header)", "with modifier suffix"],
+      "states": [
+        "Draft",
+        "In Review",
+        "Changes Requested",
+        "Approved",
+        "Published",
+        "Deprecated",
+        "stale modifier",
+        "blocked modifier"
+      ],
+      "status": "deferred",
+      "plannedSlice": 8,
+      "sizes": ["UNSPECIFIED BY DESIGN"],
+      "note": "Decision D3: the design contract lists the six domain lifecycle states as this component's states. @sayva/design-system must stay domain-free (ADR-002 DR-02/DR-03), so the implementation exposes the five presentational status token families as `tone` plus caller-supplied `glyph` and `label`. The lifecycle -> (glyph, tone) mapping is design data owned by apps/studio and parity-tested against this manifest in Slice 16."
+    },
+    {
+      "design": "SyEntityRef",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["chip", "row", "inline text", "with thumbnail (assets)"],
+      "states": [
+        "resolved",
+        "loading",
+        "deleted",
+        "no-permission",
+        "deprecated (with replacement)"
+      ],
+      "status": "deferred",
+      "plannedSlice": 9,
+      "sizes": ["UNSPECIFIED BY DESIGN"],
+      "note": "Decision D3: states are reference-resolution states, not entity lifecycle states. `deprecated` is a presentational treatment the caller opts into, not a domain lifecycle value."
+    },
+    {
+      "design": "SyMetric",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["lg", "md with delta", "sm inline", "budget bar"],
+      "states": ["ok", "warning", "error", "no-data", "loading", "stale"],
+      "status": "deferred",
+      "plannedSlice": 8,
+      "sizes": ["lg", "md", "sm"]
+    },
+    {
+      "design": "SyStateBlock",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["pane", "panel", "inline row"],
+      "states": ["first-run", "filtered-empty", "loading", "error", "no-permission", "offline"],
+      "status": "deferred",
+      "plannedSlice": 7,
+      "sizes": ["pane", "panel", "inline"]
+    },
+    {
+      "design": "SyMenu",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["elev.1 popover"],
+      "states": ["open", "loading", "submitting", "error-in-place"],
+      "status": "deferred",
+      "plannedSlice": 11,
+      "sizes": ["UNSPECIFIED BY DESIGN"]
+    },
+    {
+      "design": "SyDrawer",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["right drawer", "bottom sheet (narrow widths)"],
+      "states": ["closed", "open", "resizing", "dirty (blocks close)", "stacked max 2"],
+      "status": "deferred",
+      "plannedSlice": 12,
+      "sizes": ["elev.2"]
+    },
+    {
+      "design": "SyDialog",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["default", "destructive"],
+      "states": ["default", "destructive", "loading", "error-in-place"],
+      "status": "deferred",
+      "plannedSlice": 13,
+      "sizes": ["elev.3"]
+    },
+    {
+      "design": "SyConfidence",
+      "classification": "Design System primitive",
+      "code": null,
+      "variants": ["inline", "column", "detail"],
+      "states": [
+        "high",
+        "medium",
+        "low",
+        "unavailable",
+        "stale (computed by an older model version)"
+      ],
+      "status": "deferred",
+      "plannedSlice": 8,
+      "sizes": ["UNSPECIFIED BY DESIGN"]
+    }
+  ],
+  "outOfScope": {
+    "patterns": [
+      {
+        "design": "SyAppShell",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyEntityHeader",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyTabSet",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyInspector",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyCollection",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyMatrix",
+        "designPhase1Flag": false,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyPalette",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SySuggestion",
+        "designPhase1Flag": true,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyTimeline",
+        "designPhase1Flag": false,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyPipeline",
+        "designPhase1Flag": false,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyFindingList",
+        "designPhase1Flag": false,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      },
+      {
+        "design": "SyVersionList",
+        "designPhase1Flag": false,
+        "reason": "Scope decision D1 - Design System pattern requiring application-layer infrastructure (routing, data, action registry, selection model) that ADR-001/ADR-002 place outside @sayva/design-system. Sequenced to a later phase."
+      }
+    ],
+    "registeredNotContracted": [
+      {
+        "design": "SyTreeNav",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyScopeBar",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyMediaPlayer",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyMediaPicker",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyModelSelector",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyPoseInspector",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyQualityScore",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyDatasetSplitEditor",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyModelCard",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyMetricTable",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyRolloutControl",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyReviewPanel",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyDiffView",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyPinnedItems",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyHealthCard",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyToast",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      },
+      {
+        "design": "SyInlineBanner",
+        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+      }
+    ],
+    "reclassified": [
+      {
+        "design": "SyPackBuilder",
+        "reason": "Reclassified by the design as a configuration of an existing component, not a component."
+      },
+      {
+        "design": "SyReleaseComposer",
+        "reason": "Reclassified by the design as a configuration of an existing component, not a component."
+      },
+      {
+        "design": "SyCoverageMatrix",
+        "reason": "Reclassified by the design as a configuration of an existing component, not a component."
+      },
+      {
+        "design": "SyRuleResult",
+        "reason": "Reclassified by the design as a configuration of an existing component, not a component."
+      },
+      {
+        "design": "SyProvenanceTag",
+        "reason": "Reclassified by the design as a configuration of an existing component, not a component."
+      }
+    ]
+  }
+}

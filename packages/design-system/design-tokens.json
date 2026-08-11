@@ -1,0 +1,770 @@
+{
+  "$meta": {
+    "role": "Canonical token source for @sayva/design-system. The generator input defined by DR-15.",
+    "projection": "Faithful projection of docs/design-system/sayva-studio-design-inventory.json -> tokens[]. No value is altered, added, removed, or reordered.",
+    "sourceDocument": "sayva-studio-design-inventory.json",
+    "sourceProject": "Claude Design / Design foundations review (d9a9cd38-f02e-4baf-8fff-4ff9f808b422)",
+    "designExtracted": "2026-08-09",
+    "ingestedAt": "2026-08-11",
+    "tokenCount": 93,
+    "tokensWithoutDarkValue": [
+      "accent.hover",
+      "status.neutral.border",
+      "status.success.border",
+      "status.warning.border",
+      "status.danger.border",
+      "status.info.border",
+      "accent.border",
+      "accent.ai.border",
+      "viz.stroke.default",
+      "viz.stroke.ai"
+    ],
+    "rule": "Do not edit by hand. To change a token: change the design, re-export the inventory, re-run the ingest. Anything recorded as UNSPECIFIED BY DESIGN must never be filled from convention (AC13)."
+  },
+  "tokens": [
+    {
+      "name": "surface.canvas",
+      "group": "surface",
+      "light": "#f4f4f4",
+      "dark": "#17181a",
+      "meaning": "App background behind panes.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.default",
+      "group": "surface",
+      "light": "#ffffff",
+      "dark": "#1f2124",
+      "meaning": "Cards, tables, editors.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.subtle",
+      "group": "surface",
+      "light": "#fafafa",
+      "dark": "#26282c",
+      "meaning": "Toolbars, table headers, footers.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "surface.selected",
+      "group": "surface",
+      "light": "#eef3f0",
+      "dark": "#1e3329",
+      "meaning": "Selected rows, active nav.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "border.default",
+      "group": "border",
+      "light": "#e4e4e4",
+      "dark": "#33363a",
+      "meaning": "Pane and card separation.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "border.strong",
+      "group": "border",
+      "light": "#cfcfcf",
+      "dark": "#4a4e54",
+      "meaning": "Input borders, focusable edges.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.primary",
+      "group": "color",
+      "light": "#1a1a1a",
+      "dark": "#eceded",
+      "meaning": "Body and headings. 15.3:1 on white.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.secondary",
+      "group": "color",
+      "light": "#4a4a4a",
+      "dark": "#b9bcc0",
+      "meaning": "Supporting prose. 8.9:1.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "text.tertiary",
+      "group": "color",
+      "light": "#6b6b6b",
+      "dark": "#8f9296",
+      "meaning": "Metadata and labels. 5.4:1 on white, 4.9:1 on subtle and selected surfaces — passes AA on every ground in the system. Never for body copy.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.default",
+      "group": "color",
+      "light": "#2f6b52",
+      "dark": "#6ab894",
+      "meaning": "Primary action, focus ring, selection.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.hover",
+      "group": "color",
+      "light": "#255744",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Pressed and hovered primary.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai",
+      "group": "color",
+      "light": "#5b4b8a",
+      "dark": "#a394d8",
+      "meaning": "AI/ML domain only. Same lightness as accent.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "control.disabled.bg",
+      "group": "control-state",
+      "light": "#ebebeb",
+      "dark": "#2b2e32",
+      "meaning": "Disabled control ground. Never a dimmed version of the enabled fill.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "control.disabled.fg",
+      "group": "control-state",
+      "light": "#6b6b6b",
+      "dark": "#8f9296",
+      "meaning": "Disabled control label. 4.6:1 on control.disabled.bg — a disabled control must still be readable.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.subtle",
+      "group": "icon",
+      "light": "#858585",
+      "dark": "#8f9296",
+      "meaning": "Resting state of non-text affordances: row menus, unstarred views, chevrons. 3.3:1 on every surface — WCAG 1.4.11 floor for UI components.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.fg",
+      "group": "semantic-state",
+      "light": "#4a4a4a",
+      "dark": "#b9bcc0",
+      "meaning": "Draft, deprecated, unset. The absence of a signal is itself a state.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.bg",
+      "group": "semantic-state",
+      "light": "#f4f4f4",
+      "dark": "#26282c",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.neutral.border",
+      "group": "semantic-state",
+      "light": "#dcdcdc",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.fg",
+      "group": "semantic-state",
+      "light": "#1f7a3d",
+      "dark": "#5fbd7d",
+      "meaning": "Approved, published, passed validation.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.bg",
+      "group": "semantic-state",
+      "light": "#eef7f1",
+      "dark": "#1a2b21",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.success.border",
+      "group": "semantic-state",
+      "light": "#cfe6d8",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.fg",
+      "group": "semantic-state",
+      "light": "#a05a1e",
+      "dark": "#d99a4e",
+      "meaning": "Changes requested, non-blocking validation, degraded compatibility.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.bg",
+      "group": "semantic-state",
+      "light": "#fdf6ec",
+      "dark": "#2e2519",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.warning.border",
+      "group": "semantic-state",
+      "light": "#eeddc2",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.fg",
+      "group": "semantic-state",
+      "light": "#b91c1c",
+      "dark": "#e8736b",
+      "meaning": "Blocking errors, destructive actions, incompatible.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.bg",
+      "group": "semantic-state",
+      "light": "#fdf2f2",
+      "dark": "#2e1d1c",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.danger.border",
+      "group": "semantic-state",
+      "light": "#f0d4d4",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.fg",
+      "group": "semantic-state",
+      "light": "#1e5a8a",
+      "dark": "#6aa8db",
+      "meaning": "In review, informational, untested.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.bg",
+      "group": "semantic-state",
+      "light": "#eef4f9",
+      "dark": "#1a252e",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "status.info.border",
+      "group": "semantic-state",
+      "light": "#cfe0ee",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "UNSPECIFIED BY DESIGN",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.subtle",
+      "group": "color",
+      "light": "#eef3f0",
+      "dark": "#1e3329",
+      "meaning": "Selected rows, active nav, accent-tinted grounds. Same value as surface.selected by intent, not coincidence.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.border",
+      "group": "color",
+      "light": "#cfe0d8",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Border companion for accent grounds.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai.subtle",
+      "group": "color",
+      "light": "#f3f1f8",
+      "dark": "#241f33",
+      "meaning": "Suggestion wrappers, ghost annotation lanes, advisory findings.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "accent.ai.border",
+      "group": "color",
+      "light": "#cfc6e0",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Border companion for the AI register.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.track",
+      "group": "visualisation",
+      "light": "#f0f0f0",
+      "dark": "#2b2e32",
+      "meaning": "Unfilled portion of any quantitative bar. The only neutral in the viz ramp.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.default",
+      "group": "visualisation",
+      "light": "#cfe3d8",
+      "dark": "#3d6b54",
+      "meaning": "At or above target — coverage, quality, rollout, budget.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.warning",
+      "group": "visualisation",
+      "light": "#f0dcc0",
+      "dark": "#7a5a2e",
+      "meaning": "Below target, above floor.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.danger",
+      "group": "visualisation",
+      "light": "#f0cccc",
+      "dark": "#7a3733",
+      "meaning": "Below floor — landmark gaps, critical coverage shortfall.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.fill.ai",
+      "group": "visualisation",
+      "light": "#efecf6",
+      "dark": "#3a3352",
+      "meaning": "Machine-produced spans: suggested annotation lanes.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.stroke.default",
+      "group": "visualisation",
+      "light": "#a9cbb9",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Segment edge on a filled span, so adjacent spans stay countable.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "viz.stroke.ai",
+      "group": "visualisation",
+      "light": "#b6acd2",
+      "dark": "UNSPECIFIED BY DESIGN",
+      "meaning": "Dashed segment edge on suggested spans.",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "display",
+      "group": "typography",
+      "light": "28/1.15 700",
+      "dark": "n/a",
+      "meaning": "Page-level titles",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.lg",
+      "group": "typography",
+      "light": "20/1.25 600",
+      "dark": "n/a",
+      "meaning": "Entity header titles",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.md",
+      "group": "typography",
+      "light": "16/1.3 600",
+      "dark": "n/a",
+      "meaning": "Section headings",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "heading.sm",
+      "group": "typography",
+      "light": "14/1.35 600",
+      "dark": "n/a",
+      "meaning": "Panel headings",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "body",
+      "group": "typography",
+      "light": "13/1.55 400",
+      "dark": "n/a",
+      "meaning": "Default reading size",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "body.strong",
+      "group": "typography",
+      "light": "13/1.55 600",
+      "dark": "n/a",
+      "meaning": "Emphasis in body",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "caption",
+      "group": "typography",
+      "light": "11.5/1.4 400",
+      "dark": "n/a",
+      "meaning": "Metadata, helper text, counts",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "label",
+      "group": "typography",
+      "light": "10.5/1.3 500",
+      "dark": "n/a",
+      "meaning": "Tracked uppercase section labels",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "mono",
+      "group": "typography",
+      "light": "11.5/1.5 400",
+      "dark": "n/a",
+      "meaning": "IDs, glosses, versions, timecodes — never prose",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.050",
+      "group": "spacing",
+      "light": "2px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.100",
+      "group": "spacing",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.200",
+      "group": "spacing",
+      "light": "8px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.300",
+      "group": "spacing",
+      "light": "12px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.400",
+      "group": "spacing",
+      "light": "16px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.600",
+      "group": "spacing",
+      "light": "24px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.800",
+      "group": "spacing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "space.1200",
+      "group": "spacing",
+      "light": "48px",
+      "dark": "n/a",
+      "meaning": "4px base scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.xs",
+      "group": "radius",
+      "light": "2px",
+      "dark": "n/a",
+      "meaning": "Checkboxes, small chips",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.sm",
+      "group": "radius",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "Default for controls",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.md",
+      "group": "radius",
+      "light": "6px",
+      "dark": "n/a",
+      "meaning": "Palette, elevated cards",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.lg",
+      "group": "radius",
+      "light": "10px",
+      "dark": "n/a",
+      "meaning": "UNSPECIFIED USAGE — defined, never drawn (F8)",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "radius.full",
+      "group": "radius",
+      "light": "999px",
+      "dark": "n/a",
+      "meaning": "Avatar only; not referenced by any component contract (F8)",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.0",
+      "group": "elevation",
+      "light": "none",
+      "dark": "n/a",
+      "meaning": "Panes, tables, everything default",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.1",
+      "group": "elevation",
+      "light": "0 1px 2px rgba(0,0,0,0.07)",
+      "dark": "n/a",
+      "meaning": "Dropdowns, popovers, tooltips",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.2",
+      "group": "elevation",
+      "light": "0 6px 16px rgba(0,0,0,0.10)",
+      "dark": "n/a",
+      "meaning": "Drawers, sheets, side panels",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "elev.3",
+      "group": "elevation",
+      "light": "0 14px 34px rgba(0,0,0,0.14)",
+      "dark": "n/a",
+      "meaning": "Modal dialogs, command palette",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.instant",
+      "group": "motion",
+      "light": "80ms",
+      "dark": "n/a",
+      "meaning": "Hover, focus, checkbox, toggle",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.fast",
+      "group": "motion",
+      "light": "120ms",
+      "dark": "n/a",
+      "meaning": "Popover and menu entry, tab change",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "dur.base",
+      "group": "motion",
+      "light": "180ms",
+      "dark": "n/a",
+      "meaning": "Drawer and sheet slide, dialog scale",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "ease.standard",
+      "group": "motion",
+      "light": "cubic(.2,0,0,1)",
+      "dark": "n/a",
+      "meaning": "Entering elements",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "ease.exit",
+      "group": "motion",
+      "light": "cubic(.4,0,1,1)",
+      "dark": "n/a",
+      "meaning": "Leaving elements — always faster",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.compact",
+      "group": "sizing",
+      "light": "28px (Foundations §15) / 26px (Design System) — CONFLICT C1",
+      "dark": "n/a",
+      "meaning": "Compact density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.default",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Default density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "row.relaxed",
+      "group": "sizing",
+      "light": "40px",
+      "dark": "n/a",
+      "meaning": "Relaxed density",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.rail",
+      "group": "sizing",
+      "light": "60px",
+      "dark": "n/a",
+      "meaning": "Product rail",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.sidebar",
+      "group": "sizing",
+      "light": "208–360px",
+      "dark": "n/a",
+      "meaning": "Contextual sidebar, resizable, persisted",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "pane.inspector",
+      "group": "sizing",
+      "light": "280–420px",
+      "dark": "n/a",
+      "meaning": "Inspector, resizable, persisted",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.sm",
+      "group": "sizing",
+      "light": "28px",
+      "dark": "n/a",
+      "meaning": "Small button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.md",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Default button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "button.lg",
+      "group": "sizing",
+      "light": "40px",
+      "dark": "n/a",
+      "meaning": "Large button height",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "hit.min",
+      "group": "sizing",
+      "light": "32px",
+      "dark": "n/a",
+      "meaning": "Minimum hit area",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "hit.touch",
+      "group": "sizing",
+      "light": "44px",
+      "dark": "n/a",
+      "meaning": "Minimum hit area on touch",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.dense",
+      "group": "sizing",
+      "light": "16px",
+      "dark": "n/a",
+      "meaning": "Icons in dense contexts",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.toolbar",
+      "group": "sizing",
+      "light": "20px",
+      "dark": "n/a",
+      "meaning": "Icons in toolbars",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.grid",
+      "group": "sizing",
+      "light": "24px",
+      "dark": "n/a",
+      "meaning": "Icon design grid",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "icon.stroke",
+      "group": "sizing",
+      "light": "1.5px",
+      "dark": "n/a",
+      "meaning": "Icon stroke width",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "rhythm",
+      "group": "sizing",
+      "light": "4px",
+      "dark": "n/a",
+      "meaning": "Vertical rhythm",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.sm",
+      "group": "breakpoint",
+      "light": "< 900px",
+      "dark": "n/a",
+      "meaning": "Read and review only; editors disabled with an explanation",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.md",
+      "group": "breakpoint",
+      "light": "900–1279px",
+      "dark": "n/a",
+      "meaning": "Rail + one pane; sidebar and inspector become overlays",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.lg",
+      "group": "breakpoint",
+      "light": "1280–1727px",
+      "dark": "n/a",
+      "meaning": "Rail + sidebar + content; inspector on demand — the design target",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "bp.xl",
+      "group": "breakpoint",
+      "light": "≥ 1728px",
+      "dark": "n/a",
+      "meaning": "All panes visible; extra width goes to the data view",
+      "source": "Foundations §13"
+    },
+    {
+      "name": "focus.ring",
+      "group": "focus",
+      "light": "UNSPECIFIED BY DESIGN",
+      "dark": "n/a",
+      "meaning": "Rule stated in prose: 2px accent ring at 2px offset, never removed. No token trio exists (F9)",
+      "source": "Foundations §13"
+    }
+  ]
+}
