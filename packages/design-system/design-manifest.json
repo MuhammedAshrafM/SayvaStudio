@@ -465,7 +465,7 @@
       "group": "sizing",
       "code": null,
       "status": "blocked",
-      "reason": "Conflict C1 - Foundations SS15 states 28px, the Design System density prop states 26px. Both documents are canonical; the design owner must pick. Pending open decision D4. No Phase 1 component consumes it."
+      "reason": "Conflict C1 - Foundations §15 states 28px, the Design System density prop states 26px. Both documents are canonical; the design owner must pick. Pending open decision D4. No Phase 1 component consumes it."
     },
     {
       "design": "row.default",
@@ -800,71 +800,71 @@
     "registeredNotContracted": [
       {
         "design": "SyTreeNav",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyScopeBar",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyMediaPlayer",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyMediaPicker",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyModelSelector",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyPoseInspector",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyQualityScore",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyDatasetSplitEditor",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyModelCard",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyMetricTable",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyRolloutControl",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyReviewPanel",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyDiffView",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyPinnedItems",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyHealthCard",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyToast",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       },
       {
         "design": "SyInlineBanner",
-        "reason": "Registered in Foundations SS14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
+        "reason": "Registered in Foundations §14 with a one-line entry and no contract - no specimen, no variants, no keyboard detail. Open decision O3: contract it alongside the screen that needs it, never before."
       }
     ],
     "reclassified": [

@@ -1,0 +1,17 @@
+/*
+ * The design system's stylesheet entry point — the single file a consumer
+ * imports to get Sayva Studio's visual language.
+ *
+ * Deliberately thin. It only pulls Tailwind in and, from Slice 3, the two
+ * files that carry the design:
+ *
+ *   tokens.css  GENERATED from design-tokens.json. The 93-token semantic
+ *               layer as an `@theme` block. Never hand-edited.
+ *   base.css    Hand-authored. Focus-visible policy, the reduced-motion
+ *               block, logical-property defaults. Rules, not values.
+ *
+ * `tailwindcss` is a peerDependency, not a dependency: the consumer's build
+ * is what processes this file, so the consumer owns the version.
+ */
+
+@import 'tailwindcss';
