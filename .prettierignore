@@ -9,3 +9,10 @@ pnpm-lock.yaml
 # Frozen architecture documentation — hand-formatted for git-friendly
 # diffs (semantic linebreaks). Not to be auto-reformatted.
 docs
+
+# Generated from design-tokens.json by the token generator (DR-15). The
+# regenerate-and-diff test is authoritative for their contents, so a
+# formatter rewriting them would produce a diff the generator can never
+# match. Change the design and regenerate, never the file.
+packages/design-system/src/styles/tokens.css
+packages/design-system/src/tokens.ts

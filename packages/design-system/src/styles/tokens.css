@@ -1,0 +1,205 @@
+/*
+ * GENERATED FILE — DO NOT EDIT.
+ *
+ * Produced by tooling/generate-tokens.mjs from design-tokens.json and design-decisions.json.
+ * Hand-edits are reverted by the regenerate-and-diff test, which is
+ * authoritative for this file's contents. To change a value: change the
+ * design, re-ingest, re-run `pnpm --filter @sayva/design-system tokens:generate`.
+ */
+
+@theme {
+  /* surface — 4 custom properties */
+  --color-surface-canvas: #f4f4f4;
+  --color-surface-default: #ffffff;
+  --color-surface-subtle: #fafafa;
+  --color-surface-selected: #eef3f0;
+
+  /* border — 2 custom properties */
+  --color-border-default: #e4e4e4;
+  --color-border-strong: #cfcfcf;
+
+  /* color — 10 custom properties */
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-tertiary: #6b6b6b;
+  --color-accent-default: #2f6b52;
+  --color-accent-hover: #255744;
+  --color-accent-ai: #5b4b8a;
+  --color-accent-subtle: #eef3f0;
+  --color-accent-border: #cfe0d8;
+  --color-accent-ai-subtle: #f3f1f8;
+  --color-accent-ai-border: #cfc6e0;
+
+  /* control-state — 2 custom properties */
+  --color-control-disabled-bg: #ebebeb;
+  --color-control-disabled-fg: #6b6b6b;
+
+  /* icon — 1 custom property */
+  --color-icon-subtle: #858585;
+
+  /* semantic-state — 15 custom properties */
+  --color-status-neutral-fg: #4a4a4a;
+  --color-status-neutral-bg: #f4f4f4;
+  --color-status-neutral-border: #dcdcdc;
+  --color-status-success-fg: #1f7a3d;
+  --color-status-success-bg: #eef7f1;
+  --color-status-success-border: #cfe6d8;
+  --color-status-warning-fg: #a05a1e;
+  --color-status-warning-bg: #fdf6ec;
+  --color-status-warning-border: #eeddc2;
+  --color-status-danger-fg: #b91c1c;
+  --color-status-danger-bg: #fdf2f2;
+  --color-status-danger-border: #f0d4d4;
+  --color-status-info-fg: #1e5a8a;
+  --color-status-info-bg: #eef4f9;
+  --color-status-info-border: #cfe0ee;
+
+  /* visualisation — 7 custom properties */
+  --color-viz-track: #f0f0f0;
+  --color-viz-fill-default: #cfe3d8;
+  --color-viz-fill-warning: #f0dcc0;
+  --color-viz-fill-danger: #f0cccc;
+  --color-viz-fill-ai: #efecf6;
+  --color-viz-stroke-default: #a9cbb9;
+  --color-viz-stroke-ai: #b6acd2;
+
+  /* typography — 27 custom properties */
+  --text-display: 28px;
+  --text-display--line-height: 1.15;
+  --text-display--font-weight: 700;
+  --text-heading-lg: 20px;
+  --text-heading-lg--line-height: 1.25;
+  --text-heading-lg--font-weight: 600;
+  --text-heading-md: 16px;
+  --text-heading-md--line-height: 1.3;
+  --text-heading-md--font-weight: 600;
+  --text-heading-sm: 14px;
+  --text-heading-sm--line-height: 1.35;
+  --text-heading-sm--font-weight: 600;
+  --text-body: 13px;
+  --text-body--line-height: 1.55;
+  --text-body--font-weight: 400;
+  --text-body-strong: 13px;
+  --text-body-strong--line-height: 1.55;
+  --text-body-strong--font-weight: 600;
+  --text-caption: 11.5px;
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 400;
+  --text-label: 10.5px;
+  --text-label--line-height: 1.3;
+  --text-label--font-weight: 500;
+  --text-mono: 11.5px;
+  --text-mono--line-height: 1.5;
+  --text-mono--font-weight: 400;
+
+  /* spacing — 8 custom properties */
+  --spacing-050: 2px;
+  --spacing-100: 4px;
+  --spacing-200: 8px;
+  --spacing-300: 12px;
+  --spacing-400: 16px;
+  --spacing-600: 24px;
+  --spacing-800: 32px;
+  --spacing-1200: 48px;
+
+  /* radius — 5 custom properties */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-full: 999px;
+
+  /* elevation — 4 custom properties */
+  --shadow-elev-0: none;
+  --shadow-elev-1: 0 1px 2px rgba(0,0,0,0.07);
+  --shadow-elev-2: 0 6px 16px rgba(0,0,0,0.10);
+  --shadow-elev-3: 0 14px 34px rgba(0,0,0,0.14);
+
+  /* motion — 3 custom properties */
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+
+  /* sizing — 17 custom properties */
+  --row-default: 32px;
+  --row-relaxed: 40px;
+  --pane-rail: 60px;
+  --pane-sidebar-min: 208px;
+  --pane-sidebar-max: 360px;
+  --pane-inspector-min: 280px;
+  --pane-inspector-max: 420px;
+  --button-sm: 28px;
+  --button-md: 32px;
+  --button-lg: 40px;
+  --hit-min: 32px;
+  --hit-touch: 44px;
+  --icon-dense: 16px;
+  --icon-toolbar: 20px;
+  --icon-grid: 24px;
+  --icon-stroke: 1.5px;
+  --rhythm: 4px;
+
+  /* breakpoint — 3 custom properties */
+  --breakpoint-md: 900px;
+  --breakpoint-lg: 1280px;
+  --breakpoint-xl: 1728px;
+
+  /* focus — 3 custom properties */
+  --focus-ring-color: var(--color-accent-default);
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/*
+ * Dark theme. Not an inversion — §10.2: elevation is expressed by surface
+ * lightness rather than shadow, and pure black is never a canvas.
+ *
+ * 10 light tokens have no dark counterpart and are absent here on
+ * purpose (§16.2). They must not be invented:
+ *   accent.hover
+ *   status.neutral.border
+ *   status.success.border
+ *   status.warning.border
+ *   status.danger.border
+ *   status.info.border
+ *   accent.border
+ *   accent.ai.border
+ *   viz.stroke.default
+ *   viz.stroke.ai
+ *
+ * No component or screen has ever been drawn in dark (audit F10), so these
+ * values are unexercised. Dark *rendering* is deliberately out of Phase 1.
+ */
+[data-theme='dark'] {
+  --color-surface-canvas: #17181a;
+  --color-surface-default: #1f2124;
+  --color-surface-subtle: #26282c;
+  --color-surface-selected: #1e3329;
+  --color-border-default: #33363a;
+  --color-border-strong: #4a4e54;
+  --color-text-primary: #eceded;
+  --color-text-secondary: #b9bcc0;
+  --color-text-tertiary: #8f9296;
+  --color-accent-default: #6ab894;
+  --color-accent-ai: #a394d8;
+  --color-control-disabled-bg: #2b2e32;
+  --color-control-disabled-fg: #8f9296;
+  --color-icon-subtle: #8f9296;
+  --color-status-neutral-fg: #b9bcc0;
+  --color-status-neutral-bg: #26282c;
+  --color-status-success-fg: #5fbd7d;
+  --color-status-success-bg: #1a2b21;
+  --color-status-warning-fg: #d99a4e;
+  --color-status-warning-bg: #2e2519;
+  --color-status-danger-fg: #e8736b;
+  --color-status-danger-bg: #2e1d1c;
+  --color-status-info-fg: #6aa8db;
+  --color-status-info-bg: #1a252e;
+  --color-accent-subtle: #1e3329;
+  --color-accent-ai-subtle: #241f33;
+  --color-viz-track: #2b2e32;
+  --color-viz-fill-default: #3d6b54;
+  --color-viz-fill-warning: #7a5a2e;
+  --color-viz-fill-danger: #7a3733;
+  --color-viz-fill-ai: #3a3352;
+}

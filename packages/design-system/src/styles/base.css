@@ -1,0 +1,54 @@
+/*
+ * Hand-authored, unlike tokens.css. These are rules the design states in
+ * prose that no token can carry on its own. Every value below comes from a
+ * custom property — never a literal.
+ */
+
+/*
+ * Foundations §16 — "A 2px accent ring with a 2px offset on every focusable
+ * element, never removed."
+ *
+ * :focus-visible rather than :focus, so a mouse click on a button does not
+ * paint a ring the keyboard user needs. The ring colour is a reference to
+ * accent.default, so it follows the theme without a second declaration.
+ *
+ * The three custom properties come from decision D5 and are pending
+ * design-owner sign-off — §16 states the rule in prose but the design has
+ * no focus.ring token trio (audit F9).
+ */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-color);
+  outline-offset: var(--focus-ring-offset);
+}
+
+/*
+ * Foundations §10.7 — "Under prefers-reduced-motion all durations collapse
+ * to 0 except opacity, capped at 80ms." §9.2 adds "collapses all
+ * transforms" and "Nothing loops."
+ *
+ * Read together, that is three separate instructions, implemented below in
+ * the same order:
+ *
+ *   1. Durations collapse. --dur-fast and --dur-base go to zero.
+ *      --dur-instant deliberately does not: its stated value is 80ms, which
+ *      is exactly the cap §10.7 puts on opacity, so it becomes the token the
+ *      surviving opacity transition uses rather than a second literal.
+ *   2. Transforms collapse. Restricting transition-property to opacity is
+ *      what removes them — anything else simply stops transitioning.
+ *   3. Nothing loops, and animations do not merely shorten, they collapse.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-property: opacity !important;
+    transition-duration: var(--dur-instant) !important;
+    animation-duration: 0ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

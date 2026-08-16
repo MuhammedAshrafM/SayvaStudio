@@ -12,581 +12,607 @@
     "scopeDecision": "D1 - Phase 1 implements the token layer, the 10 Design System primitives and one shared overlay substrate hook. The 12 Design System patterns are out of scope; see outOfScope.patterns. The design's own phase1 flag marks 17 components, 7 of which are patterns this decision defers.",
     "statusVocabulary": {
       "deferred": "In Phase 1 scope, not yet implemented.",
+      "implemented-pending-signoff": "Emitted from a recorded decision because the design states the value in prose but carries no token. Awaiting design-owner sign-off; reported by the token tests until it arrives.",
       "blocked": "Cannot be implemented without a design decision. Carries a reason naming the open decision.",
       "implemented": "Present in code and covered by the parity test.",
       "out-of-scope": "Deliberately not in Phase 1. Carries a reason."
     },
     "counts": {
       "tokens": 93,
-      "tokensDeferred": 91,
-      "tokensBlocked": 2,
+      "tokensBlocked": 3,
       "tokensWithoutDarkValue": 10,
       "components": 10,
       "outOfScopePatterns": 12,
       "outOfScopeRegisteredNotContracted": 17,
-      "outOfScopeReclassified": 5
-    }
+      "outOfScopeReclassified": 5,
+      "tokensImplemented": 90,
+      "tokensPendingSignOff": 1,
+      "cssCustomProperties": 111
+    },
+    "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
   "tokens": [
     {
       "design": "surface.canvas",
       "group": "surface",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-surface-canvas"],
+      "status": "implemented"
     },
     {
       "design": "surface.default",
       "group": "surface",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-surface-default"],
+      "status": "implemented"
     },
     {
       "design": "surface.subtle",
       "group": "surface",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-surface-subtle"],
+      "status": "implemented"
     },
     {
       "design": "surface.selected",
       "group": "surface",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-surface-selected"],
+      "status": "implemented"
     },
     {
       "design": "border.default",
       "group": "border",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-border-default"],
+      "status": "implemented"
     },
     {
       "design": "border.strong",
       "group": "border",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-border-strong"],
+      "status": "implemented"
     },
     {
       "design": "text.primary",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-text-primary"],
+      "status": "implemented"
     },
     {
       "design": "text.secondary",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-text-secondary"],
+      "status": "implemented"
     },
     {
       "design": "text.tertiary",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-text-tertiary"],
+      "status": "implemented"
     },
     {
       "design": "accent.default",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-default"],
+      "status": "implemented"
     },
     {
       "design": "accent.hover",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-hover"],
+      "status": "implemented"
     },
     {
       "design": "accent.ai",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-ai"],
+      "status": "implemented"
     },
     {
       "design": "control.disabled.bg",
       "group": "control-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-control-disabled-bg"],
+      "status": "implemented"
     },
     {
       "design": "control.disabled.fg",
       "group": "control-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-control-disabled-fg"],
+      "status": "implemented"
     },
     {
       "design": "icon.subtle",
       "group": "icon",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-icon-subtle"],
+      "status": "implemented"
     },
     {
       "design": "status.neutral.fg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-neutral-fg"],
+      "status": "implemented"
     },
     {
       "design": "status.neutral.bg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-neutral-bg"],
+      "status": "implemented"
     },
     {
       "design": "status.neutral.border",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-neutral-border"],
+      "status": "implemented"
     },
     {
       "design": "status.success.fg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-success-fg"],
+      "status": "implemented"
     },
     {
       "design": "status.success.bg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-success-bg"],
+      "status": "implemented"
     },
     {
       "design": "status.success.border",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-success-border"],
+      "status": "implemented"
     },
     {
       "design": "status.warning.fg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-warning-fg"],
+      "status": "implemented"
     },
     {
       "design": "status.warning.bg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-warning-bg"],
+      "status": "implemented"
     },
     {
       "design": "status.warning.border",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-warning-border"],
+      "status": "implemented"
     },
     {
       "design": "status.danger.fg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-danger-fg"],
+      "status": "implemented"
     },
     {
       "design": "status.danger.bg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-danger-bg"],
+      "status": "implemented"
     },
     {
       "design": "status.danger.border",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-danger-border"],
+      "status": "implemented"
     },
     {
       "design": "status.info.fg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-info-fg"],
+      "status": "implemented"
     },
     {
       "design": "status.info.bg",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-info-bg"],
+      "status": "implemented"
     },
     {
       "design": "status.info.border",
       "group": "semantic-state",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-status-info-border"],
+      "status": "implemented"
     },
     {
       "design": "accent.subtle",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-subtle"],
+      "status": "implemented"
     },
     {
       "design": "accent.border",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-border"],
+      "status": "implemented"
     },
     {
       "design": "accent.ai.subtle",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-ai-subtle"],
+      "status": "implemented"
     },
     {
       "design": "accent.ai.border",
       "group": "color",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-accent-ai-border"],
+      "status": "implemented"
     },
     {
       "design": "viz.track",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-track"],
+      "status": "implemented"
     },
     {
       "design": "viz.fill.default",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-fill-default"],
+      "status": "implemented"
     },
     {
       "design": "viz.fill.warning",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-fill-warning"],
+      "status": "implemented"
     },
     {
       "design": "viz.fill.danger",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-fill-danger"],
+      "status": "implemented"
     },
     {
       "design": "viz.fill.ai",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-fill-ai"],
+      "status": "implemented"
     },
     {
       "design": "viz.stroke.default",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-stroke-default"],
+      "status": "implemented"
     },
     {
       "design": "viz.stroke.ai",
       "group": "visualisation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--color-viz-stroke-ai"],
+      "status": "implemented"
     },
     {
       "design": "display",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": ["--text-display", "--text-display--line-height", "--text-display--font-weight"],
+      "status": "implemented"
     },
     {
       "design": "heading.lg",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": [
+        "--text-heading-lg",
+        "--text-heading-lg--line-height",
+        "--text-heading-lg--font-weight"
+      ],
+      "status": "implemented"
     },
     {
       "design": "heading.md",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": [
+        "--text-heading-md",
+        "--text-heading-md--line-height",
+        "--text-heading-md--font-weight"
+      ],
+      "status": "implemented"
     },
     {
       "design": "heading.sm",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": [
+        "--text-heading-sm",
+        "--text-heading-sm--line-height",
+        "--text-heading-sm--font-weight"
+      ],
+      "status": "implemented"
     },
     {
       "design": "body",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": ["--text-body", "--text-body--line-height", "--text-body--font-weight"],
+      "status": "implemented"
     },
     {
       "design": "body.strong",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": [
+        "--text-body-strong",
+        "--text-body-strong--line-height",
+        "--text-body-strong--font-weight"
+      ],
+      "status": "implemented"
     },
     {
       "design": "caption",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": ["--text-caption", "--text-caption--line-height", "--text-caption--font-weight"],
+      "status": "implemented"
     },
     {
       "design": "label",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": ["--text-label", "--text-label--line-height", "--text-label--font-weight"],
+      "status": "implemented"
     },
     {
       "design": "mono",
       "group": "typography",
-      "code": null,
-      "status": "deferred"
+      "code": ["--text-mono", "--text-mono--line-height", "--text-mono--font-weight"],
+      "status": "implemented"
     },
     {
       "design": "space.050",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-050"],
+      "status": "implemented"
     },
     {
       "design": "space.100",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-100"],
+      "status": "implemented"
     },
     {
       "design": "space.200",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-200"],
+      "status": "implemented"
     },
     {
       "design": "space.300",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-300"],
+      "status": "implemented"
     },
     {
       "design": "space.400",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-400"],
+      "status": "implemented"
     },
     {
       "design": "space.600",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-600"],
+      "status": "implemented"
     },
     {
       "design": "space.800",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-800"],
+      "status": "implemented"
     },
     {
       "design": "space.1200",
       "group": "spacing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--spacing-1200"],
+      "status": "implemented"
     },
     {
       "design": "radius.xs",
       "group": "radius",
-      "code": null,
-      "status": "deferred"
+      "code": ["--radius-xs"],
+      "status": "implemented"
     },
     {
       "design": "radius.sm",
       "group": "radius",
-      "code": null,
-      "status": "deferred"
+      "code": ["--radius-sm"],
+      "status": "implemented"
     },
     {
       "design": "radius.md",
       "group": "radius",
-      "code": null,
-      "status": "deferred"
+      "code": ["--radius-md"],
+      "status": "implemented"
     },
     {
       "design": "radius.lg",
       "group": "radius",
-      "code": null,
-      "status": "deferred"
+      "code": ["--radius-lg"],
+      "status": "implemented"
     },
     {
       "design": "radius.full",
       "group": "radius",
-      "code": null,
-      "status": "deferred"
+      "code": ["--radius-full"],
+      "status": "implemented"
     },
     {
       "design": "elev.0",
       "group": "elevation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--shadow-elev-0"],
+      "status": "implemented"
     },
     {
       "design": "elev.1",
       "group": "elevation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--shadow-elev-1"],
+      "status": "implemented"
     },
     {
       "design": "elev.2",
       "group": "elevation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--shadow-elev-2"],
+      "status": "implemented"
     },
     {
       "design": "elev.3",
       "group": "elevation",
-      "code": null,
-      "status": "deferred"
+      "code": ["--shadow-elev-3"],
+      "status": "implemented"
     },
     {
       "design": "dur.instant",
       "group": "motion",
-      "code": null,
-      "status": "deferred"
+      "code": ["--dur-instant"],
+      "status": "implemented"
     },
     {
       "design": "dur.fast",
       "group": "motion",
-      "code": null,
-      "status": "deferred"
+      "code": ["--dur-fast"],
+      "status": "implemented"
     },
     {
       "design": "dur.base",
       "group": "motion",
-      "code": null,
-      "status": "deferred"
+      "code": ["--dur-base"],
+      "status": "implemented"
     },
     {
       "design": "ease.standard",
       "group": "motion",
-      "code": null,
-      "status": "deferred"
+      "code": [],
+      "status": "blocked",
+      "reason": "D9 — the stated value `cubic(.2,0,0,1)` is not a CSS function. Expanding it to cubic-bezier() preserves all four control points but is an interpretation of a malformed value, so it awaits confirmation. Pending open decision D9."
     },
     {
       "design": "ease.exit",
       "group": "motion",
-      "code": null,
-      "status": "deferred"
+      "code": [],
+      "status": "blocked",
+      "reason": "D9 — as ease.standard, for `cubic(.4,0,1,1)`. Pending open decision D9."
     },
     {
       "design": "row.compact",
       "group": "sizing",
-      "code": null,
+      "code": [],
       "status": "blocked",
-      "reason": "Conflict C1 - Foundations §15 states 28px, the Design System density prop states 26px. Both documents are canonical; the design owner must pick. Pending open decision D4. No Phase 1 component consumes it."
+      "reason": "C1 / D4 — Foundations §15 states 28px, the Design System density prop states 26px. Both canonical; the design owner must pick. Pending open decision D4."
     },
     {
       "design": "row.default",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--row-default"],
+      "status": "implemented"
     },
     {
       "design": "row.relaxed",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--row-relaxed"],
+      "status": "implemented"
     },
     {
       "design": "pane.rail",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--pane-rail"],
+      "status": "implemented"
     },
     {
       "design": "pane.sidebar",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--pane-sidebar-min", "--pane-sidebar-max"],
+      "status": "implemented",
+      "expansion": "A resizable range, so both ends are emitted. Collapsing them to one number would mean choosing a default the design never gave."
     },
     {
       "design": "pane.inspector",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--pane-inspector-min", "--pane-inspector-max"],
+      "status": "implemented",
+      "expansion": "A resizable range, so both ends are emitted, as pane.sidebar."
     },
     {
       "design": "button.sm",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--button-sm"],
+      "status": "implemented"
     },
     {
       "design": "button.md",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--button-md"],
+      "status": "implemented"
     },
     {
       "design": "button.lg",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--button-lg"],
+      "status": "implemented"
     },
     {
       "design": "hit.min",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--hit-min"],
+      "status": "implemented"
     },
     {
       "design": "hit.touch",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--hit-touch"],
+      "status": "implemented"
     },
     {
       "design": "icon.dense",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--icon-dense"],
+      "status": "implemented"
     },
     {
       "design": "icon.toolbar",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--icon-toolbar"],
+      "status": "implemented"
     },
     {
       "design": "icon.grid",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--icon-grid"],
+      "status": "implemented"
     },
     {
       "design": "icon.stroke",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--icon-stroke"],
+      "status": "implemented"
     },
     {
       "design": "rhythm",
       "group": "sizing",
-      "code": null,
-      "status": "deferred"
+      "code": ["--rhythm"],
+      "status": "implemented"
     },
     {
       "design": "bp.sm",
       "group": "breakpoint",
-      "code": null,
-      "status": "deferred"
+      "code": [],
+      "status": "implemented",
+      "expansion": "Not a min-width. §10.9 defines bp.sm as \"< 900px\", the base range below --breakpoint-md; it has no threshold of its own to emit."
     },
     {
       "design": "bp.md",
       "group": "breakpoint",
-      "code": null,
-      "status": "deferred"
+      "code": ["--breakpoint-md"],
+      "status": "implemented"
     },
     {
       "design": "bp.lg",
       "group": "breakpoint",
-      "code": null,
-      "status": "deferred"
+      "code": ["--breakpoint-lg"],
+      "status": "implemented"
     },
     {
       "design": "bp.xl",
       "group": "breakpoint",
-      "code": null,
-      "status": "deferred"
+      "code": ["--breakpoint-xl"],
+      "status": "implemented"
     },
     {
       "design": "focus.ring",
       "group": "focus",
-      "code": null,
-      "status": "blocked",
-      "reason": "UNSPECIFIED BY DESIGN - audit finding F9. The rule is stated in prose (2px accent ring, 2px offset, never removed) but no focus.ring.{color,width,offset} trio exists. Pending open decision D5. Must not be filled from convention (AC13)."
+      "code": ["--focus-ring-color", "--focus-ring-width", "--focus-ring-offset"],
+      "status": "implemented-pending-signoff",
+      "expansion": "Superseded by design-decisions.json: focus.ring.color / .width / .offset carry the values Foundations §16 states in prose. Emitted under decision D5, pending design-owner sign-off.",
+      "decision": "D5"
     }
   ],
   "components": [
