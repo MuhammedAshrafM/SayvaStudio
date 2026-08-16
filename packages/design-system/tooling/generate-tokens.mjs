@@ -59,7 +59,7 @@ export const NOT_EMITTED = {
   'row.compact':
     'C1 / D4 — Foundations §15 states 28px, the Design System density prop states 26px. Both canonical; the design owner must pick.',
   'focus.ring':
-    'F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose ("a 2px accent ring with a 2px offset, never removed") but the design carries no focus.ring.{color,width,offset} trio, and tokenising one was reverted. base.css implements the rule from --color-accent-default; the two 2px figures stay literals there until the design owner tokenises them.',
+    'F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose ("a 2px accent ring with a 2px offset, never removed") but the design carries no focus.ring.{color,width,offset} trio. D5 is open and pending the design owner: neither adopted nor rejected. Meanwhile base.css implements the rule from --color-accent-default, with the two 2px figures as literals copied verbatim from §16.',
   'ease.standard':
     'D9 — the stated value `cubic(.2,0,0,1)` is not a CSS function. Expanding it to cubic-bezier() preserves all four control points but is an interpretation of a malformed value, so it awaits confirmation.',
   'ease.exit': 'D9 — as ease.standard, for `cubic(.4,0,1,1)`.',
@@ -78,6 +78,11 @@ const PX_RANGE = /^([\d.]+)[–-]([\d.]+)px$/;
 const BP_LOWER = /^(?:≥\s*)?([\d.]+)(?:[–-][\d.]+)?px$/;
 const PX = /^[\d.]+px$/;
 const MS = /^[\d.]+ms$/;
+/**
+ * `none`, or offsets + optional blur/spread + a colour. A zero offset is
+ * written unitless (`0 1px 2px rgba(...)`), so the unit is optional on 0.
+ */
+const SHADOW = /^none$|^(?:(?:-?[\d.]+px|0)\s+){2,4}(?:rgba?\([\d.,\s]+\)|#[0-9a-fA-F]{3,8})$/;
 
 /**
  * Expands one design token into the custom properties that carry it.
@@ -128,7 +133,11 @@ export function expand(token) {
   }
 
   if (group === 'elevation') {
-    // `none` and `0 1px 2px rgba(...)` are both valid box-shadow values.
+    // Validated, not passed through. This group was the one place a
+    // malformed value could have reached the CSS unchallenged — which is
+    // exactly how ease.* would have slipped by if durations were unchecked
+    // (see D9). `none` or a box-shadow: offsets, blur, and a colour.
+    if (!SHADOW.test(light)) fail('expected `none` or a box-shadow value');
     return [{ cssVar: `--shadow-${dashed(name)}`, light, dark: null }];
   }
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import manifest from '../design-manifest.json';
 import design from '../design-tokens.json';
+import openDecisions from '../design-open-decisions.json';
+import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
 import { CSS_VARIABLES, PENDING_DESIGN_SIGNOFF } from './tokens.js';
 
 /**
@@ -79,11 +81,56 @@ describe('every entry is accounted for', () => {
   });
 
   it('carries no provisional tokens, and stays wired to catch one', () => {
-    // D5 was reverted, so nothing reaches the CSS on a recorded decision
-    // alone. The parity still holds if a provisional token is added later.
+    // D5 is open and pending, so nothing reaches the CSS on a recorded
+    // decision alone. The parity holds if a provisional token appears later.
     const provisional = manifest.tokens.filter((t) => t.status === 'implemented-pending-signoff');
     expect(provisional).toEqual([]);
     expect(PENDING_DESIGN_SIGNOFF).toHaveLength(0);
+  });
+});
+
+describe('every decision cited is a decision on the register', () => {
+  const registered = new Set(openDecisions.decisions.map((entry) => entry.id));
+
+  it('records every decision id the manifest cites', () => {
+    const cited = new Set(
+      manifest.tokens
+        .flatMap((token) => [
+          ...String(token.reason ?? '').matchAll(/\bD\d+\b/g),
+          ...String(token.decision ?? '').matchAll(/\bD\d+\b/g),
+        ])
+        .map((match) => match[0]),
+    );
+    expect(cited.size, 'the manifest should be citing decisions').toBeGreaterThan(0);
+    expect([...cited].filter((id) => !registered.has(id))).toEqual([]);
+  });
+
+  it('records every decision id the generator cites', () => {
+    const cited = new Set(
+      Object.values(NOT_EMITTED)
+        .flatMap((reason) => [...String(reason).matchAll(/\bD\d+\b/g)])
+        .map((match) => match[0]),
+    );
+    expect([...cited].filter((id) => !registered.has(id))).toEqual([]);
+  });
+
+  it('keeps every registered decision open and owned', () => {
+    // A decision silently flipping to closed is how a blocked token gets
+    // unblocked without anyone ruling on it.
+    for (const entry of openDecisions.decisions) {
+      expect(entry.status, `${entry.id} status`).toBe('open');
+      expect(entry.owner, `${entry.id} owner`).toBeTruthy();
+      expect(entry.mustNotDo, `${entry.id} must say what not to do`).toBeTruthy();
+    }
+    expect(openDecisions.$meta.counts.open).toBe(openDecisions.decisions.length);
+  });
+
+  it('keeps D5 pending rather than resolved in either direction', () => {
+    const d5 = openDecisions.decisions.find((entry) => entry.id === 'D5');
+    expect(d5?.status).toBe('open');
+    // Blocked, but not rejected — the distinction the design owner asked for.
+    expect(manifest.tokens.find((t) => t.design === 'focus.ring')?.status).toBe('blocked');
+    expect(d5?.statement).toMatch(/neither adopted nor rejected/i);
   });
 });
 

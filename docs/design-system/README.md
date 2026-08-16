@@ -68,6 +68,8 @@ Two conflicts are recorded rather than resolved, and must not be decided here:
 |---|---|
 | `packages/design-system/design-tokens.json` | A faithful projection of this directory's inventory `tokens[]` — the canonical generator input defined by DR-15. No value altered, added, removed or reordered. |
 | `packages/design-system/design-manifest.json` | The design→code map. Every token and contracted primitive is `implemented`, `deferred`, or `blocked` with a reason. Parity-tested against the code from Slice 3 onward. |
+| `packages/design-system/design-open-decisions.json` | The register of decisions Phase 1 cannot make on its own — each with its owner, what it blocks, and what must not be done. Every decision id cited in the manifest or the token generator must appear there, and a test enforces it. |
+| `packages/design-system/design-decisions.json` | Values the design states in prose but never tokenised, once an owner approves one. Currently empty and deliberately so. |
 | `packages/design-system/src/styles/tokens.css` | Generated from `design-tokens.json` (Slice 3). Never hand-edited. |
 | `packages/design-system/src/tokens.ts` | Generated from `design-tokens.json` (Slice 3). Token names and types only — never values. |
 

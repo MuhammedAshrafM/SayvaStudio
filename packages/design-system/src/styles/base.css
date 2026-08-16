@@ -17,12 +17,12 @@
  *
  * The two 2px figures are literals, and deliberately so. Audit finding F9
  * records that the design states this rule in prose but carries no
- * focus.ring.{color,width,offset} trio. Minting one was proposed as
- * decision D5 and reverted, so there is no token to reference — and §16
- * says the ring is "never removed", which rules out dropping the rule until
- * one exists. Both figures are copied verbatim from §16; neither is
- * inferred. This is the single place in the package where a length is
- * written directly, and it goes away the moment F9 is closed.
+ * focus.ring.{color,width,offset} trio. Minting one is decision D5, which
+ * is open and pending the design owner — neither adopted nor rejected — so
+ * there is no token to reference yet, and §16's "never removed" rules out
+ * dropping the rule while we wait. Both figures are copied verbatim from
+ * §16; neither is inferred. This is the single place in the package where a
+ * length is written directly, and it goes away when D5 closes.
  */
 :focus-visible {
   outline: 2px solid var(--color-accent-default);

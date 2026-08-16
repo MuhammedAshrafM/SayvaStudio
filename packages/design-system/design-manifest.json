@@ -611,7 +611,7 @@
       "group": "focus",
       "code": [],
       "status": "blocked",
-      "reason": "F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose (\"a 2px accent ring with a 2px offset, never removed\") but the design carries no focus.ring.{color,width,offset} trio, and tokenising one was reverted. base.css implements the rule from --color-accent-default; the two 2px figures stay literals there until the design owner tokenises them. Pending open decision D5."
+      "reason": "F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose (\"a 2px accent ring with a 2px offset, never removed\") but the design carries no focus.ring.{color,width,offset} trio. D5 is open and pending the design owner: neither adopted nor rejected. Meanwhile base.css implements the rule from --color-accent-default, with the two 2px figures as literals copied verbatim from §16."
     }
   ],
   "components": [

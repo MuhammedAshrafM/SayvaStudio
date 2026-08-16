@@ -1,0 +1,84 @@
+{
+  "$meta": {
+    "role": "The register of design and implementation decisions Phase 1 cannot make on its own. Every decision id cited anywhere in design-manifest.json or the token generator must appear here, and a test enforces that.",
+    "rule": "An entry is closed only by the named owner. Nothing here may be resolved by choosing a value in code — that is a design change, and AC13 fails any element with no design source. Statuses are 'open' until the owner rules.",
+    "updated": "2026-08-11",
+    "counts": { "open": 5, "closed": 0 }
+  },
+  "decisions": [
+    {
+      "id": "D4",
+      "title": "Compact row height — 28px or 26px",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks the token row.compact. No Phase 1 component consumes it; SyCollection's density modes will.",
+      "statement": "Foundations §15 states 28px. The Design System's density prop states 26px. Both documents are canonical and the handoff records the disagreement as conflict C1 without resolving it — the design's only self-declared blocking conflict.",
+      "evidence": "design-tokens.json row.compact carries the conflict inline as its value.",
+      "mustNotDo": "Pick either number in code."
+    },
+    {
+      "id": "D5",
+      "title": "Tokenise the focus ring (audit F9)",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks the token focus.ring. base.css still implements the rule, from --color-accent-default plus the two 2px figures §16 states verbatim, because §16 says the ring is never removed.",
+      "statement": "Foundations §16 states 'a 2px accent ring with a 2px offset on every focusable element, never removed', and §10.11 names accent.default as the ring colour — but no focus.ring.{color,width,offset} trio exists. Audit finding F9 records the omission. Minting the trio was proposed and stood down pending the design owner's ruling; it is neither adopted nor rejected.",
+      "evidence": "design-tokens.json focus.ring has the value 'UNSPECIFIED BY DESIGN'. design-decisions.json is empty and wired, so an approved trio drops straight in.",
+      "mustNotDo": "Emit focus.ring tokens, or treat the stand-down as a permanent rejection."
+    },
+    {
+      "id": "D6",
+      "title": "Which icon set",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "No Phase 1 token or component. Blocks Slice 6's Icon primitive.",
+      "statement": "Foundations §15 specifies the geometry — stroke-based, 16px in dense contexts, 20px in toolbars, on a 24px grid with 1.5px strokes — but never names the set. The sizing tokens for all four figures are implemented; only the glyph source is undecided.",
+      "evidence": "design-tokens.json icon.dense / icon.toolbar / icon.grid / icon.stroke are implemented; no token names a family.",
+      "mustNotDo": "Adopt an icon library because its geometry happens to match."
+    },
+    {
+      "id": "D9",
+      "title": "ease.standard and ease.exit are not valid CSS",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks both easing tokens. No Phase 1 component animates, so nothing is waiting on them.",
+      "statement": "Foundations §13's motion table declares ease.standard as 'cubic(.2,0,0,1)' and ease.exit as 'cubic(.4,0,1,1)'. cubic() is not a CSS function; cubic-bezier() is, and takes exactly the four control points stated. Expanding the notation would preserve every number and invent none — but it is still an interpretation of a malformed value, so it waits on the design owner.",
+      "evidence": "Verified against the source document, not only the handoff: Foundations v0.2's own motion array literally contains dur: \"cubic(.2,0,0,1)\". The handoff and the inventory transcribed it faithfully — the defect is in the canonical source, and the generator's duration validator is what surfaced it.",
+      "discovered": "Phase 1, Slice 3. Not anticipated by the Phase 1 plan, which counted 2 blocked tokens by scanning for UNSPECIFIED BY DESIGN and the C1 conflict marker — neither of which flags a value that merely looks well-formed.",
+      "mustNotDo": "Emit cubic-bezier() without the owner confirming the notation was the intent."
+    },
+    {
+      "id": "D11",
+      "title": "Three contrast pairings below the floor §16 commits to",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "None blocked. All three token values are implemented unchanged and pinned by the AC3 contrast matrix as documented gaps rather than regressions.",
+      "statement": "Foundations §16 makes AA the floor and requires 3:1 for non-text affordances. Three pairings computed from the frozen token values do not meet it. The values are left exactly as the design states them.",
+      "pairings": [
+        {
+          "tokens": ["border.strong"],
+          "measured": "1.39–1.56:1 light, 1.61–2.12:1 dark, across all four surfaces",
+          "floor": "3:1 (WCAG 1.4.11, non-text)",
+          "designClaim": "§16 claims 3:1 for non-text affordances only via icon.subtle. border.strong is never claimed — but §10.1 names it for 'input borders, focusable edges', which is exactly what 1.4.11 covers.",
+          "question": "Is the low contrast deliberate, or does border.strong need a darker value?"
+        },
+        {
+          "tokens": ["control.disabled.fg", "control.disabled.bg"],
+          "measured": "4.47:1 light, 4.36:1 dark",
+          "floor": "4.5:1 (AA text)",
+          "designClaim": "§10.1 states 4.6:1, and §16 insists 'a disabled control that cannot be read is not a state, it is a defect'. The stated figure does not match the values: they give 4.47.",
+          "question": "Was 4.6:1 the target, in which case one of the two values needs adjusting?"
+        },
+        {
+          "tokens": ["text.tertiary"],
+          "measured": "4.31:1 on dark surface.selected",
+          "floor": "4.5:1 (AA text)",
+          "designClaim": "§10.1 claims text.tertiary 'passes AA on every ground in the system'. True in light — worst case 4.75 — but false on the dark selected surface. Consistent with audit F10: no component or screen has ever been drawn in dark.",
+          "question": "Does the dark palette need revisiting, or is the claim scoped to light only?"
+        }
+      ],
+      "evidence": "src/contrast.test.ts computes all 60 pairings and pins these as documented gaps. A new failure is reported separately, as a regression.",
+      "mustNotDo": "Change a token value to make the matrix pass."
+    }
+  ]
+}

@@ -53,6 +53,23 @@ describe('the generator refuses to invent', () => {
     );
   });
 
+  it('validates elevation rather than passing box-shadow through', () => {
+    // This group used to be unvalidated — the one place a malformed value
+    // could have reached the CSS unchallenged. D9 exists precisely because
+    // an unchecked value shape looks fine until a browser sees it.
+    expect(() => expand({ name: 'elev.9', group: 'elevation', light: 'drop-shadow-ish' })).toThrow(
+      /expected `none` or a box-shadow value/,
+    );
+  });
+
+  it('accepts the box-shadow shapes the design actually uses', () => {
+    // Unitless zero offset, as §13 writes them.
+    expect(
+      expand({ name: 'elev.9', group: 'elevation', light: '0 1px 2px rgba(0,0,0,0.07)' }),
+    ).toHaveLength(1);
+    expect(expand({ name: 'elev.9', group: 'elevation', light: 'none' })).toHaveLength(1);
+  });
+
   it('refuses an unknown group outright', () => {
     expect(() => expand({ name: 'sound.click', group: 'audio', light: '440hz' })).toThrow(
       /unknown token group/,
@@ -97,8 +114,9 @@ describe('what the design left undecided stays undecided', () => {
   });
 
   it('emits nothing from a recorded decision while design-decisions.json is empty', () => {
-    // D5 was reverted, so no value reaches the CSS on a decision alone —
-    // focus.ring is blocked like row.compact and the two ease tokens.
+    // D5 is open and pending the design owner, so no value reaches the CSS
+    // on a decision alone — focus.ring stays blocked like row.compact and
+    // the two ease tokens, without that being a rejection of D5.
     expect(decisions.tokens).toHaveLength(0);
     expect(PENDING_DESIGN_SIGNOFF).toHaveLength(0);
   });

@@ -2,7 +2,7 @@
   "$meta": {
     "role": "Values the design states as a rule but never tokenised. Each entry names the decision that supplied it and whether it still awaits design-owner sign-off.",
     "rule": "An entry may exist here only when the design states the value explicitly in prose and provides no token to carry it. Nothing may be filled from UI convention (AC13). Anything the design has genuinely not decided stays blocked in design-manifest.json instead.",
-    "status": "Deliberately empty. Decision D5 would have put focus.ring.color / .width / .offset here, carrying the values Foundations §16 states in prose; it was reverted, so focus.ring stays blocked in design-manifest.json alongside row.compact and the two ease tokens. The file and the generator path it feeds are kept because this is where such a value belongs the moment one is approved — an empty list is a decision record, not an oversight.",
+    "status": "Deliberately empty, and wired. Decision D5 would put focus.ring.color / .width / .offset here, carrying the values Foundations §16 states in prose. D5 is open and pending the design owner — neither adopted nor rejected — so focus.ring stays blocked in design-manifest.json alongside row.compact and the two ease tokens, and an approved trio drops straight in without touching the generator. An empty list is a decision record, not an oversight. See design-open-decisions.json.",
     "ingestedAt": "2026-08-11",
     "counts": {
       "tokens": 0,

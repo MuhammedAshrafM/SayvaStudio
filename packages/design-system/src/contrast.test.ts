@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import design from '../design-tokens.json';
+import decisions from '../design-open-decisions.json';
 
 /**
  * AC3 — "CI asserts every semantic pairing on canvas, default, subtle and
@@ -96,33 +97,39 @@ function everyPairing() {
 /**
  * Pairings in the frozen design that do not clear their floor.
  *
- * Pinned rather than excused: the set below must match the measured set
- * exactly, so a new failure fails the build AND a fix fails the build until
- * this list is updated. Decision D11 — none of these may be resolved by
- * changing a token value here; that is a design change (AC13).
+ * These are DOCUMENTED DESIGN GAPS, not implementation defects and not
+ * regressions. Each is a property of a token value the design froze, is
+ * recorded against decision D11 in design-open-decisions.json, and may only
+ * be closed by the design owner — changing a value here to make the matrix
+ * pass is a design change, which AC13 fails.
+ *
+ * Pinned in both directions: a pairing that starts failing is a regression,
+ * and a pairing that stops failing means a value moved. Either fails the
+ * build, because either means something changed that nobody recorded.
  */
-const KNOWN_GAPS: Readonly<Record<string, number>> = {
-  // border.strong is an input border and a focusable edge, which WCAG 1.4.11
-  // covers at 3:1. §16 only ever claims 3:1 via icon.subtle, so this may be
-  // deliberate — but it needs to be said out loud, not discovered later.
-  'light|border.strong|surface.canvas': 1.42,
-  'light|border.strong|surface.default': 1.56,
-  'light|border.strong|surface.subtle': 1.49,
-  'light|border.strong|surface.selected': 1.39,
-  'dark|border.strong|surface.canvas': 2.12,
-  'dark|border.strong|surface.default': 1.93,
-  'dark|border.strong|surface.subtle': 1.76,
-  'dark|border.strong|surface.selected': 1.61,
+const DOCUMENTED_GAPS: Readonly<Record<string, { ratio: number; concern: string }>> = {
+  // WCAG 1.4.11 covers input borders and focusable edges at 3:1, which is
+  // what §10.1 names border.strong for. §16 only ever claims 3:1 via
+  // icon.subtle, so this may be deliberate — but it is said out loud here
+  // rather than discovered during an audit later.
+  'light|border.strong|surface.canvas': { ratio: 1.42, concern: 'border.strong' },
+  'light|border.strong|surface.default': { ratio: 1.56, concern: 'border.strong' },
+  'light|border.strong|surface.subtle': { ratio: 1.49, concern: 'border.strong' },
+  'light|border.strong|surface.selected': { ratio: 1.39, concern: 'border.strong' },
+  'dark|border.strong|surface.canvas': { ratio: 2.12, concern: 'border.strong' },
+  'dark|border.strong|surface.default': { ratio: 1.93, concern: 'border.strong' },
+  'dark|border.strong|surface.subtle': { ratio: 1.76, concern: 'border.strong' },
+  'dark|border.strong|surface.selected': { ratio: 1.61, concern: 'border.strong' },
 
-  // §10.1 states 4.6:1 here and §16 insists "a disabled control must still
-  // be readable". The values give 4.47, just under AA.
-  'light|control.disabled.fg|control.disabled.bg': 4.47,
-  'dark|control.disabled.fg|control.disabled.bg': 4.36,
+  // §10.1 states 4.6:1 here and §16 insists a disabled control must still be
+  // readable. The values give 4.47, just under AA.
+  'light|control.disabled.fg|control.disabled.bg': { ratio: 4.47, concern: 'control.disabled.fg' },
+  'dark|control.disabled.fg|control.disabled.bg': { ratio: 4.36, concern: 'control.disabled.fg' },
 
   // §10.1 claims text.tertiary "passes AA on every ground in the system".
   // True in light (worst case 4.75); false on the dark selected surface.
   // Consistent with audit F10 — dark has never been drawn or exercised.
-  'dark|text.tertiary|surface.selected': 4.31,
+  'dark|text.tertiary|surface.selected': { ratio: 4.31, concern: 'text.tertiary' },
 };
 
 describe('AC3 — contrast across every semantic pairing, both themes', () => {
@@ -131,26 +138,46 @@ describe('AC3 — contrast across every semantic pairing, both themes', () => {
     expect(everyPairing()).toHaveLength(60);
   });
 
-  it('flags exactly the pairings recorded as known gaps — no more, no fewer', () => {
+  it('clears the floor on every pairing that is not a documented gap', () => {
+    const regressions = everyPairing()
+      .filter((row) => row.ratio < row.floor && !(row.key in DOCUMENTED_GAPS))
+      .map((row) => `${row.key} = ${round(row.ratio)}:1, floor ${row.floor}:1`);
+
+    // A failure here is a REGRESSION: a pairing nobody has accepted has
+    // dropped below its floor. It is not covered by D11 and must not be
+    // added to DOCUMENTED_GAPS without a design ruling.
+    expect(regressions, 'contrast regression — pairings below floor with no design ruling').toEqual(
+      [],
+    );
+  });
+
+  it('still fails exactly the documented gaps, and no others', () => {
+    // The other direction: a gap that quietly stops failing means a token
+    // value moved. That is just as much a change nobody recorded.
     const failing = everyPairing()
       .filter((row) => row.ratio < row.floor)
       .map((row) => row.key)
       .sort();
-    expect(failing).toEqual(Object.keys(KNOWN_GAPS).sort());
+    expect(failing).toEqual(Object.keys(DOCUMENTED_GAPS).sort());
   });
 
-  it('holds each known gap at its recorded ratio, so a value change is caught', () => {
+  it('holds each documented gap at its recorded ratio', () => {
     const measured = Object.fromEntries(everyPairing().map((row) => [row.key, round(row.ratio)]));
-    for (const [key, ratio] of Object.entries(KNOWN_GAPS)) {
-      expect(measured[key], key).toBeCloseTo(ratio, 2);
+    for (const [key, gap] of Object.entries(DOCUMENTED_GAPS)) {
+      expect(measured[key], `${key} (D11, ${gap.concern})`).toBeCloseTo(gap.ratio, 2);
     }
   });
 
-  it('clears the floor everywhere else', () => {
-    for (const row of everyPairing()) {
-      if (row.key in KNOWN_GAPS) continue;
-      expect(row.ratio, `${row.key} must clear ${row.floor}:1`).toBeGreaterThanOrEqual(row.floor);
-    }
+  it('ties every documented gap to a concern recorded under D11', () => {
+    const d11 = decisions.decisions.find((entry) => entry.id === 'D11');
+    expect(d11?.status, 'D11 must still be open while these gaps stand').toBe('open');
+
+    const registered = new Set(d11!.pairings!.flatMap((pairing) => pairing.tokens));
+    const unregistered = [
+      ...new Set(Object.values(DOCUMENTED_GAPS).map((gap) => gap.concern)),
+    ].filter((concern) => !registered.has(concern));
+
+    expect(unregistered, 'a gap is pinned here but not recorded in D11').toEqual([]);
   });
 });
 
