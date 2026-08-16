@@ -1,7 +1,8 @@
 /*
  * Hand-authored, unlike tokens.css. These are rules the design states in
- * prose that no token can carry on its own. Every value below comes from a
- * custom property — never a literal.
+ * prose that no token can carry on its own. Values come from custom
+ * properties wherever a token exists — see the focus block for the one
+ * place where one does not.
  */
 
 /*
@@ -9,16 +10,23 @@
  * element, never removed."
  *
  * :focus-visible rather than :focus, so a mouse click on a button does not
- * paint a ring the keyboard user needs. The ring colour is a reference to
- * accent.default, so it follows the theme without a second declaration.
+ * paint a ring only the keyboard user needs.
  *
- * The three custom properties come from decision D5 and are pending
- * design-owner sign-off — §16 states the rule in prose but the design has
- * no focus.ring token trio (audit F9).
+ * The colour is --color-accent-default, a canonical token, so the ring
+ * follows the theme: #2f6b52 light, #6ab894 dark.
+ *
+ * The two 2px figures are literals, and deliberately so. Audit finding F9
+ * records that the design states this rule in prose but carries no
+ * focus.ring.{color,width,offset} trio. Minting one was proposed as
+ * decision D5 and reverted, so there is no token to reference — and §16
+ * says the ring is "never removed", which rules out dropping the rule until
+ * one exists. Both figures are copied verbatim from §16; neither is
+ * inferred. This is the single place in the package where a length is
+ * written directly, and it goes away the moment F9 is closed.
  */
 :focus-visible {
-  outline: var(--focus-ring-width) solid var(--focus-ring-color);
-  outline-offset: var(--focus-ring-offset);
+  outline: 2px solid var(--color-accent-default);
+  outline-offset: 2px;
 }
 
 /*

@@ -56,8 +56,9 @@ const ON_SURFACE: ReadonlyArray<readonly [string, number]> = [
   ['text.tertiary', AA_TEXT],
   ['icon.subtle', NON_TEXT],
   ['border.strong', NON_TEXT],
-  // The focus ring resolves to accent.default (decision D5) and must stay
-  // distinguishable on every ground it can land on.
+  // base.css paints the focus ring with accent.default (§16), so it must
+  // stay distinguishable on every ground it can land on. Also the primary
+  // action fill and the selection accent.
   ['accent.default', NON_TEXT],
 ];
 

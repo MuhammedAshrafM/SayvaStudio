@@ -69,6 +69,7 @@ describe('every entry is accounted for', () => {
     expect(blocked.map((t) => t.design).sort()).toEqual([
       'ease.exit',
       'ease.standard',
+      'focus.ring',
       'row.compact',
     ]);
     for (const token of blocked) {
@@ -77,16 +78,12 @@ describe('every entry is accounted for', () => {
     }
   });
 
-  it('keeps provisional tokens flagged in both the manifest and the generated output', () => {
+  it('carries no provisional tokens, and stays wired to catch one', () => {
+    // D5 was reverted, so nothing reaches the CSS on a recorded decision
+    // alone. The parity still holds if a provisional token is added later.
     const provisional = manifest.tokens.filter((t) => t.status === 'implemented-pending-signoff');
-    expect(provisional.map((t) => t.design)).toEqual(['focus.ring']);
-    for (const token of provisional) {
-      expect(token.decision).toMatch(/\bD\d+\b/);
-      for (const property of token.code) {
-        const name = property.replace(/^--/, '').replace(/-/g, '.');
-        expect(PENDING_DESIGN_SIGNOFF.some((entry) => entry.startsWith(name))).toBe(true);
-      }
-    }
+    expect(provisional).toEqual([]);
+    expect(PENDING_DESIGN_SIGNOFF).toHaveLength(0);
   });
 });
 

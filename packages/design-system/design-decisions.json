@@ -2,42 +2,12 @@
   "$meta": {
     "role": "Values the design states as a rule but never tokenised. Each entry names the decision that supplied it and whether it still awaits design-owner sign-off.",
     "rule": "An entry may exist here only when the design states the value explicitly in prose and provides no token to carry it. Nothing may be filled from UI convention (AC13). Anything the design has genuinely not decided stays blocked in design-manifest.json instead.",
+    "status": "Deliberately empty. Decision D5 would have put focus.ring.color / .width / .offset here, carrying the values Foundations §16 states in prose; it was reverted, so focus.ring stays blocked in design-manifest.json alongside row.compact and the two ease tokens. The file and the generator path it feeds are kept because this is where such a value belongs the moment one is approved — an empty list is a decision record, not an oversight.",
     "ingestedAt": "2026-08-11",
     "counts": {
-      "tokens": 3,
-      "pendingSignOff": 3
+      "tokens": 0,
+      "pendingSignOff": 0
     }
   },
-  "tokens": [
-    {
-      "name": "focus.ring.color",
-      "group": "focus",
-      "supplements": "focus.ring",
-      "reference": "accent.default",
-      "meaning": "Focus ring colour. Emitted as a reference rather than a literal so the ring follows the theme — accent.default is #2f6b52 light and #6ab894 dark.",
-      "statedBy": "Foundations §16: \"A 2px accent ring with a 2px offset on every focusable element, never removed.\" §10.11 names accent.default as the ring colour.",
-      "decision": "D5",
-      "signOff": "required"
-    },
-    {
-      "name": "focus.ring.width",
-      "group": "focus",
-      "supplements": "focus.ring",
-      "value": "2px",
-      "meaning": "Focus ring thickness.",
-      "statedBy": "Foundations §16: \"A 2px accent ring with a 2px offset on every focusable element, never removed.\"",
-      "decision": "D5",
-      "signOff": "required"
-    },
-    {
-      "name": "focus.ring.offset",
-      "group": "focus",
-      "supplements": "focus.ring",
-      "value": "2px",
-      "meaning": "Gap between the focused element's edge and the ring.",
-      "statedBy": "Foundations §16: \"A 2px accent ring with a 2px offset on every focusable element, never removed.\"",
-      "decision": "D5",
-      "signOff": "required"
-    }
-  ]
+  "tokens": []
 }

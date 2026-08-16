@@ -19,15 +19,15 @@
     },
     "counts": {
       "tokens": 93,
-      "tokensBlocked": 3,
+      "tokensBlocked": 4,
       "tokensWithoutDarkValue": 10,
       "components": 10,
       "outOfScopePatterns": 12,
       "outOfScopeRegisteredNotContracted": 17,
       "outOfScopeReclassified": 5,
-      "tokensImplemented": 90,
-      "tokensPendingSignOff": 1,
-      "cssCustomProperties": 111
+      "tokensImplemented": 89,
+      "tokensPendingSignOff": 0,
+      "cssCustomProperties": 108
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -609,10 +609,9 @@
     {
       "design": "focus.ring",
       "group": "focus",
-      "code": ["--focus-ring-color", "--focus-ring-width", "--focus-ring-offset"],
-      "status": "implemented-pending-signoff",
-      "expansion": "Superseded by design-decisions.json: focus.ring.color / .width / .offset carry the values Foundations §16 states in prose. Emitted under decision D5, pending design-owner sign-off.",
-      "decision": "D5"
+      "code": [],
+      "status": "blocked",
+      "reason": "F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose (\"a 2px accent ring with a 2px offset, never removed\") but the design carries no focus.ring.{color,width,offset} trio, and tokenising one was reverted. base.css implements the rule from --color-accent-default; the two 2px figures stay literals there until the design owner tokenises them. Pending open decision D5."
     }
   ],
   "components": [

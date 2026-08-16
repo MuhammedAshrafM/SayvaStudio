@@ -59,7 +59,7 @@ export const NOT_EMITTED = {
   'row.compact':
     'C1 / D4 — Foundations §15 states 28px, the Design System density prop states 26px. Both canonical; the design owner must pick.',
   'focus.ring':
-    'F9 / D5 — UNSPECIFIED BY DESIGN as a token. Superseded by the focus.ring.* entries in design-decisions.json, which carry the values §16 states in prose.',
+    'F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose ("a 2px accent ring with a 2px offset, never removed") but the design carries no focus.ring.{color,width,offset} trio, and tokenising one was reverted. base.css implements the rule from --color-accent-default; the two 2px figures stay literals there until the design owner tokenises them.',
   'ease.standard':
     'D9 — the stated value `cubic(.2,0,0,1)` is not a CSS function. Expanding it to cubic-bezier() preserves all four control points but is an interpretation of a malformed value, so it awaits confirmation.',
   'ease.exit': 'D9 — as ease.standard, for `cubic(.4,0,1,1)`.',

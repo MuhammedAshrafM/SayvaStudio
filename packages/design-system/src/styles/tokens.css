@@ -143,11 +143,6 @@
   --breakpoint-md: 900px;
   --breakpoint-lg: 1280px;
   --breakpoint-xl: 1728px;
-
-  /* focus — 3 custom properties */
-  --focus-ring-color: var(--color-accent-default);
-  --focus-ring-width: 2px;
-  --focus-ring-offset: 2px;
 }
 
 /*

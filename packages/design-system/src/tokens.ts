@@ -112,9 +112,7 @@ export type DesignToken = (typeof DESIGN_TOKENS)[number];
 
 /** Names supplied by a recorded decision rather than by the design. */
 export const DECISION_TOKENS = [
-  'focus.ring.color',
-  'focus.ring.width',
-  'focus.ring.offset',
+
 ] as const;
 export type DecisionToken = (typeof DECISION_TOKENS)[number];
 
@@ -228,9 +226,6 @@ export const CSS_VARIABLES = [
   '--breakpoint-md',
   '--breakpoint-lg',
   '--breakpoint-xl',
-  '--focus-ring-color',
-  '--focus-ring-width',
-  '--focus-ring-offset',
 ] as const;
 export type CssVariable = (typeof CSS_VARIABLES)[number];
 
@@ -250,15 +245,13 @@ export const TOKENS_WITHOUT_DARK = [
 
 /** Emitted on a recorded decision, still awaiting design-owner sign-off. */
 export const PENDING_DESIGN_SIGNOFF = [
-  'focus.ring.color (D5)',
-  'focus.ring.width (D5)',
-  'focus.ring.offset (D5)',
+
 ] as const;
 
 /** Design tokens that deliberately produce no custom property, and why. */
 export const NOT_EMITTED = {
   'row.compact': "C1 / D4 — Foundations §15 states 28px, the Design System density prop states 26px. Both canonical; the design owner must pick.",
-  'focus.ring': "F9 / D5 — UNSPECIFIED BY DESIGN as a token. Superseded by the focus.ring.* entries in design-decisions.json, which carry the values §16 states in prose.",
+  'focus.ring': "F9 / D5 — UNSPECIFIED BY DESIGN as a token. §16 states the rule in prose (\"a 2px accent ring with a 2px offset, never removed\") but the design carries no focus.ring.{color,width,offset} trio, and tokenising one was reverted. base.css implements the rule from --color-accent-default; the two 2px figures stay literals there until the design owner tokenises them.",
   'ease.standard': "D9 — the stated value `cubic(.2,0,0,1)` is not a CSS function. Expanding it to cubic-bezier() preserves all four control points but is an interpretation of a malformed value, so it awaits confirmation.",
   'ease.exit': "D9 — as ease.standard, for `cubic(.4,0,1,1)`.",
   'bp.sm': "Not a min-width. §10.9 defines bp.sm as \"< 900px\", the base range below --breakpoint-md; it has no threshold of its own to emit.",

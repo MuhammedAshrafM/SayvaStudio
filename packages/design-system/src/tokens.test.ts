@@ -96,11 +96,17 @@ describe('what the design left undecided stays undecided', () => {
     }
   });
 
-  it('keeps provisional values visible until the design owner signs them off', () => {
-    // D5's focus ring is emitted from a recorded decision, not from the
-    // design. If this ever silently empties, a provisional value has been
-    // promoted to canonical without anyone deciding to.
-    expect(PENDING_DESIGN_SIGNOFF).not.toHaveLength(0);
+  it('emits nothing from a recorded decision while design-decisions.json is empty', () => {
+    // D5 was reverted, so no value reaches the CSS on a decision alone —
+    // focus.ring is blocked like row.compact and the two ease tokens.
+    expect(decisions.tokens).toHaveLength(0);
+    expect(PENDING_DESIGN_SIGNOFF).toHaveLength(0);
+  });
+
+  it('would surface a provisional value the moment one is added', () => {
+    // The mechanism stays wired even with nothing in it: if a decision token
+    // ever appears without this list tracking it, that is a provisional
+    // value promoted to canonical without anyone deciding to.
     expect([...PENDING_DESIGN_SIGNOFF]).toEqual(
       decisions.tokens
         .filter((entry) => entry.signOff === 'required')
