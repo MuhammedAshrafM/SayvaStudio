@@ -5,3 +5,11 @@
  */
 export { SyButton } from './primitives/button/index.js';
 export type { SyButtonProps, SyButtonSize, SyButtonTone } from './primitives/button/index.js';
+
+export { SyStateBlock } from './primitives/state-block/index.js';
+export type {
+  SyStateBlockAction,
+  SyStateBlockProps,
+  SyStateBlockSize,
+  SyStateBlockState,
+} from './primitives/state-block/index.js';

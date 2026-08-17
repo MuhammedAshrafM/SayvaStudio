@@ -3,7 +3,10 @@
     "role": "The register of design and implementation decisions Phase 1 cannot make on its own. Every decision id cited anywhere in design-manifest.json or the token generator must appear here, and a test enforces that.",
     "rule": "An entry is closed only by the named owner. Nothing here may be resolved by choosing a value in code — that is a design change, and AC13 fails any element with no design source. Statuses are 'open' until the owner rules.",
     "updated": "2026-08-11",
-    "counts": { "open": 6, "closed": 0 }
+    "counts": {
+      "open": 7,
+      "closed": 0
+    }
   },
   "decisions": [
     {
@@ -91,6 +94,18 @@
       "discovered": "Phase 1, Slice 6, while implementing SyButton's primary variant.",
       "question": "Should a text.on-accent (or similar) token exist, or is reusing surface.default as the figure on a filled ground the intended reading?",
       "mustNotDo": "Mint a foreground token, or hardcode #ffffff in a component."
+    },
+    {
+      "id": "D13",
+      "title": "No font-family token for either named family",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks nothing. Text renders in the inheriting family; content the design marks as mono carries the mono type spec but not a monospace family.",
+      "statement": "Foundations §10.3 names two families in prose — Libre Franklin for UI and IBM Plex Mono for mono — and states the rule \"Mono carries IDs, glosses, versions, timecodes and diffs, never prose\". Neither family is tokenised: the nine typography tokens carry size, line-height and weight only, so the generated layer has no --font-* custom property.",
+      "evidence": "design-tokens.json's typography group emits --text-*, --text-*--line-height and --text-*--font-weight, and nothing else. SyStateBlock's error trace ID uses the text-mono token, which is the design's token for IDs, but renders in the inherited family because no monospace family token exists to apply.",
+      "discovered": "Phase 1, Slice 7, while rendering the error state's trace ID.",
+      "question": "Should font.ui and font.mono tokens exist, or is family a document-level concern the app sets outside the token layer?",
+      "mustNotDo": "Use Tailwind's default font-sans or font-mono stacks, which are neither of the named families, or hardcode a family name in a component."
     }
   ]
 }

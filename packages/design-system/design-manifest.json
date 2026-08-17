@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 1,
-      "componentsDeferred": 9
+      "componentsImplemented": 2,
+      "componentsDeferred": 8
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -708,12 +708,14 @@
     {
       "design": "SyStateBlock",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyStateBlock"],
       "variants": ["pane", "panel", "inline row"],
       "states": ["first-run", "filtered-empty", "loading", "error", "no-permission", "offline"],
-      "status": "deferred",
-      "plannedSlice": 7,
-      "sizes": ["pane", "panel", "inline"]
+      "status": "implemented",
+      "sizes": ["pane", "panel", "inline"],
+      "module": "src/primitives/state-block",
+      "note": "Six absence states x three sizes. `error` requires a traceId and an action at the TypeScript level, because AC14 fails an error without a trace ID and a retry; `loading` is a skeleton with a label rather than a heading, per the contract's \"Skeleton, not spinner\". Errors announce assertively (role=alert), every other state politely (role=status) — the contract names only errors and empties, so the rest take the polite default. No illustration or icon slot exists: \"no decorative illustration\", and the icon set is open decision D6.",
+      "contractNote": "The inventory's `variants` field repeats the three sizes rather than listing the six absence states; the handoff's §11 row and this entry's `states` field carry the six. Left verbatim as ingested — coverage is asserted against `states` and `sizes`."
     },
     {
       "design": "SyMenu",

@@ -3,6 +3,7 @@ import manifest from '../design-manifest.json';
 import design from '../design-tokens.json';
 import openDecisions from '../design-open-decisions.json';
 import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
+import { STATE_BLOCK_SIZES, STATE_BLOCK_STATES } from './primitives/state-block/index.js';
 import { CSS_VARIABLES, PENDING_DESIGN_SIGNOFF } from './tokens.js';
 
 /**
@@ -131,6 +132,31 @@ describe('every decision cited is a decision on the register', () => {
     // Blocked, but not rejected — the distinction the design owner asked for.
     expect(manifest.tokens.find((t) => t.design === 'focus.ring')?.status).toBe('blocked');
     expect(d5?.statement).toMatch(/neither adopted nor rejected/i);
+  });
+});
+
+describe('implemented components cover the contract the manifest records', () => {
+  /**
+   * Each implemented component that enumerates its contract exports the
+   * lists, so the manifest and the code cannot drift apart. A component
+   * dropping a variant fails here rather than in a story nobody wrote.
+   */
+  const COVERAGE: Record<string, { states: readonly string[]; sizes: readonly string[] }> = {
+    SyStateBlock: { states: STATE_BLOCK_STATES, sizes: STATE_BLOCK_SIZES },
+  };
+
+  it.each(Object.keys(COVERAGE))('%s implements every recorded variant and size', (name) => {
+    const entry = manifest.components.find((component) => component.design === name);
+    expect(entry, `${name} must be in the manifest`).toBeTruthy();
+    expect(entry!.status).toBe('implemented');
+
+    const implemented = COVERAGE[name]!;
+    expect([...implemented.states].sort(), `${name} variant coverage`).toEqual(
+      [...(entry!.states as string[])].sort(),
+    );
+    expect([...implemented.sizes].sort(), `${name} size coverage`).toEqual(
+      [...((entry!.sizes ?? []) as string[])].sort(),
+    );
   });
 });
 
