@@ -13,6 +13,13 @@ export type {
   SyConfidenceVariant,
 } from './primitives/confidence/index.js';
 
+export { SyEntityRef } from './primitives/entity-ref/index.js';
+export type {
+  SyEntityRefProps,
+  SyEntityRefState,
+  SyEntityRefVariant,
+} from './primitives/entity-ref/index.js';
+
 export { SyMetric } from './primitives/metric/index.js';
 export type {
   SyMetricBar,

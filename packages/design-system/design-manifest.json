@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 5,
-      "componentsDeferred": 5
+      "componentsImplemented": 6,
+      "componentsDeferred": 4
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -681,7 +681,7 @@
     {
       "design": "SyEntityRef",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyEntityRef"],
       "variants": ["chip", "row", "inline text", "with thumbnail (assets)"],
       "states": [
         "resolved",
@@ -690,10 +690,11 @@
         "no-permission",
         "deprecated (with replacement)"
       ],
-      "status": "deferred",
-      "plannedSlice": 9,
+      "status": "implemented",
       "sizes": ["UNSPECIFIED BY DESIGN"],
-      "note": "Decision D3: states are reference-resolution states, not entity lifecycle states. `deprecated` is a presentational treatment the caller opts into, not a domain lifecycle value."
+      "note": "Five states x four variants. Decision D3: `typeLabel` is a plain string, not a union of entity types — the component is \"a pointer to any entity\" and which entities exist is the application's business. The `deprecated` state requires `replacement`, nullable, because SS15.3 allows \"replacement declared or explicitly none\" but never silence. Deleted references render struck through with a visible note, per the canonical specimen's \"unresolvable refs render struck through with a 'deleted' note - never a blank\", which the handoff and inventory both omit.",
+      "module": "src/primitives/entity-ref",
+      "contractNote": "Variant values are named chip / row / inline / thumbnail; the inventory records them as \"inline text\" and \"with thumbnail (assets)\". The recorded names are prose labels for the same four variants. Coverage is asserted against `states`, where the names match once the explanatory gloss is stripped."
     },
     {
       "design": "SyMetric",

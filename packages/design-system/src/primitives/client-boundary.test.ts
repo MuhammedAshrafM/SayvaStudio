@@ -57,6 +57,7 @@ describe('interactive primitives declare their own client boundary', () => {
     expect(modules.map((m) => m.name).sort()).toEqual([
       'button/button.tsx',
       'confidence/confidence.tsx',
+      'entity-ref/entity-ref.tsx',
       'metric/metric.tsx',
       'state-block/state-block.tsx',
       'status-badge/status-badge.tsx',

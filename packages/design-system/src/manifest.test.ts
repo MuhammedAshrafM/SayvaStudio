@@ -4,6 +4,7 @@ import design from '../design-tokens.json';
 import openDecisions from '../design-open-decisions.json';
 import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
 import { CONFIDENCE_STATES } from './primitives/confidence/index.js';
+import { ENTITY_REF_STATES } from './primitives/entity-ref/index.js';
 import { METRIC_SIZES, METRIC_STATES } from './primitives/metric/index.js';
 import { STATE_BLOCK_SIZES, STATE_BLOCK_STATES } from './primitives/state-block/index.js';
 import { CSS_VARIABLES, PENDING_DESIGN_SIGNOFF } from './tokens.js';
@@ -156,6 +157,8 @@ describe('implemented components cover the contract the manifest records', () =>
   const COVERAGE: Record<string, Coverage> = {
     SyStateBlock: { states: STATE_BLOCK_STATES, sizes: STATE_BLOCK_SIZES },
     SyMetric: { states: METRIC_STATES, sizes: METRIC_SIZES },
+    // Sizes are UNSPECIFIED BY DESIGN, so there are none to cover.
+    SyEntityRef: { states: ENTITY_REF_STATES },
     // SyConfidence records no sizes — UNSPECIFIED BY DESIGN, so none exist
     // to cover.
     SyConfidence: { states: CONFIDENCE_STATES },
