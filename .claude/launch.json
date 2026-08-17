@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "studio",
+      "name": "storybook",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@sayva/studio", "dev"],
-      "port": 3000
+      "runtimeArgs": ["--filter", "@sayva/design-system", "run", "storybook"],
+      "port": 6006
     }
   ]
 }

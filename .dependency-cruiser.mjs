@@ -89,9 +89,13 @@ export default {
       path: '(^|/)(node_modules|dist)(/|$)',
     },
     // True noise only — never a valid resolution target for anything
-    // in tooling/dependency-graph.mjs.
+    // in tooling/dependency-graph.mjs. `storybook-static` belongs here for
+    // the same reason as `.next`: it is a generated bundle whose internal
+    // chunk graph is the bundler's business, not this repository's — and
+    // code-split chunks legitimately reference each other in cycles, which
+    // the no-circular rule would otherwise report as an architecture defect.
     exclude: {
-      path: '(^|/)(\\.next|\\.turbo|coverage)(/|$)',
+      path: '(^|/)(\\.next|\\.turbo|coverage|storybook-static)(/|$)',
     },
   },
 };

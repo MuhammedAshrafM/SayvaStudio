@@ -2,5 +2,8 @@ packages:
   - 'apps/*'
   - 'packages/*'
 allowBuilds:
+  # esbuild links its platform binary in a postinstall script. Vite cannot
+  # start without it, which means neither can Storybook's builder.
+  esbuild: true
   sharp: true
   unrs-resolver: true
