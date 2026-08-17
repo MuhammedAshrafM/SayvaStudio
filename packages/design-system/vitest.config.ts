@@ -1,4 +1,4 @@
 import { defineConfig } from 'vitest/config';
-import { base } from '@sayva/vitest-config/base';
+import { react } from '@sayva/vitest-config/react';
 
-export default defineConfig(base);
+export default defineConfig(react);

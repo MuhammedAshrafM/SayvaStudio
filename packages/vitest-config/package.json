@@ -5,12 +5,25 @@
   "license": "UNLICENSED",
   "type": "module",
   "files": [
-    "base.js"
+    "axe.js",
+    "base.js",
+    "react.js",
+    "setup-react.js"
   ],
   "exports": {
-    "./base": "./base.js"
+    "./axe": "./axe.js",
+    "./base": "./base.js",
+    "./react": "./react.js",
+    "./setup-react": "./setup-react.js"
   },
   "dependencies": {
-    "vitest": "^4.1.10"
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "vitest": "^4.1.10",
+    "vitest-axe": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
