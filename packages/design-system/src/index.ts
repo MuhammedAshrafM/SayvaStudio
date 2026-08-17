@@ -6,6 +6,21 @@
 export { SyButton } from './primitives/button/index.js';
 export type { SyButtonProps, SyButtonSize, SyButtonTone } from './primitives/button/index.js';
 
+export { SyConfidence } from './primitives/confidence/index.js';
+export type {
+  SyConfidenceProps,
+  SyConfidenceState,
+  SyConfidenceVariant,
+} from './primitives/confidence/index.js';
+
+export { SyMetric } from './primitives/metric/index.js';
+export type {
+  SyMetricBar,
+  SyMetricProps,
+  SyMetricSize,
+  SyMetricState,
+} from './primitives/metric/index.js';
+
 export { SyStateBlock } from './primitives/state-block/index.js';
 export type {
   SyStateBlockAction,
@@ -13,3 +28,10 @@ export type {
   SyStateBlockSize,
   SyStateBlockState,
 } from './primitives/state-block/index.js';
+
+export { SyStatusBadge } from './primitives/status-badge/index.js';
+export type {
+  SyStatusBadgeProps,
+  SyStatusBadgeTone,
+  SyStatusBadgeVariant,
+} from './primitives/status-badge/index.js';

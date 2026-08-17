@@ -3,6 +3,8 @@ import manifest from '../design-manifest.json';
 import design from '../design-tokens.json';
 import openDecisions from '../design-open-decisions.json';
 import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
+import { CONFIDENCE_STATES } from './primitives/confidence/index.js';
+import { METRIC_SIZES, METRIC_STATES } from './primitives/metric/index.js';
 import { STATE_BLOCK_SIZES, STATE_BLOCK_STATES } from './primitives/state-block/index.js';
 import { CSS_VARIABLES, PENDING_DESIGN_SIGNOFF } from './tokens.js';
 
@@ -141,8 +143,26 @@ describe('implemented components cover the contract the manifest records', () =>
    * lists, so the manifest and the code cannot drift apart. A component
    * dropping a variant fails here rather than in a story nobody wrote.
    */
-  const COVERAGE: Record<string, { states: readonly string[]; sizes: readonly string[] }> = {
+  /**
+   * The inventory folds an explanatory gloss into some recorded names —
+   * "stale (computed by an older model version)", "inline (rows)". The name
+   * is the part before the gloss. Normalised here rather than trimmed in the
+   * manifest, which stays verbatim as ingested.
+   */
+  const recordedName = (value: string) => value.replace(/\s*\(.*\)\s*$/, '').trim();
+
+  type Coverage = { states?: readonly string[]; sizes?: readonly string[] };
+
+  const COVERAGE: Record<string, Coverage> = {
     SyStateBlock: { states: STATE_BLOCK_STATES, sizes: STATE_BLOCK_SIZES },
+    SyMetric: { states: METRIC_STATES, sizes: METRIC_SIZES },
+    // SyConfidence records no sizes — UNSPECIFIED BY DESIGN, so none exist
+    // to cover.
+    SyConfidence: { states: CONFIDENCE_STATES },
+    // SyStatusBadge deliberately has no `states` entry here. Its contracted
+    // states are the six editorial lifecycle values, which decision D3 keeps
+    // out of this package; apps/studio owns that mapping. Covering them here
+    // would be asserting the coupling D3 exists to prevent.
   };
 
   it.each(Object.keys(COVERAGE))('%s implements every recorded variant and size', (name) => {
@@ -151,12 +171,23 @@ describe('implemented components cover the contract the manifest records', () =>
     expect(entry!.status).toBe('implemented');
 
     const implemented = COVERAGE[name]!;
-    expect([...implemented.states].sort(), `${name} variant coverage`).toEqual(
-      [...(entry!.states as string[])].sort(),
-    );
-    expect([...implemented.sizes].sort(), `${name} size coverage`).toEqual(
-      [...((entry!.sizes ?? []) as string[])].sort(),
-    );
+
+    if (implemented.states) {
+      expect([...implemented.states].sort(), `${name} variant coverage`).toEqual(
+        (entry!.states as string[]).map(recordedName).sort(),
+      );
+    }
+    if (implemented.sizes) {
+      expect([...implemented.sizes].sort(), `${name} size coverage`).toEqual(
+        ((entry!.sizes ?? []) as string[]).map(recordedName).sort(),
+      );
+    }
+  });
+
+  it('records why SyStatusBadge is exempt, rather than leaving it silently uncovered', () => {
+    const entry = manifest.components.find((component) => component.design === 'SyStatusBadge')!;
+    expect(entry.status).toBe('implemented');
+    expect(entry.note, 'the D3 exemption must be stated in the manifest').toMatch(/\bD3\b/);
   });
 });
 

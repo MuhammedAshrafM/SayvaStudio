@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 2,
-      "componentsDeferred": 8
+      "componentsImplemented": 5,
+      "componentsDeferred": 5
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -661,7 +661,7 @@
     {
       "design": "SyStatusBadge",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyStatusBadge"],
       "variants": ["inline (rows)", "detail (header)", "with modifier suffix"],
       "states": [
         "Draft",
@@ -673,10 +673,10 @@
         "stale modifier",
         "blocked modifier"
       ],
-      "status": "deferred",
-      "plannedSlice": 8,
+      "status": "implemented",
       "sizes": ["UNSPECIFIED BY DESIGN"],
-      "note": "Decision D3: the design contract lists the six domain lifecycle states as this component's states. @sayva/design-system must stay domain-free (ADR-002 DR-02/DR-03), so the implementation exposes the five presentational status token families as `tone` plus caller-supplied `glyph` and `label`. The lifecycle -> (glyph, tone) mapping is design data owned by apps/studio and parity-tested against this manifest in Slice 16."
+      "note": "Five tones x two placements. Decision D3: the canonical contract lists this component's states as the six editorial lifecycle values, which must not enter the design system. The component exposes `tone`, named after the five status token families, and apps/studio owns the lifecycle -> (glyph, tone, label) mapping. Each tone renders a complete status triplet (AC15). The design records no sizes (UNSPECIFIED BY DESIGN).",
+      "module": "src/primitives/status-badge"
     },
     {
       "design": "SyEntityRef",
@@ -698,12 +698,13 @@
     {
       "design": "SyMetric",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyMetric"],
       "variants": ["lg", "md with delta", "sm inline", "budget bar"],
       "states": ["ok", "warning", "error", "no-data", "loading", "stale"],
-      "status": "deferred",
-      "plannedSlice": 8,
-      "sizes": ["lg", "md", "sm"]
+      "status": "implemented",
+      "sizes": ["lg", "md", "sm"],
+      "module": "src/primitives/metric",
+      "note": "Six states x three sizes. `denominator` is required and forms part of the accessible name, per SS13.7's \"78% alone is a rumour\". The optional bar is aria-hidden decoration drawn from the viz.* ramp; AC16 is satisfied by construction rather than by lint, since a bar can only appear alongside the required `figure`. Becomes a button when `onOpen` is given, per P10 \"every metric is a door\"."
     },
     {
       "design": "SyStateBlock",
@@ -750,7 +751,7 @@
     {
       "design": "SyConfidence",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyConfidence"],
       "variants": ["inline", "column", "detail"],
       "states": [
         "high",
@@ -759,9 +760,10 @@
         "unavailable",
         "stale (computed by an older model version)"
       ],
-      "status": "deferred",
-      "plannedSlice": 8,
-      "sizes": ["UNSPECIFIED BY DESIGN"]
+      "status": "implemented",
+      "sizes": ["UNSPECIFIED BY DESIGN"],
+      "module": "src/primitives/confidence",
+      "note": "Five states x three variants. The design records no sizes for this component (UNSPECIFIED BY DESIGN), so none were invented. The numeric value always leads and is always in the accessible name (AI RULE 3); the bar is decoration and takes one fill rather than encoding the band in colour, because the band is a word."
     }
   ],
   "outOfScope": {

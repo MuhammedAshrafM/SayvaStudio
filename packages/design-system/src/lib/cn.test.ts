@@ -31,6 +31,25 @@ describe('cn', () => {
     expect(cn('base', undefined, null)).toBe('base');
   });
 
+  it('keeps a typography token and a colour token, which are different properties', () => {
+    // Both are `text-*`, but one is a font size from our @theme block and
+    // the other a colour. Untaught, tailwind-merge drops one of them — and
+    // silently, because the result is still a valid class list.
+    expect(cn('text-body', 'text-surface-default')).toBe('text-body text-surface-default');
+    expect(cn('text-status-danger-fg', 'text-caption')).toBe('text-status-danger-fg text-caption');
+    expect(cn('text-heading-md', 'text-status-danger-fg')).toBe(
+      'text-heading-md text-status-danger-fg',
+    );
+  });
+
+  it('still collapses two typography tokens, which do compete', () => {
+    expect(cn('text-body', 'text-heading-md')).toBe('text-heading-md');
+  });
+
+  it('still collapses two text colours', () => {
+    expect(cn('text-text-primary', 'text-status-danger-fg')).toBe('text-status-danger-fg');
+  });
+
   it("lets a caller's className override the component default", () => {
     // The contract every primitive relies on: `cn(componentDefaults, props.className)`
     // must let the caller win, or `className` is not an escape hatch at all.

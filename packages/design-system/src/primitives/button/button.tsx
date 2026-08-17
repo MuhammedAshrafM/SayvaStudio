@@ -1,3 +1,5 @@
+'use client';
+
 import { useId, type ComponentPropsWithRef, type MouseEvent, type ReactNode } from 'react';
 import { cn } from '../../lib/cn.js';
 import { buttonVariants } from './button.variants.js';
