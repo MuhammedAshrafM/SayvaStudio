@@ -27,7 +27,9 @@
       "outOfScopeReclassified": 5,
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
-      "cssCustomProperties": 108
+      "cssCustomProperties": 108,
+      "componentsImplemented": 1,
+      "componentsDeferred": 9
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -618,12 +620,13 @@
     {
       "design": "SyButton",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyButton"],
       "variants": ["primary", "secondary", "ghost", "danger", "icon-only (label required)"],
       "states": ["default", "hover", "active", "focus-visible", "disabled", "loading"],
-      "status": "deferred",
-      "plannedSlice": 6,
-      "sizes": ["28", "32", "40"]
+      "status": "implemented",
+      "sizes": ["28", "32", "40"],
+      "module": "src/primitives/button",
+      "note": "Variant `icon-only` requires `label` at the TypeScript level, and `disabled` requires `disabledReason`, so neither can be omitted at runtime. The primary variant's label uses surface.default as its foreground: the design has no token for a figure on a filled ground, and that is the value the canonical screen draws. Recorded as open decision D12."
     },
     {
       "design": "SyField",

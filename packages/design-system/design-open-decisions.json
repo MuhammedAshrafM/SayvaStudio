@@ -3,7 +3,7 @@
     "role": "The register of design and implementation decisions Phase 1 cannot make on its own. Every decision id cited anywhere in design-manifest.json or the token generator must appear here, and a test enforces that.",
     "rule": "An entry is closed only by the named owner. Nothing here may be resolved by choosing a value in code — that is a design change, and AC13 fails any element with no design source. Statuses are 'open' until the owner rules.",
     "updated": "2026-08-11",
-    "counts": { "open": 5, "closed": 0 }
+    "counts": { "open": 6, "closed": 0 }
   },
   "decisions": [
     {
@@ -79,6 +79,18 @@
       ],
       "evidence": "src/contrast.test.ts computes all 60 pairings and pins these as documented gaps. A new failure is reported separately, as a regression.",
       "mustNotDo": "Change a token value to make the matrix pass."
+    },
+    {
+      "id": "D12",
+      "title": "No foreground token for a filled ground",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks nothing. SyButton's primary variant paints its label with surface.default, which is the value the canonical screen draws.",
+      "statement": "The design carries three text tokens — text.primary, text.secondary, text.tertiary — all dark-on-light in the light theme, and none intended to sit on a filled accent or status ground. A filled primary button therefore has no token for its own label. §10.1 names accent.default as \"Primary action\" but stops at the fill.",
+      "evidence": "The canonical Vocabulary screen paints the primary action \"New sign\" as background #2f6b52 with color #ffffff. #2f6b52 is accent.default and #ffffff is exactly surface.default's light value, so surface.default is used as the foreground rather than a new token being minted (AC13). It behaves correctly in dark too, where both sides flip: surface.default #1f2124 on accent.default #6ab894. Both pairings are already in the AC3 matrix and clear AA — 6.28:1 light, 6.84:1 dark.",
+      "discovered": "Phase 1, Slice 6, while implementing SyButton's primary variant.",
+      "question": "Should a text.on-accent (or similar) token exist, or is reusing surface.default as the figure on a filled ground the intended reading?",
+      "mustNotDo": "Mint a foreground token, or hardcode #ffffff in a component."
     }
   ]
 }

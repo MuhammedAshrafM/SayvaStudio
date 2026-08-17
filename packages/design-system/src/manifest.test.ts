@@ -135,11 +135,36 @@ describe('every decision cited is a decision on the register', () => {
 });
 
 describe('component scope is untouched by the token slice', () => {
-  it('still carries the ten contracted primitives, all deferred', () => {
+  it('still carries the ten contracted primitives', () => {
     expect(manifest.components).toHaveLength(10);
+    expect(manifest.$meta.counts.componentsImplemented).toBe(
+      manifest.components.filter((c) => c.status === 'implemented').length,
+    );
+    expect(manifest.$meta.counts.componentsDeferred).toBe(
+      manifest.components.filter((c) => c.status === 'deferred').length,
+    );
+  });
+
+  it('gives an implemented component a module and exports, and a deferred one neither', () => {
     for (const component of manifest.components) {
-      expect(component.status).toBe('deferred');
-      expect(component.code).toBeNull();
+      if (component.status === 'implemented') {
+        expect(component.code, `${component.design} must name its exports`).not.toEqual([]);
+        expect(component.module, `${component.design} must name its module`).toBeTruthy();
+      } else {
+        expect(component.status).toBe('deferred');
+        expect(component.code).toBeNull();
+        expect(component.plannedSlice).toBeTypeOf('number');
+      }
+    }
+  });
+
+  it('exports every implemented component from the public surface', async () => {
+    const surface = await import('./index.js');
+    for (const component of manifest.components) {
+      if (component.status !== 'implemented') continue;
+      for (const symbol of component.code as string[]) {
+        expect(symbol in surface, `${symbol} must be exported from src/index.ts`).toBe(true);
+      }
     }
   });
 
