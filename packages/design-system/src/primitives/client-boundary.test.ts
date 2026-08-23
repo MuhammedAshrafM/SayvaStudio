@@ -58,6 +58,7 @@ describe('interactive primitives declare their own client boundary', () => {
       'button/button.tsx',
       'confidence/confidence.tsx',
       'entity-ref/entity-ref.tsx',
+      'field/field.tsx',
       'metric/metric.tsx',
       'state-block/state-block.tsx',
       'status-badge/status-badge.tsx',

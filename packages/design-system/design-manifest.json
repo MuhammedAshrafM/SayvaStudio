@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 6,
-      "componentsDeferred": 4
+      "componentsImplemented": 7,
+      "componentsDeferred": 3
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -631,7 +631,7 @@
     {
       "design": "SyField",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyField"],
       "variants": [
         "text",
         "mono",
@@ -653,10 +653,11 @@
         "loading",
         "suggested"
       ],
-      "status": "deferred",
-      "plannedSlice": 14,
+      "status": "implemented",
       "sizes": ["UNSPECIFIED BY DESIGN"],
-      "note": "Split across two slices: 14 (text, mono, number, textarea, select, date) and 15 (combobox, multi-facet)."
+      "note": "Eight variants x nine states, all in one slice. Three states are observed rather than set: `empty` and `filled` follow the value and `focus` is :focus-visible, which base.css owns. `readonly` and `disabled` each require a reason at the TypeScript level, per the canonical specimen's \"Reason shown, never silently disabled\" - a rule neither the handoff nor the inventory records. `suggested` renders the AI register (accent.ai.*); its accept and reject affordances belong to SySuggestion, which wraps this field and is out of Phase 1 scope. Invalid is border + icon + text, the icon being the Unicode character the specimen draws, so no icon set is involved and D6 is untouched.",
+      "module": "src/primitives/field",
+      "contractNote": "The plan split SyField across two slices on the assumption that combobox needed the overlay substrate. It does not: in the ARIA combobox pattern focus stays in the input and a virtual cursor moves via aria-activedescendant, so there is nothing to trap, stack or restore. All eight variants therefore landed together. `sizes` is UNSPECIFIED BY DESIGN and none were invented. \"⌘S saves the form\" is listed in the contract's keyboard row but is form-scoped, not field-scoped, and is not implemented here."
     },
     {
       "design": "SyStatusBadge",

@@ -20,6 +20,14 @@ export type {
   SyEntityRefVariant,
 } from './primitives/entity-ref/index.js';
 
+export { SyField } from './primitives/field/index.js';
+export type {
+  SyFieldOption,
+  SyFieldProps,
+  SyFieldState,
+  SyFieldVariant,
+} from './primitives/field/index.js';
+
 export { SyMetric } from './primitives/metric/index.js';
 export type {
   SyMetricBar,
