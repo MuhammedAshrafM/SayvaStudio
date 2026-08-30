@@ -119,7 +119,13 @@ export function SyStateBlock(props: SyStateBlockProps) {
 
   return region(
     <>
-      <Heading id={headingId} className={stateBlockHeadingVariants({ size, state })}>
+      {/* `cn` is not decoration here. This cva sets a colour in its base
+          (`text-text-primary`) and another in its `error` variant
+          (`text-status-danger-fg`); cva concatenates rather than resolves, so
+          both reach the class attribute and stylesheet order — not the
+          variant — decides. Without `cn` the error heading rendered in
+          text.primary and the danger tone never appeared. */}
+      <Heading id={headingId} className={cn(stateBlockHeadingVariants({ size, state }))}>
         {heading}
       </Heading>
 

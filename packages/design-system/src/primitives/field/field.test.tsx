@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { composeStories } from '@storybook/react-vite';
 import { render, screen } from '@testing-library/react';
@@ -307,6 +307,189 @@ describe('SyField — the AI register', () => {
     expect(container.innerHTML).toContain('accent-ai');
     // The provenance is stated in words too.
     expect(screen.getByText(/Suggested by translate-arsl/)).toBeTruthy();
+  });
+});
+
+/**
+ * Esc has to work in layers once fields sit inside drawers and dialogs, which
+ * SyField's own reuse list already promises ("SyDialog forms"). The rule the
+ * canonical contract states for overlays is "Esc closes topmost", so a field
+ * may only consume the key when it is itself the topmost thing with something
+ * to cancel.
+ */
+describe('SyField — Esc is scoped to the edit it owns', () => {
+  /**
+   * Stands in for the drawer or dialog a field will be nested in.
+   *
+   * It takes Esc from a native bubble listener on `document`, which is one of
+   * the two paths the boundary test below shows an overlay can actually use.
+   */
+  function Surrounded({
+    onEscape,
+    children,
+  }: {
+    onEscape: () => void;
+    children: (value: string, setValue: (next: string) => void) => React.ReactNode;
+  }) {
+    const [value, setValue] = useState('AS-SALAAMU');
+
+    useEffect(() => {
+      const handler = (event: KeyboardEvent) => {
+        if (event.key === 'Escape') onEscape();
+      };
+      document.addEventListener('keydown', handler);
+      return () => document.removeEventListener('keydown', handler);
+    }, [onEscape]);
+
+    return <div>{children(value, setValue)}</div>;
+  }
+
+  const withField = (onEscape: () => void) => (
+    <Surrounded onEscape={onEscape}>
+      {(value, setValue) => <SyField label="Gloss" value={value} onValueChange={setValue} />}
+    </Surrounded>
+  );
+
+  it('cancels its own edit without also closing the surface around it', async () => {
+    const user = userEvent.setup();
+    const onEscape = vi.fn();
+    render(withField(onEscape));
+    const input = screen.getByLabelText('Gloss') as HTMLInputElement;
+
+    await user.click(input);
+    await user.type(input, '-EDITED');
+    await user.keyboard('{Escape}');
+
+    expect(input.value).toBe('AS-SALAAMU');
+    // One press, one effect: the drawer above must not close as well.
+    expect(onEscape).not.toHaveBeenCalled();
+  });
+
+  it('leaves Esc alone when there is no edit to cancel', async () => {
+    const user = userEvent.setup();
+    const onEscape = vi.fn();
+    render(withField(onEscape));
+
+    // Focused, but nothing typed — the field owns nothing to revert.
+    await user.click(screen.getByLabelText('Gloss'));
+    await user.keyboard('{Escape}');
+
+    expect(onEscape).toHaveBeenCalledTimes(1);
+  });
+
+  it('releases Esc to the surface on the second press', async () => {
+    const user = userEvent.setup();
+    const onEscape = vi.fn();
+    render(withField(onEscape));
+    const input = screen.getByLabelText('Gloss') as HTMLInputElement;
+
+    await user.click(input);
+    await user.type(input, '-EDITED');
+
+    await user.keyboard('{Escape}');
+    expect(onEscape).not.toHaveBeenCalled();
+
+    // The edit is gone, so the field has nothing left to claim the key with.
+    await user.keyboard('{Escape}');
+    expect(onEscape).toHaveBeenCalledTimes(1);
+    expect(input.value).toBe('AS-SALAAMU');
+  });
+
+  /**
+   * The boundary itself, measured rather than assumed.
+   *
+   * `stopPropagation` on a React synthetic event also stops the native event,
+   * but only once React's synthetic phase has begun — which happens when the
+   * native event reaches the root container. Anything that runs before that
+   * still sees the key. Slice 11's overlays must take Esc from one of the two
+   * paths this test shows to be covered.
+   */
+  it('pins the propagation boundary an overlay must listen within', async () => {
+    const seen: string[] = [];
+
+    function Boundary() {
+      const [value, setValue] = useState('AS-SALAAMU');
+      const inner = useRef<HTMLDivElement>(null);
+
+      useEffect(() => {
+        const node = inner.current!;
+        const onInnerBubble = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') seen.push('native-inner-bubble');
+        };
+        const onDocumentBubble = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') seen.push('native-document-bubble');
+        };
+        const onDocumentCapture = (e: KeyboardEvent) => {
+          if (e.key === 'Escape') seen.push('native-document-capture');
+        };
+        node.addEventListener('keydown', onInnerBubble);
+        document.addEventListener('keydown', onDocumentBubble);
+        document.addEventListener('keydown', onDocumentCapture, true);
+        return () => {
+          node.removeEventListener('keydown', onInnerBubble);
+          document.removeEventListener('keydown', onDocumentBubble);
+          document.removeEventListener('keydown', onDocumentCapture, true);
+        };
+      }, []);
+
+      return (
+        <div ref={inner}>
+          {/* A React handler on an ancestor — the other covered path. The
+              a11y rule below guards production UI; this is a test double for
+              an overlay, which is exactly what it is standing in for. */}
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          <div
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') seen.push('react-synthetic-ancestor');
+            }}
+          >
+            <SyField label="Gloss" value={value} onValueChange={setValue} />
+          </div>
+        </div>
+      );
+    }
+
+    const user = userEvent.setup();
+    render(<Boundary />);
+    const input = screen.getByLabelText('Gloss') as HTMLInputElement;
+
+    await user.click(input);
+    await user.type(input, '-EDITED');
+    seen.length = 0;
+    await user.keyboard('{Escape}');
+
+    expect(input.value).toBe('AS-SALAAMU');
+
+    // Covered: an overlay listening either of these ways is safe.
+    expect(seen).not.toContain('react-synthetic-ancestor');
+    expect(seen).not.toContain('native-document-bubble');
+
+    // Not covered, and this is the constraint Slice 11 inherits: both of
+    // these run before React's synthetic phase, so nothing a React handler
+    // does can stop them.
+    expect(seen).toContain('native-inner-bubble');
+    expect(seen).toContain('native-document-capture');
+  });
+
+  it('keeps Esc for an open listbox and releases it once closed', async () => {
+    const user = userEvent.setup();
+    const onEscape = vi.fn();
+    render(
+      <Surrounded onEscape={onEscape}>
+        {() => <SyField variant="combobox" label="Category" value="" options={OPTIONS} />}
+      </Surrounded>,
+    );
+
+    await user.tab();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('listbox')).toBeTruthy();
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).toBeNull();
+    expect(onEscape).not.toHaveBeenCalled();
+
+    await user.keyboard('{Escape}');
+    expect(onEscape).toHaveBeenCalledTimes(1);
   });
 });
 

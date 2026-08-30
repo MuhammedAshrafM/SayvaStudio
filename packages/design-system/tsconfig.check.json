@@ -1,0 +1,35 @@
+{
+  /*
+   * The type-checking project, as distinct from the build project.
+   *
+   * tsconfig.json is the *build*: it emits to dist, so it excludes tests and
+   * stories to keep them out of the published output. `check-types` used to
+   * reuse it, which meant every test and every story file was invisible to
+   * TypeScript — a story could pass a prop the component does not have and
+   * nothing failed. That is exactly how `SyField`'s Focus story came to set
+   * `autoFocus`, a prop no field accepts: it compiled, then was dropped at
+   * runtime, and the story silently demonstrated nothing.
+   *
+   * So the two concerns are separated. The build still excludes tests and
+   * stories; this project checks everything and emits nothing.
+   */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // Emit-related settings inherited from the base config, switched off:
+    // a project that emits nothing cannot be composite and has no rootDir.
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "rootDir": "."
+  },
+  "include": ["src", ".storybook"],
+  /*
+   * Test files stay excluded for now, and deliberately rather than by
+   * oversight. Checking them additionally requires typing the
+   * `@sayva/vitest-config/axe` helper and registering its
+   * `toHaveNoViolations` matcher, which is a change to another package.
+   * That gap is recorded rather than quietly widened here.
+   */
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

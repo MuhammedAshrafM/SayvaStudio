@@ -100,13 +100,24 @@ export const WithLeadingIcon: Story = {
 /** Every tone at once — the variant sweep a reviewer scans. */
 export const AllVariants: Story = {
   args: { children: 'Approve' },
-  render: (args) => (
+  // Destructured rather than spread: `SyButtonProps` is a union whose two
+  // members disagree about `children` and `label`, so spreading the whole
+  // args object into a specific variant cannot narrow to either one.
+  render: ({ size, children }) => (
     <div className="flex items-center gap-300">
-      <SyButton {...args} variant="primary" />
-      <SyButton {...args} variant="secondary" />
-      <SyButton {...args} variant="ghost" />
-      <SyButton {...args} variant="danger" />
-      <SyButton variant="icon-only" label="Row actions" icon={<MoreGlyph />} size={args.size} />
+      <SyButton variant="primary" size={size}>
+        {children}
+      </SyButton>
+      <SyButton variant="secondary" size={size}>
+        {children}
+      </SyButton>
+      <SyButton variant="ghost" size={size}>
+        {children}
+      </SyButton>
+      <SyButton variant="danger" size={size}>
+        {children}
+      </SyButton>
+      <SyButton variant="icon-only" label="Row actions" icon={<MoreGlyph />} size={size} />
     </div>
   ),
 };

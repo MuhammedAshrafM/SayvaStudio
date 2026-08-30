@@ -241,12 +241,46 @@ export function SyField(props: SyFieldProps) {
   }
 
   function handleRevertKey(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    // "Esc reverts an in-progress inline edit" — back to whatever the value
-    // was when this edit began, not to empty.
-    if (event.key === 'Escape' && revertTo.current !== null) {
-      event.preventDefault();
-      (props as FreeText).onValueChange?.(revertTo.current);
-    }
+    if (event.key !== 'Escape') return;
+
+    const revertTarget = revertTo.current;
+
+    /*
+     * "Esc reverts an in-progress inline edit" — back to whatever the value
+     * was when this edit began, not to empty.
+     *
+     * The scope matters as much as the behaviour. Esc belongs to the
+     * innermost thing that has something to cancel, and a field has something
+     * to cancel only while an edit is genuinely in progress: merely holding
+     * focus is not enough. With nothing to revert the key is left untouched,
+     * so it reaches whatever surrounds the field — §Overlays requires "Esc
+     * closes topmost", and a drawer must still close when the caret happens
+     * to be resting in one of its fields.
+     */
+    if (revertTarget === null || event.currentTarget.value === revertTarget) return;
+
+    event.preventDefault();
+    /*
+     * The edit was ours and is now cancelled, so this keystroke is spent: an
+     * overlay above must not read the same Esc as a request to close, which
+     * would revert the edit and dismiss the drawer in one press.
+     *
+     * How far this reaches is measured, not assumed — see the boundary test
+     * in field.test.tsx. React's synthetic `stopPropagation` also calls the
+     * native one, which stops the event at the React root container. So it
+     * reaches:
+     *
+     *   stopped      a React `onKeyDown` on any ancestor
+     *   stopped      a native bubble listener on document (above the root)
+     *   NOT stopped  a native bubble listener on a node inside the root,
+     *                which runs before React's synthetic phase begins
+     *   NOT stopped  any capture-phase listener
+     *
+     * An overlay must therefore take Esc from a React handler or from
+     * document on the bubble path. Slice 11 depends on this.
+     */
+    event.stopPropagation();
+    (props as FreeText).onValueChange?.(revertTarget);
   }
 }
 
@@ -316,6 +350,10 @@ function ComboControl({
     }
     if (event.key === 'Escape' && open) {
       event.preventDefault();
+      // An open listbox is the topmost dismissible thing on screen, so
+      // closing it consumes the key and a surrounding drawer or dialog stays
+      // open. Closed, the branch is not taken at all and Esc passes through.
+      event.stopPropagation();
       setOpen(false);
     }
   }

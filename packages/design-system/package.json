@@ -16,7 +16,7 @@
     "build": "tsc -b",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -p tsconfig.check.json",
     "test": "vitest run",
     "tokens:generate": "node tooling/generate-tokens.mjs",
     "storybook": "storybook dev -p 6006 --no-open",

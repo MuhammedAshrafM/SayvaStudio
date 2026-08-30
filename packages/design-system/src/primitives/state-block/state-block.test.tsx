@@ -115,6 +115,30 @@ describe('SyStateBlock — nothing is communicated by colour alone', () => {
     expect(screen.getByText(/a41f-9c02-77be/)).toBeTruthy();
   });
 
+  /**
+   * The tone is not the only signal — the heading text and the trace ID above
+   * carry the failure on their own — but it is a specified one, and for four
+   * slices it was declared in the variants file and never painted: cva emitted
+   * the base `text-text-primary` alongside the error variant's
+   * `text-status-danger-fg`, and stylesheet order picked the base.
+   */
+  it('paints the error heading in the danger tone rather than the base colour', () => {
+    const { container } = render(<SyStateBlock {...propsFor('error')} />);
+    const classes = container.querySelector('h2')!.className.split(/\s+/);
+
+    expect(classes).toContain('text-status-danger-fg');
+    // The losing half of the collision must be gone, not merely outranked.
+    expect(classes).not.toContain('text-text-primary');
+  });
+
+  it('leaves every other state on the base heading colour', () => {
+    const { container } = render(<SyStateBlock {...propsFor('offline')} />);
+    const classes = container.querySelector('h2')!.className.split(/\s+/);
+
+    expect(classes).toContain('text-text-primary');
+    expect(classes).not.toContain('text-status-danger-fg');
+  });
+
   it.each(STATE_BLOCK_STATES)('gives %s readable text content, not just a class', (state) => {
     const { container } = render(<SyStateBlock {...propsFor(state)} />);
     const accessible =

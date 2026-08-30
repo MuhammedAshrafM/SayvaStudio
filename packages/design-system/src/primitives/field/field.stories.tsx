@@ -10,7 +10,17 @@ const meta = {
 
 export default meta;
 
-type Story = StoryObj<typeof meta>;
+/**
+ * Typed against the component rather than against `typeof meta`.
+ *
+ * Both forms reject a prop the component does not have — which is the point,
+ * and what this file previously escaped by not being type-checked at all.
+ * The difference is that `StoryObj<typeof meta>` also requires every story's
+ * args to satisfy `SyFieldProps` on their own, which a discriminated union
+ * plus meta-level defaults cannot do: `{ variant: 'mono' }` would have to
+ * restate `value` even though `meta.args` already supplies it.
+ */
+type Story = StoryObj<typeof SyField>;
 
 const CATEGORIES = [
   { value: 'greetings', label: 'Greetings' },
@@ -61,8 +71,29 @@ export const Empty: Story = { args: { label: 'Display name', value: '' } };
 
 export const Filled: Story = { args: { label: 'Display name', value: 'Peace be upon you' } };
 
-/** Focus is :focus-visible, which base.css owns — never removed (§16). */
-export const Focus: Story = { args: { label: 'Display name', value: 'Peace', autoFocus: true } };
+/**
+ * Focus is :focus-visible, which base.css owns — never removed (§16).
+ *
+ * There is no `focus` prop to set: the state belongs to the platform. So the
+ * story focuses the control itself. It previously passed `autoFocus`, which
+ * `SyField` does not accept — React never received it, nothing was focused,
+ * and the story demonstrated an ordinary filled field under the name Focus.
+ */
+export const Focus: Story = {
+  args: { label: 'Display name', value: 'Peace' },
+  /*
+   * The control is focused, so the story is at least in the state it names.
+   *
+   * The ring is a separate matter and deliberately not faked here.
+   * `:focus-visible` is a keyboard-modality heuristic that only trusted input
+   * satisfies: neither `.focus()` nor `userEvent.tab()` paints it, which was
+   * measured in the browser rather than assumed. Tab to the field to see the
+   * ring; base.css owns it and §16 forbids removing it.
+   */
+  play: async ({ canvasElement }) => {
+    canvasElement.querySelector('input')?.focus();
+  },
+};
 
 /** Border + icon + text, never colour alone. */
 export const Invalid: Story = {
