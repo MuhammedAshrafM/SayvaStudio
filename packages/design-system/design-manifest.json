@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 8,
-      "componentsDeferred": 2
+      "componentsImplemented": 9,
+      "componentsDeferred": 1
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -735,13 +735,15 @@
     {
       "design": "SyDrawer",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyDrawer"],
       "variants": ["right drawer", "bottom sheet (narrow widths)"],
       "states": ["closed", "open", "resizing", "dirty (blocks close)", "stacked max 2"],
-      "status": "deferred",
-      "plannedSlice": 12,
+      "status": "implemented",
       "sizes": ["elev.2"],
-      "note": "Decision D14 rules this surface non-modal: it shares the overlay substrate but does not contain Tab. Decision D16 governs `resizing` — the state is explicitly SyDrawer's own in the design, but nothing dimensional supports it (§10.8's sizing table has rows for the rail, sidebar and inspector and none for a drawer), so when this is built the state will be declared and inert, marked blocked citing D16, with no resize affordance and no invented width."
+      "module": "src/primitives/drawer",
+      "substrate": "src/overlay — non-modal, per decision D14.",
+      "statesBlocked": ["resizing"],
+      "note": "Non-modal per decision D14: it shares the overlay substrate but does not contain Tab, and says so with aria-modal=\"false\" — a surface whose purpose is to keep the grid visible has to keep it reachable. `resizing` is declared and inert per open decision D16: the state is explicitly SyDrawer's own in the design, but §10.8's sizing table carries rows for the rail, sidebar and inspector and none for a drawer, so there is no width range, handle or persistence rule to build from. No resize affordance is rendered and no width is set — the surface is content-sized and an application supplies any dimension through className. `dirty` blocks the close and requires onRequestDiscard at the TypeScript level, so \"dirty state prompts before discard\" cannot be forgotten; the prompt itself is a blocking decision and therefore the caller's SyDialog. `loading` is UNSPECIFIED BY DESIGN for this component and none was invented. Which variant applies at which width is SyAppShell's call — it \"owns responsive behaviour, no screen defines its own breakpoint handling\" — so the variant arrives as a prop."
     },
     {
       "design": "SyDialog",
@@ -751,7 +753,8 @@
       "states": ["default", "destructive", "loading", "error-in-place"],
       "status": "deferred",
       "plannedSlice": 13,
-      "sizes": ["elev.3"]
+      "sizes": ["elev.3"],
+      "note": "Decision D14 rules this surface modal: it contains Tab, which is the half of that ruling the design states outright."
     },
     {
       "design": "SyConfidence",

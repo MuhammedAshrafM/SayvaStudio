@@ -13,6 +13,9 @@ export type {
   SyConfidenceVariant,
 } from './primitives/confidence/index.js';
 
+export { SyDrawer } from './primitives/drawer/index.js';
+export type { SyDrawerProps, SyDrawerState, SyDrawerVariant } from './primitives/drawer/index.js';
+
 export { SyEntityRef } from './primitives/entity-ref/index.js';
 export type {
   SyEntityRefProps,

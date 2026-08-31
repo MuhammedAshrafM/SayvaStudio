@@ -37,6 +37,7 @@ const storyModules = import.meta.glob(['../**/*.stories.tsx', '!../__fixtures__/
 const EXPECTED_STORY_FILES = [
   'button.stories.tsx',
   'confidence.stories.tsx',
+  'drawer.stories.tsx',
   'entity-ref.stories.tsx',
   'field.stories.tsx',
   'menu.stories.tsx',

@@ -5,6 +5,7 @@ import openDecisions from '../design-open-decisions.json';
 import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
 import { CONFIDENCE_STATES } from './primitives/confidence/index.js';
 import { ENTITY_REF_STATES } from './primitives/entity-ref/index.js';
+import { DRAWER_STATES } from './primitives/drawer/index.js';
 import { FIELD_STATES } from './primitives/field/index.js';
 import { MENU_STATES } from './primitives/menu/index.js';
 import { METRIC_SIZES, METRIC_STATES } from './primitives/metric/index.js';
@@ -195,6 +196,9 @@ describe('implemented components cover the contract the manifest records', () =>
     SyConfidence: { states: CONFIDENCE_STATES },
     // Sizes are UNSPECIFIED BY DESIGN, so there are none to cover.
     SyMenu: { states: MENU_STATES },
+    // SyDrawer records an elevation in its `sizes` field rather than a size,
+    // so there is likewise nothing to cover there.
+    SyDrawer: { states: DRAWER_STATES },
     // SyStatusBadge deliberately has no `states` entry here. Its contracted
     // states are the six editorial lifecycle values, which decision D3 keeps
     // out of this package; apps/studio owns that mapping. Covering them here

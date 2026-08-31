@@ -173,6 +173,14 @@ export function useOverlay({
      */
     const focusedAtOpen = document.activeElement as HTMLElement | null;
 
+    /*
+     * The named trigger, read now rather than in the cleanup. The surface and
+     * its trigger have both committed by the time this effect runs, so the
+     * ref is already populated — and reading it here rather than later means
+     * the element restored to is the one that opened the overlay.
+     */
+    const namedTrigger = triggerRef?.current ?? null;
+
     const entry: OverlayEntry = {
       close: () => onRequestCloseRef.current(),
       modal,
@@ -218,7 +226,7 @@ export function useOverlay({
       // A07 by default; skipped only when the surface said so, and never onto
       // an element that has since left the document.
       if (!entry.restoreFocus) return;
-      const trigger = triggerRef?.current ?? focusedAtOpen;
+      const trigger = namedTrigger ?? focusedAtOpen;
       if (!trigger || !trigger.isConnected) return;
       trigger.focus();
     };
