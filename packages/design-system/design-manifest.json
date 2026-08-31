@@ -28,8 +28,8 @@
       "tokensImplemented": 89,
       "tokensPendingSignOff": 0,
       "cssCustomProperties": 108,
-      "componentsImplemented": 7,
-      "componentsDeferred": 3
+      "componentsImplemented": 8,
+      "componentsDeferred": 2
     },
     "codeField": "The custom properties a design token produced. An array because the mapping is not always 1:1 — a typography token expands to three, a resizable pane range to two, and a blocked token to none."
   },
@@ -723,12 +723,14 @@
     {
       "design": "SyMenu",
       "classification": "Design System primitive",
-      "code": null,
+      "code": ["SyMenu"],
       "variants": ["elev.1 popover"],
       "states": ["open", "loading", "submitting", "error-in-place"],
-      "status": "deferred",
-      "plannedSlice": 11,
-      "sizes": ["UNSPECIFIED BY DESIGN"]
+      "status": "implemented",
+      "sizes": ["UNSPECIFIED BY DESIGN"],
+      "module": "src/primitives/menu",
+      "substrate": "src/overlay — the shared overlay substrate the design contracts as \"a hook, not a component\". Provides Esc-closes-topmost, focus restoration to the trigger (A07) and a stack capped at depth two (A07, §15.9). Containment is an opt-in flag on it, per D14.",
+      "note": "role=\"menu\" per decision D15, which the design states outright in this component's own accessibility cell. Non-modal per decision D14: Tab is not contained — it moves focus onward and the menu closes behind it. The eight fixed groups the contract names — Open, Edit, Relate, Lifecycle, Validate, Duplicate, Copy link, Destructive (last) — are the entity action registry's vocabulary and stay in apps/studio under decision D3, exactly as SyStatusBadge's lifecycle values do. This component renders the groups it is handed in the order it is handed them, so \"destructive items last\" remains the registry's guarantee rather than a reordering performed behind the caller's back. Item tone is presentational, and the destructive group is set apart structurally by a separator as well as by colour (P5). Unpermitted items require their reason at the TypeScript level and tie it to the item with aria-describedby. Width is content-driven: sizes are UNSPECIFIED BY DESIGN and none was invented."
     },
     {
       "design": "SyDrawer",
@@ -738,7 +740,8 @@
       "states": ["closed", "open", "resizing", "dirty (blocks close)", "stacked max 2"],
       "status": "deferred",
       "plannedSlice": 12,
-      "sizes": ["elev.2"]
+      "sizes": ["elev.2"],
+      "note": "Decision D14 rules this surface non-modal: it shares the overlay substrate but does not contain Tab. Decision D16 governs `resizing` — the state is explicitly SyDrawer's own in the design, but nothing dimensional supports it (§10.8's sizing table has rows for the rail, sidebar and inspector and none for a drawer), so when this is built the state will be declared and inert, marked blocked citing D16, with no resize affordance and no invented width."
     },
     {
       "design": "SyDialog",

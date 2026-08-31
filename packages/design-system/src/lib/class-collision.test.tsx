@@ -39,6 +39,7 @@ const EXPECTED_STORY_FILES = [
   'confidence.stories.tsx',
   'entity-ref.stories.tsx',
   'field.stories.tsx',
+  'menu.stories.tsx',
   'metric.stories.tsx',
   'preview-harness.stories.tsx',
   'state-block.stories.tsx',

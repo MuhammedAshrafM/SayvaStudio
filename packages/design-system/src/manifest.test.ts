@@ -6,6 +6,7 @@ import { NOT_EMITTED } from '../tooling/generate-tokens.mjs';
 import { CONFIDENCE_STATES } from './primitives/confidence/index.js';
 import { ENTITY_REF_STATES } from './primitives/entity-ref/index.js';
 import { FIELD_STATES } from './primitives/field/index.js';
+import { MENU_STATES } from './primitives/menu/index.js';
 import { METRIC_SIZES, METRIC_STATES } from './primitives/metric/index.js';
 import { STATE_BLOCK_SIZES, STATE_BLOCK_STATES } from './primitives/state-block/index.js';
 import { CSS_VARIABLES, PENDING_DESIGN_SIGNOFF } from './tokens.js';
@@ -119,15 +120,43 @@ describe('every decision cited is a decision on the register', () => {
     expect([...cited].filter((id) => !registered.has(id))).toEqual([]);
   });
 
-  it('keeps every registered decision open and owned', () => {
-    // A decision silently flipping to closed is how a blocked token gets
-    // unblocked without anyone ruling on it.
+  it('lets no decision close without a recorded ruling', () => {
+    /**
+     * A decision silently flipping to closed is how a blocked token gets
+     * unblocked without anyone ruling on it. The guard is no longer "nothing
+     * may close" — D14 and D15 have been ruled — but "closing requires the
+     * ruling, its author and its date on the record".
+     */
+    const vocabulary = new Set(Object.keys(openDecisions.$meta.statusVocabulary));
+
     for (const entry of openDecisions.decisions) {
-      expect(entry.status, `${entry.id} status`).toBe('open');
+      expect(vocabulary.has(entry.status), `${entry.id} status: ${entry.status}`).toBe(true);
       expect(entry.owner, `${entry.id} owner`).toBeTruthy();
       expect(entry.mustNotDo, `${entry.id} must say what not to do`).toBeTruthy();
+
+      if (entry.status !== 'ruled') continue;
+      expect(entry.ruling, `${entry.id} is ruled and must record the ruling`).toBeTruthy();
+      expect(entry.ruledBy, `${entry.id} must record who ruled`).toBeTruthy();
+      expect(entry.ruledOn, `${entry.id} must record when`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     }
-    expect(openDecisions.$meta.counts.open).toBe(openDecisions.decisions.length);
+
+    const withStatus = (status: string) =>
+      openDecisions.decisions.filter((entry) => entry.status === status).length;
+    expect(openDecisions.$meta.counts.open).toBe(withStatus('open'));
+    expect(openDecisions.$meta.counts.ruled).toBe(withStatus('ruled'));
+  });
+
+  it('keeps a decision that still blocks something open, whatever was agreed meanwhile', () => {
+    /**
+     * D16's handling is settled — declare `resizing`, build no affordance —
+     * but the design question behind it is not. A blocked entry must always
+     * cite a decision the design has yet to answer, so an agreed interim
+     * handling goes in `interimRuling` and the status stays open.
+     */
+    const d16 = openDecisions.decisions.find((entry) => entry.id === 'D16');
+    expect(d16?.status).toBe('open');
+    expect(d16?.interimRuling, 'the agreed handling must be recorded').toBeTruthy();
+    expect(d16?.question, 'the unanswered design question must survive').toBeTruthy();
   });
 
   it('keeps D5 pending rather than resolved in either direction', () => {
@@ -164,6 +193,8 @@ describe('implemented components cover the contract the manifest records', () =>
     // SyConfidence records no sizes — UNSPECIFIED BY DESIGN, so none exist
     // to cover.
     SyConfidence: { states: CONFIDENCE_STATES },
+    // Sizes are UNSPECIFIED BY DESIGN, so there are none to cover.
+    SyMenu: { states: MENU_STATES },
     // SyStatusBadge deliberately has no `states` entry here. Its contracted
     // states are the six editorial lifecycle values, which decision D3 keeps
     // out of this package; apps/studio owns that mapping. Covering them here

@@ -21,21 +21,45 @@ import { describe, expect, it } from 'vitest';
  */
 
 const PRIMITIVES_DIR = path.resolve(import.meta.dirname);
+const SRC_DIR = path.resolve(PRIMITIVES_DIR, '..');
 
-/** Component modules only: not tests, not stories, not variant maps. */
+/**
+ * Everything the public surface can hand to a Server Component: the
+ * primitives, and the overlay substrate beside them. The substrate is a hook
+ * exported from the barrel, so it carries exactly the same obligation as a
+ * component — and being a `.ts` file outside `primitives/` would have put it
+ * outside this scan, which is the gap that let SyButton ship without a
+ * directive in the first place.
+ */
+const SCANNED = [
+  { dir: PRIMITIVES_DIR, prefix: 'primitives', extensions: ['.tsx'] },
+  { dir: path.join(SRC_DIR, 'overlay'), prefix: 'overlay', extensions: ['.ts'] },
+];
+
+/** Component and hook modules only: not tests, not stories, not barrels. */
 function componentModules(): { name: string; file: string; source: string }[] {
   const found: { name: string; file: string; source: string }[] = [];
-  for (const entry of readdirSync(PRIMITIVES_DIR, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const dir = path.join(PRIMITIVES_DIR, entry.name);
+
+  const collect = (dir: string, name: string, extensions: string[]) => {
     for (const file of readdirSync(dir)) {
-      if (!file.endsWith('.tsx')) continue;
-      if (file.includes('.test.') || file.includes('.stories.')) continue;
+      if (!extensions.some((extension) => file.endsWith(extension))) continue;
+      if (file.includes('.test.') || file.includes('.stories.') || file === 'index.ts') continue;
       found.push({
-        name: `${entry.name}/${file}`,
+        name: `${name}/${file}`,
         file: path.join(dir, file),
         source: readFileSync(path.join(dir, file), 'utf8'),
       });
+    }
+  };
+
+  for (const { dir, prefix, extensions } of SCANNED) {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) {
+        collect(path.join(dir, entry.name), `${prefix}/${entry.name}`, extensions);
+      } else if (extensions.some((extension) => entry.name.endsWith(extension))) {
+        collect(dir, prefix, extensions);
+        break;
+      }
     }
   }
   return found;
@@ -55,20 +79,25 @@ describe('interactive primitives declare their own client boundary', () => {
   it('finds the component modules it is meant to be checking', () => {
     // A silent zero-file scan would pass forever.
     expect(modules.map((m) => m.name).sort()).toEqual([
-      'button/button.tsx',
-      'confidence/confidence.tsx',
-      'entity-ref/entity-ref.tsx',
-      'field/field.tsx',
-      'metric/metric.tsx',
-      'state-block/state-block.tsx',
-      'status-badge/status-badge.tsx',
+      'overlay/use-overlay.ts',
+      'primitives/button/button.tsx',
+      'primitives/confidence/confidence.tsx',
+      'primitives/entity-ref/entity-ref.tsx',
+      'primitives/field/field.tsx',
+      'primitives/menu/menu.tsx',
+      'primitives/metric/metric.tsx',
+      'primitives/state-block/state-block.tsx',
+      'primitives/status-badge/status-badge.tsx',
     ]);
   });
 
   it('leaves purely presentational primitives on the server', () => {
     // Not every primitive is interactive, and marking one a client boundary
     // it does not need would pull it into the client bundle for nothing.
-    for (const name of ['confidence/confidence.tsx', 'status-badge/status-badge.tsx']) {
+    for (const name of [
+      'primitives/confidence/confidence.tsx',
+      'primitives/status-badge/status-badge.tsx',
+    ]) {
       const module = modules.find((m) => m.name === name)!;
       expect(USES_HOOK.test(module.source) || BINDS_HANDLER.test(module.source)).toBe(false);
       expect(DECLARES_CLIENT.test(module.source), `${name} needs no directive`).toBe(false);
@@ -92,13 +121,13 @@ describe('interactive primitives declare their own client boundary', () => {
 describe('the directive survives the build', () => {
   // tsc preserves a directive prologue, but "preserves" is worth proving:
   // the directive is meaningless to Next unless it reaches dist/.
-  const DIST = path.resolve(PRIMITIVES_DIR, '../../dist/primitives');
+  const DIST = path.resolve(SRC_DIR, '../dist');
 
   it.each(modules.map((m) => m.name))('%s reaches dist with its directive', (name) => {
     const module = modules.find((m) => m.name === name)!;
     if (!USES_HOOK.test(module.source) && !BINDS_HANDLER.test(module.source)) return;
 
-    const built = path.join(DIST, name.replace(/\.tsx$/, '.js'));
+    const built = path.join(DIST, name.replace(/\.tsx?$/, '.js'));
     let output: string;
     try {
       output = readFileSync(built, 'utf8');

@@ -2,9 +2,15 @@
   "$meta": {
     "role": "The register of design and implementation decisions Phase 1 cannot make on its own. Every decision id cited anywhere in design-manifest.json or the token generator must appear here, and a test enforces that.",
     "rule": "An entry is closed only by the named owner. Nothing here may be resolved by choosing a value in code — that is a design change, and AC13 fails any element with no design source. Statuses are 'open' until the owner rules.",
-    "updated": "2026-08-11",
+    "statusVocabulary": {
+      "open": "No ruling yet. Nothing may proceed that depends on the answer.",
+      "ruled": "The named owner has ruled. The entry records the ruling, who made it and when, and stays on the register so the reasoning survives."
+    },
+    "rulingRule": "A 'ruled' entry must carry ruling, ruledBy and ruledOn. A decision that still blocks a token or a state stays 'open' even when an interim handling has been agreed — the handling goes in interimRuling, so 'blocked' in design-manifest.json always cites a decision the design has yet to answer.",
+    "updated": "2026-08-31",
     "counts": {
-      "open": 7,
+      "open": 8,
+      "ruled": 2,
       "closed": 0
     }
   },
@@ -106,6 +112,46 @@
       "discovered": "Phase 1, Slice 7, while rendering the error state's trace ID.",
       "question": "Should font.ui and font.mono tokens exist, or is family a document-level concern the app sets outside the token layer?",
       "mustNotDo": "Use Tailwind's default font-sans or font-mono stacks, which are neither of the named families, or hardcode a family name in a component."
+    },
+    {
+      "id": "D14",
+      "title": "Which overlays contain Tab, and which do not",
+      "status": "ruled",
+      "owner": "design",
+      "phase1Impact": "Governs the overlay substrate and every overlay that uses it: SyMenu (Slice 11), SyDrawer (Slice 12), SyDialog (Slice 13).",
+      "statement": "The handoff's §11 contract table states focus containment for only two of the four overlays, in their own cells: SyDialog — \"Esc cancels; focus trapped and restored\" — and SyPalette — \"focus trapped and restored\". SyMenu's keyboard cell names only \"Esc closes; focus returns to trigger\", and SyDrawer's names only \"Esc closes; ⌘Enter submits\". Yet the same table's SyMenu accessibility cell describes all four as sharing \"one behavioural substrate (focus trap, Esc, stacking, focus restore)\", and SyDrawer, SyDialog and SyPalette each carry \"shares the overlay substrate\". The two readings are not reconciled by the sources: under the first, containment is per-component and the substrate merely offers it; under the second, sharing the substrate confers it. Foundations §16's complete accessibility rules never mention containment at all, and §16 does not record overlay focus behaviour as UNSPECIFIED, so the design believes it has specified this.",
+      "evidence": "Explicit containment: SyDialog and SyPalette only. Composition-derived: SyMenu and SyDrawer, via the shared-substrate sentence. Accessibility item A07 — \"Every overlay returns focus to its trigger on close. Stacked overlays restore in reverse order, maximum depth two.\" — is restoration, not containment, and was not used as containment evidence. The v0.1 Foundations copy corroborates restoration-without-containment for SyDrawer and containment for the palette, and is subordinate to v0.2.",
+      "ruling": "Containment is declared per surface, not conferred by sharing the substrate. The substrate provides focus entry, Esc-closes-topmost, restoration to trigger and a depth-2 stack for every overlay; containment is an opt-in flag. SyDialog is modal and contains Tab. SyMenu and SyDrawer are non-modal and do not.",
+      "ruledBy": "design owner, 2026-08-31, on the analysis recorded in this entry",
+      "ruledOn": "2026-08-31",
+      "rulingCaveat": "Only the SyDialog half is compelled by an explicit statement. SyDrawer rests on inference from its stated purpose — \"Work beside context, never on top of it\" and \"Opens in a SyDrawer, so the grid stays visible. Never a modal.\" — and SyMenu on external ARIA reasoning about role=menu, neither of which is a design statement. The shared-substrate sentence supports the opposite reading and has not been reconciled away. Sayva Studio Design System.dc.html §Overlays could not be read when this was ruled: DesignSync was unauthorized and the document is not vendored, so the ruling rests on the vendored v0.2 extraction.",
+      "mustNotDo": "Give SyMenu or SyDrawer a Tab trap, or drop containment from SyDialog, without a new ruling recorded here."
+    },
+    {
+      "id": "D15",
+      "title": "SyMenu's ARIA role",
+      "status": "ruled",
+      "owner": "design",
+      "phase1Impact": "Governs SyMenu's semantics and keyboard model (Slice 11).",
+      "statement": "SyMenu's own accessibility cell states \"menu role; destructive items last and labelled; shortcut shown per item\", in the Design System document, which §11 names as the naming authority. Its contents are commands from the entity action registry, in eight fixed groups. The competing datum is a §Overlays shared card recorded during the pre-Slice-11 review as saying \"dialog / alertdialog roles\"; that card could not be re-read, and it cannot be universal on in-repo evidence alone, because SyPalette's own cell states the combobox pattern.",
+      "evidence": "Handoff §11 SyMenu accessibility cell and the inventory's SyMenu.accessibility field are character-identical. The v0.1 Foundations copy contributes nothing: it registers no menu component in any group.",
+      "ruling": "role=\"menu\". The per-component statement is explicit, sits in the naming-authority document, and is the only reading consistent with SyPalette also being combobox.",
+      "ruledBy": "design owner, 2026-08-31, on the analysis recorded in this entry",
+      "ruledOn": "2026-08-31",
+      "mustNotDo": "Render SyMenu as a dialog, or put anything but commands inside it — role=menu admits menuitem children only.",
+      "note": "Naming the role states the semantics; the WAI-ARIA menu keyboard pattern that follows from it is external convention, not a design statement, and is recorded as such in the SyMenu module."
+    },
+    {
+      "id": "D16",
+      "title": "SyDrawer declares a resizing state the design gives no dimensions for",
+      "status": "open",
+      "owner": "design",
+      "phase1Impact": "Blocks the resizing state of SyDrawer (Slice 12). Blocks nothing in Slice 11.",
+      "statement": "\"resizing\" is an explicit state in SyDrawer's own States cell — \"closed, open, resizing, dirty (blocks close), stacked max 2\" — in both the v0.2 extraction and the older v0.1 copy. It is SyDrawer's own contracted state, not inherited from SyAppShell, which separately declares its own resizing state. But nothing dimensional supports it: §10.8's sizing table has rows for the rail, the sidebar and the inspector and no row for a drawer, and the only drawer-related tokens are elev.2 and dur.base. SyAppShell's identical state name is fully supported — pane.sidebar 208–360px and pane.inspector 280–420px, both \"resizable, persisted\", plus \"Panes resizable, persisted per user\". §16 UNSPECIFIED BY DESIGN does not list drawer resizing, so the design does not regard this as a known gap.",
+      "evidence": "A full string walk of the inventory returns five occurrences of \"resiz\": the two token meanings, SyDrawer.states[2], SyAppShell.states[4], and SyAppShell.composition. No drawer width, minimum, maximum, handle size or persistence rule exists anywhere.",
+      "interimRuling": "Declared but inert. SyDrawer will declare resizing in its state union so the contract and the manifest agree, will render no resize affordance, and the state will be marked blocked in design-manifest.json citing D16 — the handling already used for row.compact (D4) and focus.ring (D5). Agreed by the design owner on 2026-08-31. The design question below remains unanswered, which is why this entry stays open.",
+      "question": "Does SyDrawer resize at all? If it does: what is the width range, does the width persist per user, and does the bottom sheet resize by height? If it does not, resizing should be struck from SyDrawer's states at source.",
+      "mustNotDo": "Invent a drawer width range, reuse pane.inspector's 280–420px because the drawer sits at the same screen edge, or build a resize affordance."
     }
   ]
 }

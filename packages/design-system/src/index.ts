@@ -28,6 +28,15 @@ export type {
   SyFieldVariant,
 } from './primitives/field/index.js';
 
+export { SyMenu } from './primitives/menu/index.js';
+export type {
+  SyMenuGroup,
+  SyMenuItem,
+  SyMenuItemTone,
+  SyMenuProps,
+  SyMenuState,
+} from './primitives/menu/index.js';
+
 export { SyMetric } from './primitives/metric/index.js';
 export type {
   SyMetricBar,
@@ -50,3 +59,11 @@ export type {
   SyStatusBadgeTone,
   SyStatusBadgeVariant,
 } from './primitives/status-badge/index.js';
+
+/**
+ * The overlay substrate. The design contracts it by name and by shape —
+ * "that substrate is a hook, not a component" — so it is part of the public
+ * surface rather than an internal detail of the overlays that use it.
+ */
+export { MAX_OVERLAY_DEPTH, useOverlay } from './overlay/index.js';
+export type { UseOverlayOptions } from './overlay/index.js';
