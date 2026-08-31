@@ -13,6 +13,14 @@ export type {
   SyConfidenceVariant,
 } from './primitives/confidence/index.js';
 
+export { SyDialog } from './primitives/dialog/index.js';
+export type {
+  SyDialogAction,
+  SyDialogProps,
+  SyDialogState,
+  SyDialogVariant,
+} from './primitives/dialog/index.js';
+
 export { SyDrawer } from './primitives/drawer/index.js';
 export type { SyDrawerProps, SyDrawerState, SyDrawerVariant } from './primitives/drawer/index.js';
 

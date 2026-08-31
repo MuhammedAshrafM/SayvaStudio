@@ -82,6 +82,7 @@ describe('interactive primitives declare their own client boundary', () => {
       'overlay/use-overlay.ts',
       'primitives/button/button.tsx',
       'primitives/confidence/confidence.tsx',
+      'primitives/dialog/dialog.tsx',
       'primitives/drawer/drawer.tsx',
       'primitives/entity-ref/entity-ref.tsx',
       'primitives/field/field.tsx',
