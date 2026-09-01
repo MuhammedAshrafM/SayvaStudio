@@ -1,13 +1,30 @@
-// Proves the domain dependency edge actually resolves and compiles —
-// not just declared in package.json. Remove once a real Use Case needs it.
-import '@sayva/domain';
-
 /**
- * Use Cases and Request/Response Models land here incrementally, starting
- * with Implementation Roadmap Phase 2 (Project Management). Empty on
- * purpose until then; see docs/architecture/architecture-blueprint.md §4.
+ * `@sayva/application` — Use Cases and Request/Response Models.
  *
  * Depends on @sayva/domain only (Architecture Blueprint AD-01/AD-02,
- * ADR-002 DR-02) — never Infrastructure, never a framework.
+ * ADR-002 DR-02) — never Infrastructure, never a framework. A use case
+ * holds ports, so the concrete adapter behind one can change without this
+ * layer noticing.
+ *
+ * Populated one aggregate per Roadmap phase. Project arrives with Phase 2;
+ * see docs/architecture/architecture-blueprint.md §4 for the full table.
  */
-export {};
+export {
+  createProjectUseCase,
+  deleteProjectUseCase,
+  duplicateProjectUseCase,
+  listProjectsUseCase,
+  openProjectUseCase,
+  saveProjectUseCase,
+  ProjectNotFoundError,
+  toProjectView,
+} from './project/index.js';
+export type {
+  CreateProjectRequest,
+  DeleteProjectRequest,
+  DuplicateProjectRequest,
+  OpenProjectRequest,
+  ProjectUseCaseDeps,
+  ProjectView,
+  SaveProjectRequest,
+} from './project/index.js';

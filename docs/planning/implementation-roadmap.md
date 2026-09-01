@@ -120,9 +120,9 @@ flowchart TD
 
 **Freeze point:** The primitive set covers what every CRUD screen in Phases 2–9 needs. Later additions go through "does one already exist?" — not a reopening of this phase.
 
-> **Unresolved — this freeze criterion and scope decision D1 do not agree.**
-> The criterion above asks whether the primitive set covers every CRUD screen in Phases 2–9. D1 scoped this phase to the ten primitives and **deferred all twelve patterns**, including `SyAppShell` (the shell every screen sits in) and `SyCollection` (the list every CRUD screen shows). On the criterion's own terms the answer is therefore no — not because a primitive is missing, but because the surfaces those screens need were placed outside this phase on purpose.
-> Both statements are authoritative and neither resolves the other, so the discrepancy is recorded rather than decided. What it changes is *where the patterns get built*, not whether Phase 1's own scope is complete. See the Phase 1 status entry below.
+> **Resolved by ruling, 2026-09-01 — the criterion is read within D1's scope.**
+> The criterion above asks whether the primitive set covers every CRUD screen in Phases 2–9. D1 scoped this phase to the ten primitives and **deferred all twelve patterns**, including `SyAppShell` (the shell every screen sits in) and `SyCollection` (the list every CRUD screen shows), as needing application-layer infrastructure. Read literally against the whole product the criterion could not be met, and read against D1's scope it is.
+> The design owner ruled the second reading: the criterion is satisfied by the ten contracted primitives and the shared overlay substrate, complete and verified. The deferred patterns are **not** pulled back into Phase 1 — each is built in the application phase that requires it, where the infrastructure D1 cited actually exists. D1 is not reopened and no token changed.
 
 > **Note:** Zero dependency on `domain` (ADR-002 DR-02) — this can run in parallel with Phase 2 rather than strictly serialized after it.
 
@@ -359,10 +359,12 @@ Folder Structure, then Turborepo Scaffolding, then Initial Project Bootstrap (Ph
 
 **Phase 0 — Frozen/Complete as of 2026-08-08** (commit `fd6d8ee`). See Phase 0's own entry above for the full freeze record.
 
-**Phase 1 — Implementation complete as of 2026-09-01** (commit `4e9cc93`), and **not yet Frozen**: the Definition of Done §9 requires explicit approval for that, which has not been given.
+**Phase 1 — Frozen/Complete as of 2026-09-01** (commit `1375ded`; implementation complete at `4e9cc93`). Frozen on explicit approval from the design owner, per Definition of Done §9 — the freeze criterion read within scope decision D1, as recorded in the ruling note under Phase 1 above.
 
 All ten contracted primitives are implemented and exported, together with the shared overlay substrate hook. Verified at that commit: 639 tests across 22 files; 33 negative regression cases, each observed failing for its intended reason; `format:check`, `lint`, `dependency-cruiser` (134 modules, 322 dependencies, zero violations), `check-types`, `test`, `build` and `build-storybook` all green, with a second run FULL TURBO across every cached task; Storybook at 11 groups and 119 stories; a clean rebuild leaving `dist` free of tests, stories and fixtures, with nine client directives and neither presentational primitive carrying one.
 
-Sixteen design decisions were raised during the phase. **D14** (containment is declared per surface) and **D15** (`SyMenu` uses `role="menu"`) are ruled. **D4, D5, D6, D9, D11, D12, D13 and D16 remain open** and are the design owner's to answer; four tokens (`row.compact`, `focus.ring`, `ease.standard`, `ease.exit`) and one component state (`SyDrawer`'s `resizing`) stay blocked citing them. Nothing was closed by implementation.
+Sixteen design decisions were raised during the phase. **D14** (containment is declared per surface) and **D15** (`SyMenu` uses `role="menu"`) are ruled. **D4, D5, D6, D9, D11, D12, D13 and D16 remain open** and are the design owner's to answer; four tokens (`row.compact`, `focus.ring`, `ease.standard`, `ease.exit`) and one component state (`SyDrawer`'s `resizing`) stay blocked citing them. Nothing was closed by implementation, and the freeze closes none of them — an open decision outlives the phase that raised it.
 
-Two things are deliberately *not* claimed here. The phase is not Frozen, per the paragraph above. And the freeze criterion's own question — whether the primitive set covers every CRUD screen in Phases 2–9 — is left open, because D1 deferred the patterns those screens need; see the unresolved note under Phase 1.
+The twelve deferred patterns are not a Phase 1 remainder. Each belongs to the application phase that needs it, and arrives there with the infrastructure D1 named as its reason for deferral. From here only a verified production bug reopens this phase.
+
+**Phase 2 — Project Management is next.** Its Domain and Application layers are unblocked; its Infrastructure layer is not — see that phase's entry for the three prerequisites.

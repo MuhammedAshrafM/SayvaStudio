@@ -2,20 +2,33 @@ import { describe, expect, it } from 'vitest';
 import * as application from './index';
 
 /**
- * A smoke test, not a unit test: @sayva/application has no implementation
- * yet (Phase 0 scope — see index.ts). What's actually under test here is
- * the infrastructure — index.ts imports '@sayva/domain' at module scope,
- * so loading this module under Vitest exercises real cross-package
- * resolution through @sayva/domain's package.json exports map (DR-05),
- * the same edge ESLint boundaries and dependency-cruiser already verify
- * statically. This is why it needs @sayva/domain built first — turbo.json's
- * `test` task declares `dependsOn: ["^build"]` for exactly this reason
- * (TD-02, resolved Slice 14). Real behavior gets real tests starting with
- * Phase 2's first Use Case.
+ * The package's public surface.
+ *
+ * A Phase 0 smoke test until Phase 2 gave it something real to assert. It
+ * pinned "exports nothing yet", which was true then and is the thing that
+ * changed. What it guards now is the boundary itself: ADR-002 DR-05 makes
+ * this barrel the only way in, so an accidental export widens the contract
+ * as surely as an accidental import would.
  */
-describe('@sayva/application entry module', () => {
-  it('loads without throwing, resolving its @sayva/domain import, and exports nothing yet', () => {
-    expect(application).toBeTypeOf('object');
-    expect(Object.keys(application)).toEqual([]);
+const EXPECTED_SURFACE = [
+  'ProjectNotFoundError',
+  'createProjectUseCase',
+  'deleteProjectUseCase',
+  'duplicateProjectUseCase',
+  'listProjectsUseCase',
+  'openProjectUseCase',
+  'saveProjectUseCase',
+  'toProjectView',
+];
+
+describe('@sayva/application public surface', () => {
+  it('exports exactly what it means to', () => {
+    expect(Object.keys(application).sort()).toEqual(EXPECTED_SURFACE);
+  });
+
+  it('resolves its @sayva/domain dependency through the real toolchain', async () => {
+    // The one allowed edge (DR-02). Loading proves it resolves through
+    // domain's exports map, not by reaching past it.
+    await expect(import('@sayva/domain')).resolves.toBeTypeOf('object');
   });
 });
