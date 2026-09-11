@@ -17,12 +17,14 @@ export { createMetadata, restoreMetadata, touchMetadata } from './shared/metadat
 export type { Metadata } from './shared/metadata.js';
 
 export {
+  assertProjectSchemaVersion,
   createProject,
   isProjectId,
   newProjectId,
   renameProject,
   restoreProject,
   toProjectId,
+  CURRENT_PROJECT_SCHEMA_VERSION,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
 } from './project/index.js';

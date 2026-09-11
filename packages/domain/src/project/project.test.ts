@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import * as domain from '../index.js';
 import { DomainError } from '../errors.js';
 import type { Clock, IdGenerator } from '../ports/index.js';
 import {
+  assertProjectSchemaVersion,
   createProject,
   renameProject,
   restoreProject,
+  CURRENT_PROJECT_SCHEMA_VERSION,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
 } from './project.js';
@@ -70,25 +73,89 @@ describe('Project — invariant: Name required, non-empty', () => {
   });
 });
 
-describe('Project — invariant: SchemaVersion shape', () => {
+describe('Project — invariant: SchemaVersion compatible', () => {
   /**
-   * Shape only. The invariant Domain Model §3 states — "readable by the
-   * current Studio build" — needs a compatibility rule and a current-build
-   * version, and no canonical source carries either. What is enforced here
-   * is the part that is specified: a version is a positive integer.
+   * Domain Model §3's "SchemaVersion must be readable by the current Studio
+   * build", given its concrete rule by ADR-003 SR-07: compatible when
+   * `schemaVersion <= CURRENT_PROJECT_SCHEMA_VERSION`.
+   *
+   * This block previously asserted the opposite — that a far-future version
+   * was *accepted*, because deciding compatibility with no source behind it
+   * would have been inventing the rule. The rule now exists, so the premise
+   * that test recorded is the thing that changed.
    */
-  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])('rejects %p', (schemaVersion) => {
-    expect(() => createProject({ name: 'X', schemaVersion }, deps)).toThrow(DomainError);
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    'rejects %p as not a version at all',
+    (schemaVersion) => {
+      expect(() => createProject({ name: 'X', schemaVersion }, deps)).toThrow(DomainError);
+    },
+  );
+
+  it('accepts the current version and carries it verbatim', () => {
+    const project = createProject(
+      { name: 'X', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      deps,
+    );
+    expect(project.schemaVersion).toBe(CURRENT_PROJECT_SCHEMA_VERSION);
   });
 
-  it('accepts a positive integer and carries it verbatim', () => {
-    expect(createProject({ name: 'X', schemaVersion: 3 }, deps).schemaVersion).toBe(3);
+  it('is 1 in this build', () => {
+    expect(CURRENT_PROJECT_SCHEMA_VERSION).toBe(1);
   });
 
-  it('does not decide compatibility, because nothing specifies it', () => {
-    // A far-future version is not rejected here: rejecting it would be
-    // inventing the very rule that is missing.
-    expect(createProject({ name: 'X', schemaVersion: 9999 }, deps).schemaVersion).toBe(9999);
+  it('rejects a version newer than this build can read, naming both', () => {
+    expect(() => assertProjectSchemaVersion(CURRENT_PROJECT_SCHEMA_VERSION + 1)).toThrow(
+      /schemaVersion 2 is newer than this Studio build can read \(supports up to 1\)/,
+    );
+  });
+
+  it('rejects a far-future version too', () => {
+    expect(() => createProject({ name: 'X', schemaVersion: 9999 }, deps)).toThrow(DomainError);
+  });
+
+  it('accepts every version at or below the current one', () => {
+    // `<=`, not `===` — SR-07 promises an older file stays readable. At
+    // version 1 the two rules coincide, so this is the assertion that will
+    // actually catch a regression to strict equality when a 2 exists.
+    for (let version = 1; version <= CURRENT_PROJECT_SCHEMA_VERSION; version += 1) {
+      expect(assertProjectSchemaVersion(version)).toBe(version);
+    }
+  });
+
+  it('is not the Pack schemaVersion and shares nothing with it', () => {
+    // SR-08. @sayva/domain does not depend on @sayva/pack-schema at all
+    // (ADR-001), so the separation is structural — this pins the intent so a
+    // later "reuse the Pack constant" change has to argue with a test.
+    expect(Object.keys(domain).filter((k) => /pack/i.test(k))).toEqual([]);
+  });
+});
+
+describe('Project — the version gate is checked before anything else', () => {
+  /**
+   * ADR-003 SR-07: "can this build read the file at all" precedes "is what
+   * it contains valid". A version-2 file may legitimately carry a state this
+   * build has never heard of; reporting that as an unknown state would name
+   * the wrong problem to whoever has to act on it.
+   */
+  const futureFile = {
+    id: UUID_A,
+    name: '',
+    schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION + 1,
+    state: 'Published' as never,
+    createdAt: new Date('nonsense'),
+    updatedAt: new Date('nonsense'),
+  };
+
+  it('reports the version, not the unknown state, and not the empty name', () => {
+    // Every other invariant in this input is also violated. The version is
+    // the one that gets reported.
+    expect(() => restoreProject(futureFile)).toThrow(/newer than this Studio build can read/);
+  });
+
+  it('still reports the other problems once the version is readable', () => {
+    expect(() =>
+      restoreProject({ ...futureFile, schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION }),
+    ).toThrow(/Unknown Project state/);
   });
 });
 
@@ -184,7 +251,10 @@ describe('ProjectId — identity is permanent and detectably broken when malform
 
 describe('Project — reconstitution round-trips', () => {
   it('rebuilds an equal Project from its own parts', () => {
-    const project = createProject({ name: 'ArSL', schemaVersion: 2, tags: ['pilot'] }, deps);
+    const project = createProject(
+      { name: 'ArSL', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION, tags: ['pilot'] },
+      deps,
+    );
     const restored = restoreProject({
       id: project.id,
       name: project.name,

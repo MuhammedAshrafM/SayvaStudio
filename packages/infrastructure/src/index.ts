@@ -1,17 +1,23 @@
-// Proves both dependency edges actually resolve and compile — not just
-// declared in package.json. Remove once a real adapter needs them.
-import '@sayva/domain';
+// The @sayva/pack-schema edge has no real consumer yet — PackExporter
+// arrives with Roadmap Phase 11 — so this import stands in for it, proving
+// the declared dependency actually resolves and compiles rather than only
+// being listed in package.json. The @sayva/domain edge no longer needs one:
+// the Project repository below imports it for real.
 import '@sayva/pack-schema';
 
 /**
- * Repository implementations and the filesystem/Zip/Id/Clock adapters land
- * here incrementally, starting with Implementation Roadmap Phase 2
- * (Project Management). PackExporter arrives with Phase 11 (Pack Builder).
- * Empty on purpose until then; see
- * docs/architecture/architecture-blueprint.md §5.
+ * `@sayva/infrastructure` — repository implementations and the
+ * filesystem/Zip/Id/Clock adapters (Architecture Blueprint §5).
  *
- * Depends on @sayva/domain (to implement its interfaces) and
- * @sayva/pack-schema (to implement PackExporter) — never @sayva/application
- * (Architecture Blueprint AD-01, ADR-002 DR-02/DR-03).
+ * Node APIs are used here and nowhere else. ADR-003 SR-01 fixes the storage
+ * mechanism as direct Node `fs`, and SR-02 keeps this package server-only:
+ * it is reachable through the Composition Root alone (AD-05), never from a
+ * Client Component (§6), and never by Application or Domain, which hold the
+ * ports and nothing else (AD-01, ADR-002 DR-02/DR-03).
+ *
+ * Filled in by the phase that needs each adapter. Project arrives with
+ * Phase 2; PackExporter with Phase 11.
  */
-export {};
+export { createFilesystemProjectRepository } from './project/filesystem-project-repository.js';
+export { ProjectFileError } from './project/project-file-error.js';
+export { PROJECT_FILE_EXTENSION } from './project/project-file.js';

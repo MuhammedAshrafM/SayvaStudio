@@ -142,6 +142,12 @@ flowchart TD
 
 **Freeze point:** A Project can be created, opened, saved, duplicated, and deleted end-to-end. Correctly still an empty shell — no Language yet.
 
+> **Infrastructure prerequisites — resolved by [ADR-003](../adr/ADR-003-storage-mechanism-and-project-persistence.md), 2026-09-11.**
+> The Domain and Application layers were unblocked and built first. The filesystem `ProjectRepository` was not: three questions the frozen documents left open had to be answered before an adapter could exist — the **storage mechanism** (deferred by name in Architecture Blueprint §9), the **`.sayva` file format** (named in the Domain Model's glossary, never specified), and the **Project `SchemaVersion` compatibility rule** (the invariant is stated in Domain Model §3; the rule behind it was not, which left this phase's first acceptance criterion only half-enforceable).
+> All three are now ruled — direct Node `fs`, one UTF-8 JSON file per Project written atomically, and `schemaVersion <= CURRENT_PROJECT_SCHEMA_VERSION`. No frozen document was changed: ADR-003 supplies what §9 deferred, in the form §9 called for.
+
+> **Still open in this phase:** `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".
+
 > **Note:** Import/Export is listed under Project Management in the original feature brief but is deliberately deferred to Phase 12 — sequenced late for priority, not because it's technically blocked here.
 
 ### Phase 3 — Language Management
@@ -367,4 +373,4 @@ Sixteen design decisions were raised during the phase. **D14** (containment is d
 
 The twelve deferred patterns are not a Phase 1 remainder. Each belongs to the application phase that needs it, and arrives there with the infrastructure D1 named as its reason for deferral. From here only a verified production bug reopens this phase.
 
-**Phase 2 — Project Management is next.** Its Domain and Application layers are unblocked; its Infrastructure layer is not — see that phase's entry for the three prerequisites.
+**Phase 2 — Project Management is in progress.** Its Domain and Application layers are complete. Its Infrastructure layer was blocked on three unresolved prerequisites, now ruled in [ADR-003](../adr/ADR-003-storage-mechanism-and-project-persistence.md) — see that phase's entry. The remaining scope is the Project list / create / open screens, which additionally need `SyAppShell` and `SyCollection`, two of the twelve patterns D1 deferred out of Phase 1.

@@ -12,9 +12,11 @@ import * as domain from './index';
  * an accidental import.
  */
 const EXPECTED_SURFACE = [
+  'CURRENT_PROJECT_SCHEMA_VERSION',
   'DomainError',
   'PROJECT_STATES',
   'PROJECT_TRANSITIONS_BLOCKED',
+  'assertProjectSchemaVersion',
   'createMetadata',
   'createProject',
   'isProjectId',

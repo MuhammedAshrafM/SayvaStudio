@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createProject,
+  CURRENT_PROJECT_SCHEMA_VERSION,
   type Clock,
   type IdGenerator,
   type Project,
@@ -237,8 +238,14 @@ describe('DuplicateProject', () => {
   });
 
   it('carries the source schemaVersion, since the copy is the same format', async () => {
+    // Was `4` before ADR-003 SR-07 gave `schemaVersion` a compatibility rule;
+    // a version above CURRENT is now unconstructible, which is the point of
+    // the gate. At version 1 "carried from the source" and "defaulted to the
+    // current build" are indistinguishable, so which one a duplicate should
+    // get is a question a version 2 will have to answer — no source rules on
+    // it today, and this test does not decide it.
     const source = createProject(
-      { name: 'X', schemaVersion: 4 },
+      { name: 'X', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
       { ids: ids(UUID_A), clock: clockAt('2026-09-01T10:00:00.000Z') },
     );
     const memory = inMemoryRepository([source]);
@@ -246,7 +253,7 @@ describe('DuplicateProject', () => {
       deps({ projects: memory.repository, ids: ids(UUID_B) }),
       { id: source.id, name: 'Copy' },
     );
-    expect(view.schemaVersion).toBe(4);
+    expect(view.schemaVersion).toBe(source.schemaVersion);
   });
 
   it('requires a name for the copy', async () => {

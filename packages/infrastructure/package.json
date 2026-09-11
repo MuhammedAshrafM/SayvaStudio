@@ -16,7 +16,8 @@
     "build": "tsc -b",
     "clean": "rm -rf dist *.tsbuildinfo",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@sayva/domain": "workspace:*",
@@ -25,7 +26,10 @@
   "devDependencies": {
     "@sayva/eslint-config": "workspace:*",
     "@sayva/typescript-config": "workspace:*",
+    "@sayva/vitest-config": "workspace:*",
+    "@types/node": "^26.1.2",
     "eslint": "^9.39.5",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
   }
 }

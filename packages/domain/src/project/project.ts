@@ -42,12 +42,13 @@ export type Project = {
   /**
    * The format version of the `.sayva` file this Project is stored in.
    *
-   * Only its *shape* is enforced here. The invariant §3 states — "SchemaVersion
-   * must be readable by the current Studio build" — needs a compatibility rule
-   * and a current-build version, and neither exists in any canonical source.
-   * The Pack's `schemaVersion` is a different concern by the Pack
-   * Specification's own rule that Domain and Pack evolve independently, so it
-   * cannot stand in. Supplied by the caller until that rule is decided.
+   * The invariant §3 states — "SchemaVersion must be readable by the current
+   * Studio build" — is enforced by `assertProjectSchemaVersion` against
+   * `CURRENT_PROJECT_SCHEMA_VERSION` (ADR-003 SR-07).
+   *
+   * Not to be confused with the Pack's `schemaVersion`: two unrelated numbers
+   * that never need to agree, never get compared, and version different files
+   * for different readers (ADR-003 SR-08, Pack Specification §8).
    */
   readonly schemaVersion: number;
   readonly state: ProjectState;
@@ -71,10 +72,36 @@ function assertName(name: string): string {
   return trimmed;
 }
 
-function assertSchemaVersion(schemaVersion: number): number {
+/**
+ * The `.sayva` format version this Studio build writes — ADR-003 SR-07.
+ *
+ * Bumped only when the persisted shape of a Project changes. Unrelated to the
+ * Pack's `schemaVersion`, which versions a different file for a different
+ * reader (SR-08).
+ */
+export const CURRENT_PROJECT_SCHEMA_VERSION = 1;
+
+/**
+ * The concrete form of Domain Model §3's "SchemaVersion must be readable by
+ * the current Studio build" — ADR-003 SR-07.
+ *
+ * Exported because the gate has to be callable at the read boundary *before*
+ * anything else about a persisted Project is validated. A future schema may
+ * legitimately add a state or reshape a field, so checking structure first
+ * would report a newer file as malformed — an error about the wrong problem.
+ * Infrastructure asks this question first and gets the right answer once,
+ * rather than restating the rule and letting the two drift.
+ */
+export function assertProjectSchemaVersion(schemaVersion: number): number {
   if (!Number.isSafeInteger(schemaVersion) || schemaVersion < 1) {
     throw new DomainError(
       `Project schemaVersion must be a positive integer; received ${String(schemaVersion)}.`,
+    );
+  }
+  if (schemaVersion > CURRENT_PROJECT_SCHEMA_VERSION) {
+    throw new DomainError(
+      `Project schemaVersion ${String(schemaVersion)} is newer than this Studio build can read ` +
+        `(supports up to ${String(CURRENT_PROJECT_SCHEMA_VERSION)}).`,
     );
   }
   return schemaVersion;
@@ -95,7 +122,7 @@ export function createProject(
   return {
     id: newProjectId(deps.ids),
     name: assertName(input.name),
-    schemaVersion: assertSchemaVersion(input.schemaVersion),
+    schemaVersion: assertProjectSchemaVersion(input.schemaVersion),
     state: 'Created',
     metadata: createMetadata(deps.clock, input.tags),
   };
@@ -127,15 +154,22 @@ export type RestoreProjectInput = {
  * Every invariant is re-checked. A file edited by hand, or written by an
  * older build, is exactly the case where "Domain validates truth" has to
  * hold — reconstitution is not a trusted path.
+ *
+ * The schema version is checked *first*, before the state or any other
+ * field (ADR-003 SR-07). "Can this build read the file at all" precedes
+ * "is what it contains valid": a version this build does not understand may
+ * carry a state or a field shape that only looks wrong from here, and
+ * reporting that as malformed would name the wrong problem.
  */
 export function restoreProject(input: RestoreProjectInput): Project {
+  const schemaVersion = assertProjectSchemaVersion(input.schemaVersion);
   if (!PROJECT_STATES.includes(input.state)) {
     throw new DomainError(`Unknown Project state "${String(input.state)}".`);
   }
   return {
     id: toProjectId(input.id),
     name: assertName(input.name),
-    schemaVersion: assertSchemaVersion(input.schemaVersion),
+    schemaVersion,
     state: input.state,
     metadata: restoreMetadata(input),
   };

@@ -1,7 +1,9 @@
 export {
+  assertProjectSchemaVersion,
   createProject,
   renameProject,
   restoreProject,
+  CURRENT_PROJECT_SCHEMA_VERSION,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
 } from './project.js';
