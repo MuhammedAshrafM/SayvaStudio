@@ -85,11 +85,12 @@ Steps 3–5 are checked mechanically from Slice 3 onward: the regenerate-and-dif
 
 ## Recorded discrepancies
 
-Three count discrepancies exist between the handoff's prose and the inventory's data.
-The inventory is internally consistent in all three cases — its declared `$meta.counts` match its actual array lengths exactly — so it is treated as authoritative for counts, and none of the three has implementation impact beyond which number to build against.
+Four count discrepancies exist between the handoff's prose and the inventory's data.
+The inventory is internally consistent in every case — its declared `$meta.counts` match its actual array lengths exactly — so it is treated as authoritative for counts, and none of the four has implementation impact beyond which number to build against.
 
 | # | Discrepancy | Resolution |
 |---|---|---|
 | 1 | Handoff status summary says **85 tokens**; the inventory declares 93 and contains 93. | Build against **93**. Recorded as open decision D7. |
 | 2 | Handoff §11 says **four** components were reclassified as configurations; enumerating them yields five, and the inventory contains five. | The design's own recorded conflict **C2**. Housekeeping. |
 | 3 | Handoff §12's heading reads **"Design System primitives (9)"** but enumerates ten, and both the §11 contract table's class column and the inventory's `classification` field yield ten. | Build against **ten**. Not previously recorded by design — send back as a documentation correction. |
+| 4 | Handoff §15.6 reads **"URL contract (12 routes)"**; the inventory's `foundations.url-contract.routes` enumerates eleven. | Build against the **eleven enumerated**. The twelfth is not identifiable from either file and **must not be invented**. Not previously recorded by design — send back as a documentation correction, together with whether a route is genuinely missing. Found 2026-09-14 while establishing that the URL contract has no Projects route ([ADR-004](../adr/ADR-004-project-management-is-pre-shell.md)). |
