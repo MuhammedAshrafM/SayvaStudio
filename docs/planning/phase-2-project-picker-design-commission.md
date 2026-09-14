@@ -1,6 +1,6 @@
 # Design Commission — Pre-Shell Project Workspace Picker
 
-**Status:** Commission · awaiting design
+**Status:** Commission · **answered 2026-09-14 by [the Project Picker design](./phase-2-project-picker-design.md)** (proposed, not yet ingested into Claude Design)
 **For:** the Claude Design project — *Design foundations review* (`d9a9cd38-f02e-4baf-8fff-4ff9f808b422`)
 **Raised by:** Roadmap Phase 2, third scope bullet — "Project list / create / open screens"
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits **before** `SyAppShell`
