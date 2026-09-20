@@ -8,7 +8,7 @@
 |---|---|---|---|
 | 1 | `Sayva Studio Foundations.dc.html` | v0.2 | Philosophy, IA, domain model, lifecycle, tokens, register, layout, accessibility |
 | 2 | `Sayva Studio Design System.dc.html` | v0.2 | Component contracts (canonical naming authority), workspace recipe, screen briefs |
-| 3 | `Sayva Studio Screens.dc.html` | canonical | Vocabulary + Sign Editor at full fidelity, design review |
+| 3 | `Sayva Studio Screens.dc.html` | canonical | Vocabulary + Sign Editor at full fidelity, design review, Project Picker specified-not-drawn |
 | 4 | `Sayva Studio Scale Review.dc.html` | canonical | Amendments A1–A3, cardinality, optimistic boundary |
 | 5 | `Sayva Studio Handoff Audit.dc.html` | v1.1 | Inventory, Phase 1 boundary, acceptance criteria |
 
@@ -952,6 +952,7 @@ Intended use · Training data · Evaluation · Benchmarks · Inference profile �
 | 14 | Compatibility matrix | Release | DRAWN (specimen) | LP × ML pack states | `SyMatrix`, 4 cell states | `SyMatrix` | axis labels |
 | 15 | Rollout control | Release | DRAWN (specimen) | Ramp, hold, roll back | bar + % + Hold + Roll back | `SyRolloutControl`\* `SyMetric` | percentage steps |
 | 16 | Health cards | Health | DRAWN (specimen) | Route to the work | 6-card grid | `SyMetric` `SyHealthCard`\* | which six figures |
+| 17 | **Project Picker** | Pre-shell | **SPECIFIED — NOT DRAWN** | Reach a Project — the authoring workspace, one `.sayva` file — so the shell has a workspace to operate inside | Header (product name · workspace root · New Project) → single-column Project list → `SyDrawer` for create and duplicate. No shell chrome | `SyButton` `SyField` `SyDrawer` `SyStateBlock` | Four copy strings; the two-column row content; the workspace-root line; the `N` shortcut |
 
 **Screens 3–16 are component specimens drawn inside the Foundations/Design System documents, not full workspace screens.** Only **Vocabulary** and **Sign Editor** are complete, canonical, full-fidelity workspaces.
 

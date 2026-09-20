@@ -23,7 +23,7 @@ It introduces no design decisions of its own — every file here is a byte-faith
 | File | What it is |
 |---|---|
 | `SAYVA_STUDIO_DESIGN_HANDOFF.md` | Extraction-first handoff, 18 sections. The practical entry point — tokens, component contracts, workspace recipes, screen inventory, design rules, and everything the design has deliberately left unspecified. |
-| `sayva-studio-design-inventory.json` | The machine-readable form. 93 tokens, 22 contracted components, 17 registered-without-contract, 5 reclassified, 8 patterns, 10 principles, 8 workspace recipes, 16 screens, 20 rules, 27 accessibility items, 9 open decisions, 18 unspecified-by-design entries. Every entry carries a `source` field naming the document and section it came from. |
+| `sayva-studio-design-inventory.json` | The machine-readable form. 93 tokens, 22 contracted components, 17 registered-without-contract, 5 reclassified, 8 patterns, 10 principles, **9 workspace recipes**, **17 screens**, 20 rules, 27 accessibility items, 9 open decisions, 18 unspecified-by-design entries. Every entry carries a `source` field naming the document and section it came from. |
 
 Both are excluded from Prettier by the repository-root `.prettierignore` (`docs`), which is what keeps them byte-faithful.
 
@@ -34,6 +34,7 @@ Both are excluded from Prettier by the repository-root `.prettierignore` (`docs`
 | **Project** | Claude Design — *Design foundations review* (`d9a9cd38-f02e-4baf-8fff-4ff9f808b422`) |
 | **Design extracted** | 2026-08-09 |
 | **Ingested here** | 2026-08-11 (Phase 1, Slice 1) |
+| **Amended** | 2026-09-20 — `Sayva Studio Screens.dc.html` **§04 Project picker** authored in the Claude Design project, then re-exported through the workflow below. Adds one workspace recipe and one screen, and introduces the status **`specified-not-drawn`**. No token, component contract, or existing section changed; §03 Design review keeps its number and both citations of it (`ai-register`, `R06`) are untouched. |
 | **Source documents** | `Sayva Studio Foundations.dc.html` v0.2 · `Sayva Studio Design System.dc.html` v0.2 · `Sayva Studio Screens.dc.html` · `Sayva Studio Scale Review.dc.html` · `Sayva Studio Handoff Audit.dc.html` v1.1 |
 
 The five `.dc.html` source documents are **not** vendored — they are rendered documents whose data lives in embedded script arrays, and the handoff plus the inventory are their extraction.

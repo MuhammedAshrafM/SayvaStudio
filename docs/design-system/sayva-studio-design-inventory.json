@@ -19,7 +19,7 @@
       {
         "file": "Sayva Studio Screens.dc.html",
         "version": "canonical",
-        "role": "Vocabulary + Sign Editor at full fidelity, design review"
+        "role": "Vocabulary + Sign Editor at full fidelity, design review, Project Picker specified-not-drawn"
       },
       {
         "file": "Sayva Studio Scale Review.dc.html",
@@ -43,12 +43,20 @@
       "patterns": 8,
       "principles": 10,
       "rules": 20,
-      "workspaceRecipes": 8,
-      "screens": 16,
+      "workspaceRecipes": 9,
+      "screens": 17,
       "screensCanonical": 2,
       "accessibility": 27,
       "openDecisions": 9,
-      "unspecified": 18
+      "unspecified": 18,
+      "screensSpecifiedNotDrawn": 1
+    },
+    "statusVocabulary": {
+      "canonical-drawn": "Drawn at full fidelity in a source document.",
+      "partially-drawn": "Drawn in part; the remainder specified in prose.",
+      "specified-not-drawn": "Contract complete, visual design deliberately absent. Buildable. Not a brief.",
+      "brief-only": "A one-paragraph brief. A brief is not a design; these cannot be built beyond their shell.",
+      "component-specimen": "A specimen of one component in situ, not a whole screen."
     }
   },
   "foundations": [
@@ -3085,6 +3093,55 @@
         "Ranking weights are UNSPECIFIED BY DESIGN"
       ],
       "blockedBy": "1 uncontracted component (SyPinnedItems)"
+    },
+    {
+      "id": "project-picker",
+      "name": "Project Picker",
+      "entity": "PROJECT (many)",
+      "template": "pre-shell — none of L1-L7",
+      "status": "specified-not-drawn",
+      "source": "Sayva Studio Screens.dc.html §04",
+      "url": "Application root. Adds no entry to the URL contract.",
+      "goal": "Get the author into the workspace they mean to work in, or into a new one, without asking them anything the filesystem already knows.",
+      "layout": "One column at every breakpoint. No rail, no scope bar, no sidebar, no inspector. Header, then list.",
+      "scope": "None. No scope bar — nothing here is language-scoped.",
+      "appBar": "Screen-local header: product name, the workspace root being listed, and the single primary action New Project. Not SyEntityHeader.",
+      "columns": [
+        "name",
+        "updatedAt"
+      ],
+      "filters": [
+        "None"
+      ],
+      "savedViews": [
+        "None"
+      ],
+      "selection": "None. Selection exists to enable bulk action; there is none.",
+      "bulkActions": [
+        "None"
+      ],
+      "inspector": "None.",
+      "queues": "None.",
+      "jobs": "None. Create, open and duplicate are each a single small file operation.",
+      "states": {
+        "empty": "first-run: root empty or absent. The explanatory line names the location being listed.",
+        "loading": "Skeleton, not spinner, while the scan is in flight.",
+        "error": "Root unreadable: names the path, action Retry. Per-file: an unreadable .sayva renders as an inline-row error naming the file."
+      },
+      "responsive": "One column at all four breakpoints. bp.sm is read-and-open only, with New Project and Duplicate disabled and a stated reason. Content-column maximum width is NOT APPLICABLE — both candidate rules are scoped to the shell.",
+      "components": [
+        "SyButton",
+        "SyField",
+        "SyDrawer",
+        "SyStateBlock"
+      ],
+      "screenSpecific": [
+        "The four copy strings",
+        "The two-column row content",
+        "The workspace-root line in the header",
+        "The N shortcut for New Project"
+      ],
+      "blockedBy": "Delete semantics (two canonical sources contradict); ArchiveProject; Created->Active trigger; workspace root path; tolerant repository read. None resolved by this design."
     }
   ],
   "screens": [
@@ -3525,6 +3582,29 @@
       ],
       "responsive": "UNSPECIFIED BY DESIGN",
       "note": "A component specimen drawn inside a design document, not a full workspace screen."
+    },
+    {
+      "n": 17,
+      "name": "Project Picker",
+      "domain": "Pre-shell",
+      "status": "specified-not-drawn",
+      "source": "Sayva Studio Screens.dc.html §04",
+      "purpose": "Reach a Project — the authoring workspace, one .sayva file — so the shell has a workspace to operate inside.",
+      "layoutHierarchy": "Header (product name, workspace root, New Project) -> single-column Project list -> SyDrawer for create and duplicate. No shell chrome.",
+      "components": [
+        "SyButton",
+        "SyField",
+        "SyDrawer",
+        "SyStateBlock"
+      ],
+      "variants": "UNSPECIFIED BY DESIGN",
+      "states": [
+        "first-run",
+        "loading",
+        "error",
+        "error (inline row, per unreadable file)"
+      ],
+      "screenSpecific": "Specified in full and deliberately not drawn. No mockup, sample content, spacing, colour or copy beyond what the section states."
     }
   ],
   "rules": [
