@@ -1,0 +1,34 @@
+/*
+ * Studio's stylesheet entry point.
+ *
+ * The visual language itself is not defined here and must not be: it comes
+ * from `@sayva/design-system/styles`, the package's public CSS surface
+ * (ADR-002 DR-16), which pulls in Tailwind, the generated token layer and
+ * the hand-authored base rules. Nothing in this file adds a token, a colour
+ * or a component style — doing so would put a second source of truth beside
+ * the generated one.
+ *
+ * What this file does own is what the consumer is supposed to own: which
+ * files Tailwind scans for utility usage.
+ */
+
+@import '@sayva/design-system/styles';
+
+/*
+ * Tailwind v4 detects sources automatically, but deliberately skips
+ * `node_modules` — and a pnpm workspace package is reached through exactly
+ * that. This line is load-bearing, and measurably so: removing it and
+ * rebuilding takes the emitted stylesheet from 24,089 bytes to 5,539, with
+ * zero design-system utilities in it.
+ *
+ * It takes the token layer with it, which is the part worth knowing. `@theme`
+ * emits a custom property only when a generated utility uses it, so with no
+ * source scanned there are no utilities, and therefore no `--row-default`,
+ * no `--color-accent-default`, nothing. The failure is total rather than
+ * partial — the stylesheet still builds and still links, and every rule in
+ * it is gone.
+ *
+ * The path is the real source directory, not the symlink, so the scan sees
+ * the same files the build compiles.
+ */
+@source '../../../../packages/design-system/src';
