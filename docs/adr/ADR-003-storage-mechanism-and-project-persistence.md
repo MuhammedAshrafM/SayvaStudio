@@ -168,12 +168,22 @@ Rejected because it makes every format change break every existing Project with 
 
 **Explicitly not decided here:**
 
-- Where the workspace root actually points. SR-05 fixes only that it is injected; choosing the path is the Composition Root's job, in the slice that builds one.
+- Where the workspace root actually points. SR-05 fixes only that it is injected; **SR-09 (below) fixes how it arrives**; the directory itself remains a deployment decision and is still not chosen here.
 - The file layout for Language, Course, Category, Lesson, Asset, and Sign — each is decided by the phase that builds it. SR-01/02/05/06 apply; SR-03 and SR-04 are about the Project file specifically.
 - The `Assets/` directory's layout (Phase 4), and the Phase 12 bundle's format.
 - Whether `findAll()` should tolerate one unreadable file instead of failing. The port returns `readonly Project[]` with no channel for partial failure, so the adapter fails loudly rather than hiding a Project; giving the list screen a tolerant read would change the Domain port and needs its own decision.
 - Durability barriers (`fsync`) — see SR-06.
 - `ArchiveProject`, which remains absent from Blueprint §4 and from Phase 2's scope while Phase 2's manual checklist names it. Unchanged by this ADR and still open.
+
+## Amendment — SR-09: the workspace root reaches the Composition Root through the environment
+
+**Approved 2026-09-22 as decision PP-02.** SR-05 fixed that the root is *injected*; it deferred *how it arrives* and *where it points*. This settles the mechanism. **It does not choose a directory.**
+
+- **Decision:** the workspace root is supplied by the environment variable **`SAYVA_WORKSPACE_ROOT`**, read **only** in the Composition Root. There is **no default** — an absent or empty value fails loudly rather than resolving to anything. `@sayva/infrastructure` continues to receive the root as a constructor argument and reads no environment variable of its own, exactly as SR-05 requires: "no ambient path, nothing read from the environment inside the adapter".
+- **The root is also presentation data.** The canonical Project Picker design has the surface name the location it is listing — an empty picker that cannot say *where* Studio looked is the "broken screen" the design's own absence-state rule warns about. The root therefore crosses the Server→Client boundary as a plain serializable string, like any other Response Model value (AD-02, Blueprint §6). It is displayed only: the picker cannot change it.
+- **Reason:** the workspace root is deployment configuration, not architecture. An environment variable keeps the choice out of the codebase entirely, needs no new config file format, and is read in the one module AD-05 already designates for concrete wiring. Failing loudly rather than defaulting is what keeps SR-05's "no default" true in practice rather than only on paper.
+- **Alternatives considered:** a per-OS default directory by convention — rejected twice over: it is the invention ADR-003 declined to make, and a silent default is how a user's projects end up somewhere they never chose. A config file — rejected; it buys nothing an environment variable does not and adds a format decision. Passing the root in from the Composition Root's caller — rejected as circular, relocating the question rather than answering it.
+- **Consequences:** Studio will not start without `SAYVA_WORKSPACE_ROOT` set, which is intended. Multi-root is **not** supported and not designed. The actual directory remains a deployment decision, documented for operators rather than fixed here.
 
 ## Status
 
