@@ -6,7 +6,24 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules"],
+  /*
+   * Test files are excluded from type-checking, and deliberately rather than
+   * by oversight — the same recorded gap as design-system's
+   * tsconfig.check.json, reached from the other direction.
+   *
+   * This app needs no separate check-types project: `nextjs.json` already
+   * sets `noEmit`, so there is no dist to keep tests out of and nothing to
+   * split. Its `include` therefore picks test files up for free, which is
+   * what surfaced the gap here: checking them requires typing the
+   * `@sayva/vitest-config/axe` helper and registering its
+   * `toHaveNoViolations` matcher, and both live in another package.
+   *
+   * Widening that quietly inside an app slice is exactly what design-system
+   * declined to do. Fixing it once in `@sayva/vitest-config` would let both
+   * this file and tsconfig.check.json drop their exclusion — worth doing as
+   * its own change, not as a side effect of this one.
+   */
+  "exclude": ["node_modules", "**/*.test.ts", "**/*.test.tsx"],
   "references": [
     { "path": "../../packages/application" },
     { "path": "../../packages/infrastructure" },
