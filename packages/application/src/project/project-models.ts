@@ -20,6 +20,24 @@ export type ProjectView = {
   readonly notes?: string;
 };
 
+/**
+ * The Project list as the Project Picker shows it — a Query View Model.
+ *
+ * AD-07 keeps the decision "did the list load, or did it fail" inside a
+ * Query use case rather than a Server Component, so the page receives one
+ * of these and only renders it. Plain and serializable, like every Response
+ * Model (AD-02).
+ *
+ * The `error` branch carries exactly what readiness ruling RB-2 settled and
+ * nothing more: the trace ID of this occurrence (ADR-003 SR-11). The affected
+ * file location that the canonical error state also shows arrives with
+ * SR-10, in the read-only slice — it is not carried here, and the trace ID is
+ * never a stand-in for it.
+ */
+export type ProjectListView =
+  | { readonly status: 'listed'; readonly projects: readonly ProjectView[] }
+  | { readonly status: 'error'; readonly traceId: string };
+
 /** The one place a Domain entity becomes a Response Model. */
 export function toProjectView(project: Project): ProjectView {
   return {

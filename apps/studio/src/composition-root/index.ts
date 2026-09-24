@@ -1,7 +1,8 @@
 import 'server-only';
 
-import type { ProjectUseCaseDeps } from '@sayva/application';
+import type { ProjectListUseCaseDeps, ProjectUseCaseDeps } from '@sayva/application';
 import {
+  createConsoleFailureTracer,
   createCryptoIdGenerator,
   createFilesystemProjectRepository,
   createSystemClock,
@@ -82,14 +83,30 @@ export function projectUseCaseDeps(): ProjectUseCaseDeps {
   return cachedDeps;
 }
 
+let cachedListDeps: ProjectListUseCaseDeps | undefined;
+
+/**
+ * The dependencies of the Project list query: the ordinary Project ones plus
+ * the failure tracer (ADR-003 SR-11).
+ *
+ * Kept apart from `projectUseCaseDeps()` on purpose. SR-11 scopes tracing to
+ * the Project list's read failure, so the tracer is wired into this one
+ * dependency set and reaches no other use case.
+ */
+export function projectListDeps(): ProjectListUseCaseDeps {
+  cachedListDeps ??= { ...projectUseCaseDeps(), tracer: createConsoleFailureTracer() };
+  return cachedListDeps;
+}
+
 /**
  * Test seam, not production API.
  *
- * Both values above are memoised for the life of the process, which is
+ * Every value above is memoised for the life of the process, which is
  * correct for a server but makes the module impossible to exercise twice
  * with different configuration. Nothing in the application calls this.
  */
 export function resetCompositionRoot(): void {
   cachedRoot = undefined;
   cachedDeps = undefined;
+  cachedListDeps = undefined;
 }

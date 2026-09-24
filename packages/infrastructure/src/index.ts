@@ -18,6 +18,7 @@ import '@sayva/pack-schema';
  * Filled in by the phase that needs each adapter. Project arrives with
  * Phase 2; PackExporter with Phase 11.
  */
+export { createConsoleFailureTracer } from './console-failure-tracer.js';
 export { createCryptoIdGenerator } from './crypto-id-generator.js';
 export { createSystemClock } from './system-clock.js';
 

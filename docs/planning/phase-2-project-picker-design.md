@@ -55,7 +55,7 @@ All 21 contracted fields, in the design's own shape.
 | **`inspector`** | **None.** `SyInspector` is a deferred pattern, and a Project has six fields, two of which are shown. |
 | **`queues`** | **None.** Nothing here hands a cursor to anything. |
 | **`jobs`** | **None.** Create, open and duplicate are each a single small file operation. The design's rule is that cardinality decides sync vs job; the cardinality here is one. |
-| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file. Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **open** (RB-2) — see §6. |
+| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file. Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **per occurrence** (RB-2) — see §6. |
 | **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. See §8. |
 | **`components`** | `SyButton` · `SyField` · `SyDrawer` · `SyStateBlock`. Four primitives, no patterns. |
 | **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`. |
@@ -158,7 +158,9 @@ The three exclusions are recorded rather than omitted, so a later reviewer can s
 
 **Temporary slice boundary (RB-6).** First-run renders its heading and line now; its `New Project` action arrives with the Create slice. The same holds for `New Project` in the header, since it is the same action. Until then neither location renders it, and nothing stands in its place — no substitute action and no disabled button — and first-run is never replaced by a bare empty list.
 
-**Trace ID — open (RB-2).** `SyStateBlock`'s `error` state requires a trace ID (AC14), rendered after the component's visible **Trace ID** label, and its value for this surface is **not yet defined**. Ruled out: the file path, the framework's error digest, and any new correlation or trace mechanism. The error state cannot be built until the value is ruled.
+**Trace ID (RB-2).** `SyStateBlock`'s `error` state requires a trace ID (AC14), rendered after the component's visible **Trace ID** label. Each failure to read the list gets its own trace ID when it happens — an identifier for that one occurrence, never reused and never a category. The same value is written with the failure's details to the server's own diagnostic output, so the Trace ID on screen leads to the record of what went wrong. It is not the file path, not the framework's error digest, and not stored anywhere: it exists only in the page state and that one diagnostic line.
+
+A stable diagnostic code was considered and rejected: under the component's visible **Trace ID** label it would name a kind of failure as if it were one occurrence of it.
 
 ### §7 — Duplicate and delete
 
@@ -289,9 +291,8 @@ Carried forward unresolved. None is decided by this design.
 | 5 | **Workspace root path** — the mechanism is ruled (ADR-003 SR-09: `SAYVA_WORKSPACE_ROOT`, read only in the Composition Root); the directory it points at stays a deployment decision. | Nothing now — §12's displayed location comes from SR-09. | Deployment |
 | 6 | **D6, the icon set.** | Nothing today — the design uses no icons. Blocks `SyMenu` if a third row action is ever needed. | Design owner |
 | 7 | **`SaveProject` — "saved" is ambiguous.** No source says what a save does on this surface, or whether it belongs here. Recorded, **not** resolved, and specifically not resolved as Rename. | Nothing here — no save affordance is placed. | Design owner |
-| 8 | **The error state's trace ID (AC14)** — value not defined for this surface. The file path, the framework's error digest and any new trace mechanism are ruled out. | The `error` state, and so §4's and §5's error treatments. | Design owner |
 
-**Withdrawn from this table since the first draft:** the `bp.xl` content-column maximum width, which is **not applicable** to a pre-shell surface rather than missing from it (§8). And item 7 above is a restatement: the first draft resolved the "saved" ambiguity as Rename, which no canonical source supports; it is now recorded as ambiguous and left open.
+**Withdrawn from this table since the first draft:** the `bp.xl` content-column maximum width, which is **not applicable** to a pre-shell surface rather than missing from it (§8). And item 7 above is a restatement: the first draft resolved the "saved" ambiguity as Rename, which no canonical source supports; it is now recorded as ambiguous and left open. And the error state's trace ID, added as item 8 by readiness ruling RB-2 and resolved by it on 2026-09-24 — see §6.
 
 The zero-Language entry state was never a dependency of this design and is not one now — it is a **separate shell design concern** (§2).
 

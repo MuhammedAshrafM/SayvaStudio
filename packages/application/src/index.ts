@@ -16,6 +16,7 @@ export {
   listProjectsUseCase,
   openProjectUseCase,
   saveProjectUseCase,
+  viewProjectListUseCase,
   ProjectNotFoundError,
   toProjectView,
 } from './project/index.js';
@@ -24,6 +25,8 @@ export type {
   DeleteProjectRequest,
   DuplicateProjectRequest,
   OpenProjectRequest,
+  ProjectListUseCaseDeps,
+  ProjectListView,
   ProjectUseCaseDeps,
   ProjectView,
   SaveProjectRequest,

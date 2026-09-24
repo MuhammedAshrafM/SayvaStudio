@@ -11,7 +11,7 @@
  */
 export { DomainError } from './errors.js';
 
-export type { Clock, IdGenerator } from './ports/index.js';
+export type { Clock, FailureTracer, IdGenerator } from './ports/index.js';
 
 export { createMetadata, restoreMetadata, touchMetadata } from './shared/metadata.js';
 export type { Metadata } from './shared/metadata.js';

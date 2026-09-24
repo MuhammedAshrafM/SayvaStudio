@@ -17,6 +17,7 @@ import {
   listProjectsUseCase,
   openProjectUseCase,
   saveProjectUseCase,
+  viewProjectListUseCase,
   type ProjectUseCaseDeps,
 } from './project-use-cases.js';
 
@@ -467,5 +468,149 @@ describe('the use cases hold ports, not adapters', () => {
 
     await deleteProjectUseCase(d, { id: copy.id });
     expect(await listProjectsUseCase(d)).toHaveLength(1);
+  });
+});
+
+describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', () => {
+  /**
+   * A fake tracer, not the real one: DR-02 keeps Infrastructure out of this
+   * package, tests included. It records every failure it is handed and mints
+   * a visibly distinct value per call, so a use case that cached, reused or
+   * substituted a trace ID would show up here.
+   */
+  function recordingTracer() {
+    const traced: unknown[] = [];
+    const tracer = {
+      trace: (failure: unknown) => {
+        traced.push(failure);
+        return `trace-${traced.length}`;
+      },
+    };
+    return { tracer, traced };
+  }
+
+  /** A repository whose read fails, and which counts any attempt to write. */
+  function failingRepository(failure: unknown) {
+    const memory = inMemoryRepository();
+    const repository: ProjectRepository = {
+      ...memory.repository,
+      findAll: () => Promise.reject(failure),
+    };
+    return { repository, calls: memory.calls, store: memory.store };
+  }
+
+  const WHERE = 'C:/authoring/projects/3f2504e0-4f89-41d3-9a0c-0305e82c3301.sayva';
+  const fileFailure = () =>
+    Object.assign(new Error(`Project file "${WHERE}" is not valid JSON.`), {
+      path: WHERE,
+      digest: '2102856004',
+    });
+
+  it('lists the Projects, in PP-04 order, when the read succeeds', async () => {
+    const { tracer, traced } = recordingTracer();
+    const older = createProject(
+      { name: 'Older', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      { ids: ids(UUID_A), clock: clockAt('2026-09-01T10:00:00.000Z') },
+    );
+    const newer = createProject(
+      { name: 'Newer', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      { ids: ids(UUID_B), clock: clockAt('2026-09-20T10:00:00.000Z') },
+    );
+
+    const view = await viewProjectListUseCase({
+      ...deps({ projects: inMemoryRepository([older, newer]).repository }),
+      tracer,
+    });
+
+    expect(view).toEqual({
+      status: 'listed',
+      projects: [
+        expect.objectContaining({ name: 'Newer' }),
+        expect.objectContaining({ name: 'Older' }),
+      ],
+    });
+    // Nothing failed, so nothing is traced.
+    expect(traced).toEqual([]);
+  });
+
+  it('returns the error state carrying the trace ID the tracer minted', async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(view).toEqual({ status: 'error', traceId: 'trace-1' });
+  });
+
+  it('keeps that state serializable, so it survives the Server→Client boundary', async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(JSON.parse(JSON.stringify(view))).toEqual(view);
+  });
+
+  it('asks for a new trace ID for every occurrence', async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+    const d = { ...deps({ projects: repository }), tracer };
+
+    const first = await viewProjectListUseCase(d);
+    const second = await viewProjectListUseCase(d);
+
+    expect(first).toEqual({ status: 'error', traceId: 'trace-1' });
+    expect(second).toEqual({ status: 'error', traceId: 'trace-2' });
+  });
+
+  it('hands the tracer the failure itself, once, so the record has the detail', async () => {
+    const { tracer, traced } = recordingTracer();
+    const failure = fileFailure();
+    const { repository } = failingRepository(failure);
+
+    await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(traced).toEqual([failure]);
+  });
+
+  it('never uses the file path as the trace ID', async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(view.status).toBe('error');
+    if (view.status !== 'error') return;
+    expect(view.traceId).not.toBe(WHERE);
+    expect(view.traceId).not.toContain('.sayva');
+  });
+
+  it("never uses the framework's error digest as the trace ID", async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(view).not.toEqual({ status: 'error', traceId: '2102856004' });
+  });
+
+  it('persists nothing: a failed read writes no Project and deletes none', async () => {
+    const { tracer } = recordingTracer();
+    const { repository, calls, store } = failingRepository(fileFailure());
+
+    await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(calls.save).toBe(0);
+    expect(calls.delete).toBe(0);
+    expect(store.size).toBe(0);
+  });
+
+  it('carries only the trace ID in the error state — the location is SR-10, not this', async () => {
+    const { tracer } = recordingTracer();
+    const { repository } = failingRepository(fileFailure());
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(Object.keys(view).sort()).toEqual(['status', 'traceId']);
   });
 });

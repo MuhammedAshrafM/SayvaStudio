@@ -19,6 +19,7 @@ const EXPECTED_SURFACE = [
   'openProjectUseCase',
   'saveProjectUseCase',
   'toProjectView',
+  'viewProjectListUseCase',
 ];
 
 describe('@sayva/application public surface', () => {

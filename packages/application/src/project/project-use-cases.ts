@@ -3,11 +3,17 @@ import {
   renameProject,
   toProjectId,
   type Clock,
+  type FailureTracer,
   type IdGenerator,
   type Project,
   type ProjectRepository,
 } from '@sayva/domain';
-import { ProjectNotFoundError, toProjectView, type ProjectView } from './project-models.js';
+import {
+  ProjectNotFoundError,
+  toProjectView,
+  type ProjectListView,
+  type ProjectView,
+} from './project-models.js';
 
 /**
  * The five Project use cases — Roadmap Phase 2 scope, and the Architecture
@@ -102,6 +108,44 @@ export async function listProjectsUseCase(
 
 function mostRecentlyUpdatedFirst(a: Project, b: Project): number {
   return b.metadata.updatedAt.getTime() - a.metadata.updatedAt.getTime();
+}
+
+/**
+ * What the Project list query needs: the ordinary Project dependencies plus
+ * the tracer. A separate type rather than a new field on `ProjectUseCaseDeps`,
+ * so the tracer reaches this one query and no other use case — ADR-003 SR-11
+ * scopes tracing to the Project list's read failure.
+ */
+export type ProjectListUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer };
+
+/**
+ * Query. The Project list as the Project Picker renders it: either the list,
+ * or a failure identified by its own trace ID.
+ *
+ * The decision between the two is made here, per AD-07, so a Server
+ * Component never has to catch anything. The list itself comes from
+ * `listProjectsUseCase` unchanged — same order, same Response Models.
+ *
+ * On failure the tracer is asked once for this occurrence (ADR-003 SR-11).
+ * The trace ID it returns is minted for the occurrence, recorded with the
+ * failure on the server's diagnostic output, and never derived from the
+ * failure — not its file path, not a framework digest. Nothing is written to
+ * the repository: a failed read changes nothing on disk.
+ *
+ * Every failure is caught, not only repository ones. SR-10's Domain-side
+ * failure contract, which will let Application tell a file problem from
+ * anything else, arrives with the read-only slice; until then a failure of
+ * any kind still reaches the author as a traced error rather than a crash,
+ * and the diagnostic line keeps its full detail.
+ */
+export async function viewProjectListUseCase(
+  deps: ProjectListUseCaseDeps,
+): Promise<ProjectListView> {
+  try {
+    return { status: 'listed', projects: await listProjectsUseCase(deps) };
+  } catch (failure) {
+    return { status: 'error', traceId: deps.tracer.trace(failure) };
+  }
 }
 
 // --- SaveProject ----------------------------------------------------------
