@@ -71,11 +71,37 @@ export async function openProjectUseCase(
   return toProjectView(await load(deps, request.id));
 }
 
-/** Query. Every Project, for the list screen. */
+/**
+ * Query. Every Project, most recently edited first.
+ *
+ * The order is decided here, in the Query's View Model assembly, because
+ * AD-07 puts "any decision-worthy logic" there — never in a Server
+ * Component — and a list's default order is exactly that kind of decision:
+ * left to each consumer, two screens could disagree about what "the project
+ * list" is. The canonical Project Picker design (Screens §04) reads
+ * "`updatedAt` descending … client-side — no port change", and PP-04 records
+ * that as *outside the repository and outside a server-side data query*,
+ * which this is. `ProjectRepository.findAll()` is untouched and takes no
+ * sort parameter.
+ *
+ * There is deliberately **no tie-breaker**. Two Projects edited at the same
+ * instant compare equal and keep whatever relative order the repository
+ * returned them in — `Array.prototype.sort` is stable. No source ranks one
+ * equally-recent Project above another, and ordering by name or id here would
+ * be inventing a rule the design never stated.
+ *
+ * The port's array is copied before sorting: it is `readonly`, and sorting it
+ * in place would reorder the repository's own result behind its back.
+ */
 export async function listProjectsUseCase(
   deps: ProjectUseCaseDeps,
 ): Promise<readonly ProjectView[]> {
-  return (await deps.projects.findAll()).map(toProjectView);
+  const projects = await deps.projects.findAll();
+  return [...projects].sort(mostRecentlyUpdatedFirst).map(toProjectView);
+}
+
+function mostRecentlyUpdatedFirst(a: Project, b: Project): number {
+  return b.metadata.updatedAt.getTime() - a.metadata.updatedAt.getTime();
 }
 
 // --- SaveProject ----------------------------------------------------------

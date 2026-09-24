@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createProject,
+  restoreProject,
   CURRENT_PROJECT_SCHEMA_VERSION,
   type Clock,
   type IdGenerator,
@@ -149,6 +150,161 @@ describe('ListProjects', () => {
 
   it('returns an empty list rather than failing when there are none', async () => {
     await expect(listProjectsUseCase(deps())).resolves.toEqual([]);
+  });
+});
+
+describe('ListProjects — ordering (PP-04)', () => {
+  /**
+   * `updatedAt` descending, decided in the Query's View Model assembly
+   * (AD-07). The fake repository returns Projects in the order they were
+   * seeded, so every test below seeds them *out* of the expected order —
+   * otherwise a use case that sorted nothing would pass.
+   */
+  const ID_1 = '11111111-1111-4111-8111-111111111111';
+  const ID_2 = '22222222-2222-4222-8222-222222222222';
+  const ID_3 = '33333333-3333-4333-8333-333333333333';
+  const ID_4 = '44444444-4444-4444-8444-444444444444';
+
+  /** A Project with exact, independent timestamps — restoreProject takes both. */
+  const projectAt = (
+    id: string,
+    name: string,
+    updatedAt: string,
+    createdAt = '2026-01-01T00:00:00.000Z',
+  ): Project =>
+    restoreProject({
+      id,
+      name,
+      schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION,
+      state: 'Created',
+      createdAt: new Date(createdAt),
+      updatedAt: new Date(updatedAt),
+    });
+
+  const listNames = async (seed: Project[]) =>
+    (await listProjectsUseCase(deps({ projects: inMemoryRepository(seed).repository }))).map(
+      (view) => view.name,
+    );
+
+  const older = projectAt(ID_1, 'Older', '2026-09-01T09:00:00.000Z');
+  const middle = projectAt(ID_2, 'Middle', '2026-09-10T09:00:00.000Z');
+  const newest = projectAt(ID_3, 'Newest', '2026-09-20T09:00:00.000Z');
+
+  it('lists the most recently updated Project first', async () => {
+    expect(await listNames([middle, older, newest])).toEqual(['Newest', 'Middle', 'Older']);
+  });
+
+  it('produces the same order whatever order the repository returns', async () => {
+    // Every permutation of three. If the use case passed the repository's
+    // order through, at most one of these could match.
+    const permutations = [
+      [older, middle, newest],
+      [older, newest, middle],
+      [middle, older, newest],
+      [middle, newest, older],
+      [newest, older, middle],
+      [newest, middle, older],
+    ];
+    for (const seed of permutations) {
+      expect(await listNames(seed)).toEqual(['Newest', 'Middle', 'Older']);
+    }
+  });
+
+  it('orders by updatedAt, not by createdAt', async () => {
+    // Created first, edited last. A list ordered by creation would put it
+    // at the bottom; "most recently edited first" puts it at the top.
+    const oldButJustEdited = projectAt(
+      ID_4,
+      'Old but just edited',
+      '2026-09-23T09:00:00.000Z',
+      '2025-01-01T00:00:00.000Z',
+    );
+    const recentButUntouched = projectAt(
+      ID_1,
+      'Recent but untouched',
+      '2026-09-05T09:00:00.000Z',
+      '2026-09-05T09:00:00.000Z',
+    );
+
+    expect(await listNames([recentButUntouched, oldButJustEdited])).toEqual([
+      'Old but just edited',
+      'Recent but untouched',
+    ]);
+  });
+
+  it('distinguishes updates a millisecond apart', async () => {
+    const earlier = projectAt(ID_1, 'Earlier', '2026-09-20T09:00:00.000Z');
+    const later = projectAt(ID_2, 'Later', '2026-09-20T09:00:00.001Z');
+
+    expect(await listNames([earlier, later])).toEqual(['Later', 'Earlier']);
+  });
+
+  it('keeps Projects edited at the same instant between the newer and the older ones', async () => {
+    // Deliberately asserts nothing about which tied Project comes first —
+    // no source ranks one equally-recent Project above another. Only that
+    // both are present, adjacent, and correctly placed around the rest.
+    const tiedAlpha = projectAt(ID_1, 'Alpha', '2026-09-15T09:00:00.000Z');
+    const tiedZulu = projectAt(ID_2, 'Zulu', '2026-09-15T09:00:00.000Z');
+    const before = projectAt(ID_3, 'Before', '2026-09-20T09:00:00.000Z');
+    const after = projectAt(ID_4, 'After', '2026-09-10T09:00:00.000Z');
+
+    const names = await listNames([tiedZulu, after, tiedAlpha, before]);
+
+    expect(names).toHaveLength(4);
+    expect(names[0]).toBe('Before');
+    expect(names[3]).toBe('After');
+    expect(new Set(names.slice(1, 3))).toEqual(new Set(['Alpha', 'Zulu']));
+  });
+
+  it('applies no tie-breaker of its own', async () => {
+    // The check that no secondary key was invented. A tie-breaker — by name,
+    // by id, by createdAt — would force the tied pair into the same order
+    // however the repository supplied them. With none, the use case leaves
+    // ties exactly as it received them, so reversing the input reverses the
+    // output. This fixes no particular order between the two; it shows the
+    // order is not the use case's to choose.
+    //
+    // Chosen so any plausible invented key disagrees with one of the two
+    // runs: Zulu sorts after Alpha by name, ID_2 after ID_1 by id, and
+    // Zulu was created before Alpha.
+    const alpha = projectAt(ID_1, 'Alpha', '2026-09-15T09:00:00.000Z', '2026-02-01T00:00:00.000Z');
+    const zulu = projectAt(ID_2, 'Zulu', '2026-09-15T09:00:00.000Z', '2026-01-01T00:00:00.000Z');
+
+    expect(await listNames([alpha, zulu])).toEqual(['Alpha', 'Zulu']);
+    expect(await listNames([zulu, alpha])).toEqual(['Zulu', 'Alpha']);
+  });
+
+  it("does not reorder the repository's own result", async () => {
+    // findAll() returns `readonly Project[]`. Sorting it in place would
+    // reorder an array the use case does not own; a frozen array makes that
+    // throw instead of passing quietly.
+    const returned = Object.freeze([older, newest, middle]);
+    const repository: ProjectRepository = {
+      ...inMemoryRepository().repository,
+      findAll: () => Promise.resolve(returned),
+    };
+
+    const views = await listProjectsUseCase(deps({ projects: repository }));
+
+    expect(views.map((view) => view.name)).toEqual(['Newest', 'Middle', 'Older']);
+    expect(returned.map((project) => project.name)).toEqual(['Older', 'Newest', 'Middle']);
+  });
+
+  it('still returns Response Models with the unchanged ProjectView shape', async () => {
+    const [first] = await listProjectsUseCase(
+      deps({ projects: inMemoryRepository([older, newest]).repository }),
+    );
+
+    expect(Object.keys(first ?? {}).sort()).toEqual([
+      'createdAt',
+      'id',
+      'name',
+      'schemaVersion',
+      'state',
+      'tags',
+      'updatedAt',
+    ]);
+    expect(first?.updatedAt).toBe('2026-09-20T09:00:00.000Z');
   });
 });
 
