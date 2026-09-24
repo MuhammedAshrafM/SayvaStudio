@@ -185,6 +185,16 @@ Rejected because it makes every format change break every existing Project with 
 - **Alternatives considered:** a per-OS default directory by convention — rejected twice over: it is the invention ADR-003 declined to make, and a silent default is how a user's projects end up somewhere they never chose. A config file — rejected; it buys nothing an environment variable does not and adds a format decision. Passing the root in from the Composition Root's caller — rejected as circular, relocating the question rather than answering it.
 - **Consequences:** Studio will not start without `SAYVA_WORKSPACE_ROOT` set, which is intended. Multi-root is **not** supported and not designed. The actual directory remains a deployment decision, documented for operators rather than fixed here.
 
+## Amendment — SR-10: a repository failure reaches the interface through a Domain-side contract
+
+**Approved in principle 2026-09-24 as readiness ruling RB-1.** It fixes where a failure's information may travel. It does not fix the exact shape of the contract, which is implementation work for the slice that needs it.
+
+- **The problem it settles:** the canonical Project Picker design has its error state show the affected location — `ProjectFileError.path`. That error is an Infrastructure class. Blueprint §2 forbids a component from importing one; ADR-002 DR-02 forbids Application from importing Infrastructure at all; and AD-07 forbids a Server Component from deciding which state to show. Read literally, no layer could legally carry the path to the screen.
+- **Decision:** the repository's failure contract is declared where the port itself is declared — Domain, per AD-01 — and it carries what the canonical design needs to represent a project-file failure, **including the affected location where the design requires it**. Application catches that Domain-side failure and maps it into a serializable View Model state (AD-02, AD-07). Presentation renders the state it is handed and never inspects an error.
+- **`ProjectFileError` stays an Infrastructure implementation detail.** It realises the Domain-side contract; it is not the contract. Nothing in Domain, Application or Presentation imports it or anything else from `@sayva/infrastructure`.
+- **What it deliberately does not carry:** a trace ID. The error state's trace ID is a separate `SyStateBlock` contract (AC14) whose value is an open design decision (RB-2), and the file location must not stand in for it.
+- **What it does not change:** `findAll()` still fails the whole call on one unreadable file. Tolerant repository reads remain undecided, exactly as recorded above.
+
 ## Status
 
 **Approved**, on explicit ruling from the project owner, 2026-09-11 — Decision 1 (SR-01, SR-02), Decision 2 (SR-03, SR-05, SR-06), Decision 3 (SR-07, SR-08). SR-04 was derived from the `ProjectRepository` port during implementation planning and is recorded here for separate review.

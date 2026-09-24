@@ -952,7 +952,7 @@ Intended use · Training data · Evaluation · Benchmarks · Inference profile �
 | 14 | Compatibility matrix | Release | DRAWN (specimen) | LP × ML pack states | `SyMatrix`, 4 cell states | `SyMatrix` | axis labels |
 | 15 | Rollout control | Release | DRAWN (specimen) | Ramp, hold, roll back | bar + % + Hold + Roll back | `SyRolloutControl`\* `SyMetric` | percentage steps |
 | 16 | Health cards | Health | DRAWN (specimen) | Route to the work | 6-card grid | `SyMetric` `SyHealthCard`\* | which six figures |
-| 17 | **Project Picker** | Pre-shell | **SPECIFIED — NOT DRAWN** | Reach a Project — the authoring workspace, one `.sayva` file — so the shell has a workspace to operate inside | Header (product name · workspace root · New Project) → single-column Project list → `SyDrawer` for create and duplicate. No shell chrome | `SyButton` `SyField` `SyDrawer` `SyStateBlock` | Four copy strings; the two-column row content; the workspace-root line; the `N` shortcut |
+| 17 | **Project Picker** | Pre-shell | **SPECIFIED — NOT DRAWN** | Reach a Project — the authoring workspace, one `.sayva` file — so the shell has a workspace to operate inside | Header (product name · workspace root · New Project) → single-column Project list → `SyDrawer` for create and duplicate. No shell chrome | `SyButton` `SyField` `SyDrawer` `SyStateBlock` | Four copy strings; the two-column row content; the workspace-root line; the `updatedAt` presentation; the `N` shortcut |
 
 **Screens 3–16 are component specimens drawn inside the Foundations/Design System documents, not full workspace screens.** Only **Vocabulary** and **Sign Editor** are complete, canonical, full-fidelity workspaces.
 

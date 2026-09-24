@@ -1,10 +1,10 @@
 # Project Picker — Design
 
-**Status:** Proposed · answers [the commission](./phase-2-project-picker-design-commission.md) · **not yet ingested into the authoritative Claude Design project**
+**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits before `SyAppShell`
 **Authored:** 2026-09-14, on the design owner's instruction to execute the commission
 
-> **Authority note.** The vendored sources in `docs/design-system/` remain canonical and are untouched. This document is a design *proposal* answering the commission; it becomes canonical only when the design owner approves it and it is authored into the Claude Design project and re-extracted. Until then, `AC13` is satisfied by this document standing in for a design source, not by this document *being* one.
+> **Authority note.** This document was approved at `8d0deb6` and authored into the Claude Design project as `Sayva Studio Screens.dc.html` §04 at `556fc99`. **§04 is the canonical source**; this file is its planning-side text and is kept in step with it. Where the two ever disagree, §04 wins and this file is wrong.
 
 ---
 
@@ -46,8 +46,8 @@ All 21 contracted fields, in the design's own shape.
 | **`goal`** | Get the author into the workspace they mean to work in, or into a new one, without asking them anything the filesystem already knows. |
 | **`layout`** | One column at every breakpoint. No rail, no scope bar, no sidebar, no inspector. Header, then list, then nothing. The column does not grow without bound — see §8 for the one value this design cannot set. |
 | **`scope`** | **None.** No scope bar (WS-02). Nothing here is language-scoped: the surface exists precisely because no workspace is open yet. |
-| **`appBar`** | A screen-local header: the product name, the workspace root being listed (§12), and the single primary action `New Project`. **Not `SyEntityHeader`** — that is one of the twelve patterns D1 deferred, and this header needs none of what it provides. |
-| **`columns`** | `name` · `updatedAt`. Two, deliberately. Not `id` (a UUID is not author-facing), not `schemaVersion` (an implementation detail, surfaced only when it blocks an open), not `state` (finding ①, and every Project in this phase is `Created` because `Created → Active` has no trigger). |
+| **`appBar`** | A screen-local header: the product name, the workspace-root line (§12), and the single primary action `New Project`. The workspace-root line reads **"Studio is looking in {root}"** — the sentence the first-run line already begins with, so the states repeat the header rather than paraphrase it (RB-4). **Not `SyEntityHeader`** — that is one of the twelve patterns D1 deferred, and this header needs none of what it provides. |
+| **`columns`** | `name` · `updatedAt`. Two, deliberately. Not `id` (a UUID is not author-facing), not `schemaVersion` (an implementation detail, surfaced only when it blocks an open), not `state` (finding ①, and every Project in this phase is `Created` because `Created → Active` has no trigger). `updatedAt` is shown as compact relative time — see §5 (RB-3). |
 | **`filters`** | **None.** |
 | **`savedViews`** | **None.** Saved views are named URLs, and this surface has no route state to name. |
 | **`selection`** | **None.** Selection exists to enable bulk action; there is none. |
@@ -55,10 +55,10 @@ All 21 contracted fields, in the design's own shape.
 | **`inspector`** | **None.** `SyInspector` is a deferred pattern, and a Project has six fields, two of which are shown. |
 | **`queues`** | **None.** Nothing here hands a cursor to anything. |
 | **`jobs`** | **None.** Create, open and duplicate are each a single small file operation. The design's rule is that cardinality decides sync vs job; the cardinality here is one. |
-| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file. Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. |
+| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file. Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **open** (RB-2) — see §6. |
 | **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. See §8. |
 | **`components`** | `SyButton` · `SyField` · `SyDrawer` · `SyStateBlock`. Four primitives, no patterns. |
-| **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `N` shortcut for `New Project`. |
+| **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`. |
 
 ---
 
@@ -120,6 +120,10 @@ Opening is by `ProjectId`, from the row. Three failure modes exist and each gets
 
 **Row content:** `name`, then `updatedAt`. **Sort:** `updatedAt` descending, most recently edited first, client-side — no port change.
 
+**`updatedAt` presentation (RB-3).** Compact relative time — the way the drawn Vocabulary grid shows its own `Updated` column, whose sample rows read `2h ago`, `1d ago` through `6d ago`, `1w ago` and `2w ago`. Minutes below an hour, hours below a day, days below a week, weeks from a week onward, each floored: `12m ago`, `5h ago`, `3d ago`, `2w ago`. The machine value stays in a `<time>` element's `datetime` attribute. The label is computed when the page renders and does not tick.
+
+Two parts extend the drawn precedent, which shows only `h`, `d` and `w`, and are stated so they are not mistaken for it. The **minute** unit, so an edit made moments ago does not read `0h ago`. And **weeks with no larger unit above them**, so no month, year or absolute-date format is introduced — a Project last edited a year ago reads `52w ago`.
+
 **Row actions:** `Open` (secondary `SyButton`) and `Duplicate` (ghost `SyButton`). **No contextual menu, and no icons anywhere in this surface.** `SyMenu`'s trigger would be an icon-only button, which needs an icon set — **D6, open**. Two text-labelled verbs avoid that entirely, and R14's eight-group menu does not bind here (ADR-004 WS-04). `SyMenu`'s contract also draws its contents *"from the entity action registry, not per-screen code"*, and no such registry exists in Phase 2.
 
 > If a third row action is ever needed, `SyMenu` becomes the right answer and **D6 must be ruled first**. Recorded so the next person does not rediscover it.
@@ -149,6 +153,12 @@ The interim degrades into the target when the port decision lands. **This design
 | `offline` | **No** | Storage is the local filesystem (ADR-003 SR-01). There is no network to be offline from. |
 
 The three exclusions are recorded rather than omitted, so a later reviewer can see they were considered.
+
+**Loading's accessible name (RB-5)** is **"Studio is looking in {root}"** — the same sentence, because that is what the state is. It stays a skeleton, not a spinner; nothing visual is added.
+
+**Temporary slice boundary (RB-6).** First-run renders its heading and line now; its `New Project` action arrives with the Create slice. The same holds for `New Project` in the header, since it is the same action. Until then neither location renders it, and nothing stands in its place — no substitute action and no disabled button — and first-run is never replaced by a bare empty list.
+
+**Trace ID — open (RB-2).** `SyStateBlock`'s `error` state requires a trace ID (AC14), rendered after the component's visible **Trace ID** label, and its value for this surface is **not yet defined**. Ruled out: the file path, the framework's error digest, and any new correlation or trace mechanism. The error state cannot be built until the value is ruled.
 
 ### §7 — Duplicate and delete
 
@@ -276,9 +286,10 @@ Carried forward unresolved. None is decided by this design.
 | 2 | **Delete semantics** — Domain Model §8 vs R20. | All of delete. No affordance designed. | Domain Model owner + Design |
 | 3 | **`ArchiveProject`** — absent from Blueprint §4 and Phase 2 scope; named in Phase 2's manual checklist. | Any archive affordance. | Architecture |
 | 4 | **`Created → Active`** — no trigger in any source. | Any lifecycle display. Avoided by showing no state column. | Domain Model owner |
-| 5 | **Workspace root path** — ADR-003, explicitly not decided. | §12's displayed location has no value to show. | Architecture |
+| 5 | **Workspace root path** — the mechanism is ruled (ADR-003 SR-09: `SAYVA_WORKSPACE_ROOT`, read only in the Composition Root); the directory it points at stays a deployment decision. | Nothing now — §12's displayed location comes from SR-09. | Deployment |
 | 6 | **D6, the icon set.** | Nothing today — the design uses no icons. Blocks `SyMenu` if a third row action is ever needed. | Design owner |
 | 7 | **`SaveProject` — "saved" is ambiguous.** No source says what a save does on this surface, or whether it belongs here. Recorded, **not** resolved, and specifically not resolved as Rename. | Nothing here — no save affordance is placed. | Design owner |
+| 8 | **The error state's trace ID (AC14)** — value not defined for this surface. The file path, the framework's error digest and any new trace mechanism are ruled out. | The `error` state, and so §4's and §5's error treatments. | Design owner |
 
 **Withdrawn from this table since the first draft:** the `bp.xl` content-column maximum width, which is **not applicable** to a pre-shell surface rather than missing from it (§8). And item 7 above is a restatement: the first draft resolved the "saved" ambiguity as Rename, which no canonical source supports; it is now recorded as ambiguous and left open.
 

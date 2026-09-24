@@ -3105,7 +3105,7 @@
       "goal": "Get the author into the workspace they mean to work in, or into a new one, without asking them anything the filesystem already knows.",
       "layout": "One column at every breakpoint. No rail, no scope bar, no sidebar, no inspector. Header, then list.",
       "scope": "None. No scope bar — nothing here is language-scoped.",
-      "appBar": "Screen-local header: product name, the workspace root being listed, and the single primary action New Project. Not SyEntityHeader.",
+      "appBar": "Screen-local header: product name, the workspace-root line, and the single primary action New Project. The workspace-root line reads \"Studio is looking in {root}\". Not SyEntityHeader.",
       "columns": [
         "name",
         "updatedAt"
@@ -3124,9 +3124,9 @@
       "queues": "None.",
       "jobs": "None. Create, open and duplicate are each a single small file operation.",
       "states": {
-        "empty": "first-run: root empty or absent. The explanatory line names the location being listed.",
-        "loading": "Skeleton, not spinner, while the scan is in flight.",
-        "error": "Root unreadable: names the path, action Retry. Per-file: an unreadable .sayva renders as an inline-row error naming the file."
+        "empty": "first-run: root empty or absent. The explanatory line names the location being listed. Temporary slice boundary: its New Project action arrives with the Create slice; until then no action renders, no substitute and no disabled button, and first-run is never replaced by a bare empty list.",
+        "loading": "Skeleton, not spinner, while the scan is in flight. Accessible name: \"Studio is looking in {root}\".",
+        "error": "Root unreadable: names the path, action Retry. Per-file: an unreadable .sayva renders as an inline-row error naming the file. Trace ID (AC14): OPEN — value not defined; the file path, the framework's error digest and any new trace mechanism are ruled out."
       },
       "responsive": "One column at all four breakpoints. bp.sm is read-and-open only, with New Project and Duplicate disabled and a stated reason. Content-column maximum width is NOT APPLICABLE — both candidate rules are scoped to the shell.",
       "components": [
@@ -3139,9 +3139,10 @@
         "The four copy strings",
         "The two-column row content",
         "The workspace-root line in the header",
+        "The updatedAt presentation: compact relative time (Nm / Nh / Nd / Nw ago, floored), with the machine value in a <time> element's datetime attribute",
         "The N shortcut for New Project"
       ],
-      "blockedBy": "Delete semantics (two canonical sources contradict); ArchiveProject; Created->Active trigger; workspace root path; tolerant repository read. None resolved by this design."
+      "blockedBy": "Delete semantics (two canonical sources contradict); ArchiveProject; Created->Active trigger; workspace root path; tolerant repository read. The error state's trace ID (AC14). None resolved by this design."
     }
   ],
   "screens": [
