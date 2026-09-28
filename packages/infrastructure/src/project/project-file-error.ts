@@ -1,3 +1,5 @@
+import { ProjectFileFailure } from '@sayva/domain';
+
 /**
  * A `.sayva` file that cannot be turned into a Project.
  *
@@ -13,12 +15,16 @@
  * Callers that need to tell those apart inspect `cause` rather than parsing
  * this message.
  */
-export class ProjectFileError extends Error {
-  /** The file this failure is about. Absolute. */
+export class ProjectFileError extends ProjectFileFailure {
+  /**
+   * The file this failure is about. Absolute. The same value as the
+   * inherited `location`, which is the name the Domain-side contract gives it
+   * (ADR-003 SR-10); `path` stays because this package speaks filesystem.
+   */
   readonly path: string;
 
   constructor(filePath: string, reason: string, options?: { cause?: unknown }) {
-    super(`Project file "${filePath}" ${reason}`, options);
+    super(`Project file "${filePath}" ${reason}`, filePath, options);
     this.name = 'ProjectFileError';
     this.path = filePath;
   }

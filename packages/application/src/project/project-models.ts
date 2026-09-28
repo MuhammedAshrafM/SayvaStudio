@@ -21,22 +21,39 @@ export type ProjectView = {
 };
 
 /**
+ * One row of the Project Picker — only what the row shows.
+ *
+ * The canonical row carries `name` then `updatedAt` (Screens §04). `id` rides
+ * along as the row's identity, not as content. `updatedAt` is the ISO 8601
+ * machine value for a `<time datetime>`; `updatedAgo` is RB-3's label for it,
+ * computed in the Query so no component formats anything (AD-07).
+ */
+export type ProjectListItem = {
+  readonly id: string;
+  readonly name: string;
+  readonly updatedAt: string;
+  readonly updatedAgo: string;
+};
+
+/**
  * The Project list as the Project Picker shows it — a Query View Model.
  *
- * AD-07 keeps the decision "did the list load, or did it fail" inside a
- * Query use case rather than a Server Component, so the page receives one
- * of these and only renders it. Plain and serializable, like every Response
- * Model (AD-02).
+ * AD-07 keeps every decision about which state to show inside a Query use
+ * case, so each branch below is one of the canonical states and the page
+ * only renders whichever it is handed. Plain and serializable (AD-02).
  *
- * The `error` branch carries exactly what readiness ruling RB-2 settled and
- * nothing more: the trace ID of this occurrence (ADR-003 SR-11). The affected
- * file location that the canonical error state also shows arrives with
- * SR-10, in the read-only slice — it is not carried here, and the trace ID is
- * never a stand-in for it.
+ * - `listed` — at least one Project, in PP-04 order.
+ * - `first-run` — the workspace holds none. Decided here rather than left to
+ *   a component checking for an empty array, because the canonical design
+ *   treats it as its own state, never as an empty list.
+ * - `error` — the list could not be read. `location` is where (ADR-003
+ *   SR-10); `traceId` is which occurrence (SR-11). They are separate
+ *   contracts and neither stands in for the other.
  */
 export type ProjectListView =
-  | { readonly status: 'listed'; readonly projects: readonly ProjectView[] }
-  | { readonly status: 'error'; readonly traceId: string };
+  | { readonly status: 'listed'; readonly projects: readonly ProjectListItem[] }
+  | { readonly status: 'first-run' }
+  | { readonly status: 'error'; readonly traceId: string; readonly location: string };
 
 /** The one place a Domain entity becomes a Response Model. */
 export function toProjectView(project: Project): ProjectView {

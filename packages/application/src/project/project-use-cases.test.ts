@@ -3,6 +3,7 @@ import {
   createProject,
   restoreProject,
   CURRENT_PROJECT_SCHEMA_VERSION,
+  ProjectFileFailure,
   type Clock,
   type IdGenerator,
   type Project,
@@ -500,9 +501,13 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
   }
 
   const WHERE = 'C:/authoring/projects/3f2504e0-4f89-41d3-9a0c-0305e82c3301.sayva';
+  /**
+   * The port's failure contract (ADR-003 SR-10), as the repository throws it.
+   * A framework-style `digest` is attached so the tests can prove it is never
+   * what reaches the screen.
+   */
   const fileFailure = () =>
-    Object.assign(new Error(`Project file "${WHERE}" is not valid JSON.`), {
-      path: WHERE,
+    Object.assign(new ProjectFileFailure(`Project file "${WHERE}" is not valid JSON.`, WHERE), {
       digest: '2102856004',
     });
 
@@ -539,7 +544,7 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
 
     const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
 
-    expect(view).toEqual({ status: 'error', traceId: 'trace-1' });
+    expect(view).toEqual({ status: 'error', traceId: 'trace-1', location: WHERE });
   });
 
   it('keeps that state serializable, so it survives the Server→Client boundary', async () => {
@@ -559,8 +564,8 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
     const first = await viewProjectListUseCase(d);
     const second = await viewProjectListUseCase(d);
 
-    expect(first).toEqual({ status: 'error', traceId: 'trace-1' });
-    expect(second).toEqual({ status: 'error', traceId: 'trace-2' });
+    expect(first).toEqual({ status: 'error', traceId: 'trace-1', location: WHERE });
+    expect(second).toEqual({ status: 'error', traceId: 'trace-2', location: WHERE });
   });
 
   it('hands the tracer the failure itself, once, so the record has the detail', async () => {
@@ -581,6 +586,9 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
 
     expect(view.status).toBe('error');
     if (view.status !== 'error') return;
+    // The path is in the state — as the location, where SR-10 puts it — and
+    // nowhere else.
+    expect(view.location).toBe(WHERE);
     expect(view.traceId).not.toBe(WHERE);
     expect(view.traceId).not.toContain('.sayva');
   });
@@ -591,7 +599,10 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
 
     const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
 
-    expect(view).not.toEqual({ status: 'error', traceId: '2102856004' });
+    expect(view.status).toBe('error');
+    if (view.status !== 'error') return;
+    expect(view.traceId).not.toBe('2102856004');
+    expect(view.location).not.toBe('2102856004');
   });
 
   it('persists nothing: a failed read writes no Project and deletes none', async () => {
@@ -605,12 +616,118 @@ describe('ViewProjectList — the traced read failure (RB-2, ADR-003 SR-11)', ()
     expect(store.size).toBe(0);
   });
 
-  it('carries only the trace ID in the error state — the location is SR-10, not this', async () => {
+  it('carries the trace ID and the location in the error state, and nothing else', async () => {
+    // SR-10 adds the location to what RB-2 shipped; the two stay separate.
     const { tracer } = recordingTracer();
     const { repository } = failingRepository(fileFailure());
 
     const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
 
-    expect(Object.keys(view).sort()).toEqual(['status', 'traceId']);
+    expect(Object.keys(view).sort()).toEqual(['location', 'status', 'traceId']);
+  });
+
+  it('carries whatever location the failure names — the folder, when the folder is the problem', async () => {
+    const { tracer } = recordingTracer();
+    const folder = 'C:/authoring/projects';
+    const { repository } = failingRepository(
+      new ProjectFileFailure(`Project file "${folder}" could not be listed.`, folder),
+    );
+
+    const view = await viewProjectListUseCase({ ...deps({ projects: repository }), tracer });
+
+    expect(view).toEqual({ status: 'error', traceId: 'trace-1', location: folder });
+  });
+
+  it('rethrows anything that is not a read failure, untraced', async () => {
+    // A defect is not "Can't read the projects folder". Showing it as one
+    // would name the wrong problem, so it is not caught at all.
+    const { tracer, traced } = recordingTracer();
+    const defect = new TypeError('Cannot read properties of undefined');
+    const { repository } = failingRepository(defect);
+
+    await expect(
+      viewProjectListUseCase({ ...deps({ projects: repository }), tracer }),
+    ).rejects.toBe(defect);
+    expect(traced).toEqual([]);
+  });
+});
+
+describe('ViewProjectList — first-run and listed states (read-only Picker slice)', () => {
+  const noTracing = { trace: () => 'unused' };
+  const at = (iso: string) => ({ ids: ids(UUID_A), clock: clockAt(iso) });
+
+  it('is the first-run state when the workspace holds no Projects', async () => {
+    const view = await viewProjectListUseCase({ ...deps(), tracer: noTracing });
+    expect(view).toEqual({ status: 'first-run' });
+  });
+
+  it('never returns an empty list — an empty workspace is first-run, not a bare list', async () => {
+    const view = await viewProjectListUseCase({ ...deps(), tracer: noTracing });
+    expect(view).not.toHaveProperty('projects');
+  });
+
+  it('gives each row exactly what the row shows, and no more', async () => {
+    // Dates far from the real calendar on purpose: a query that read the wall
+    // clock instead of the Clock port would then disagree with this one. With
+    // dates near today the two can coincide, and the defect goes unseen.
+    const project = createProject(
+      { name: 'ArSL Curriculum', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      at('2031-03-10T09:00:00.000Z'),
+    );
+
+    const view = await viewProjectListUseCase({
+      ...deps({
+        projects: inMemoryRepository([project]).repository,
+        clock: clockAt('2031-03-13T09:00:00.000Z'),
+      }),
+      tracer: noTracing,
+    });
+
+    expect(view).toEqual({
+      status: 'listed',
+      projects: [
+        {
+          id: UUID_A,
+          name: 'ArSL Curriculum',
+          updatedAt: '2031-03-10T09:00:00.000Z',
+          updatedAgo: '3d ago',
+        },
+      ],
+    });
+  });
+
+  it('measures every row against the same instant', async () => {
+    let calls = 0;
+    const countingClock: Clock = {
+      now: () => {
+        calls += 1;
+        return new Date('2026-09-28T09:00:00.000Z');
+      },
+    };
+    const a = createProject({ name: 'A', schemaVersion: 1 }, at('2026-09-28T08:00:00.000Z'));
+    const b = createProject(
+      { name: 'B', schemaVersion: 1 },
+      { ids: ids(UUID_B), clock: clockAt('2026-09-14T09:00:00.000Z') },
+    );
+
+    const view = await viewProjectListUseCase({
+      ...deps({ projects: inMemoryRepository([a, b]).repository, clock: countingClock }),
+      tracer: noTracing,
+    });
+
+    expect(calls).toBe(1);
+    expect(view.status === 'listed' && view.projects.map((row) => row.updatedAgo)).toEqual([
+      '1h ago',
+      '2w ago',
+    ]);
+  });
+
+  it('keeps the listed state serializable', async () => {
+    const project = createProject({ name: 'X', schemaVersion: 1 }, at('2026-09-25T09:00:00.000Z'));
+    const view = await viewProjectListUseCase({
+      ...deps({ projects: inMemoryRepository([project]).repository }),
+      tracer: noTracing,
+    });
+    expect(JSON.parse(JSON.stringify(view))).toEqual(view);
   });
 });

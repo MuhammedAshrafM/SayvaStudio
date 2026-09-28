@@ -25,6 +25,7 @@ export {
   restoreProject,
   toProjectId,
   CURRENT_PROJECT_SCHEMA_VERSION,
+  ProjectFileFailure,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
 } from './project/index.js';

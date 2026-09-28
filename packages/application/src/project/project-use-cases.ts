@@ -2,6 +2,7 @@ import {
   createProject,
   renameProject,
   toProjectId,
+  ProjectFileFailure,
   type Clock,
   type FailureTracer,
   type IdGenerator,
@@ -14,6 +15,7 @@ import {
   type ProjectListView,
   type ProjectView,
 } from './project-models.js';
+import { updatedAgo } from './updated-ago.js';
 
 /**
  * The five Project use cases — Roadmap Phase 2 scope, and the Architecture
@@ -119,33 +121,51 @@ function mostRecentlyUpdatedFirst(a: Project, b: Project): number {
 export type ProjectListUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer };
 
 /**
- * Query. The Project list as the Project Picker renders it: either the list,
- * or a failure identified by its own trace ID.
+ * Query. The Project list as the Project Picker renders it: the list, the
+ * first-run state, or a traced read failure.
  *
- * The decision between the two is made here, per AD-07, so a Server
- * Component never has to catch anything. The list itself comes from
- * `listProjectsUseCase` unchanged — same order, same Response Models.
+ * Every choice between those is made here, per AD-07, so a Server Component
+ * never has to catch, count or format anything. The Projects themselves come
+ * from `listProjectsUseCase` unchanged — same PP-04 order.
  *
- * On failure the tracer is asked once for this occurrence (ADR-003 SR-11).
- * The trace ID it returns is minted for the occurrence, recorded with the
- * failure on the server's diagnostic output, and never derived from the
- * failure — not its file path, not a framework digest. Nothing is written to
- * the repository: a failed read changes nothing on disk.
+ * On a read failure the repository throws a `ProjectFileFailure`, the port's
+ * Domain-side failure contract (ADR-003 SR-10). Its `location` goes into the
+ * error state; the tracer is asked once for a trace ID for this occurrence
+ * (SR-11), minted for it and never derived from the failure — not its
+ * location, not a framework digest. Nothing is written to the repository: a
+ * failed read changes nothing on disk.
  *
- * Every failure is caught, not only repository ones. SR-10's Domain-side
- * failure contract, which will let Application tell a file problem from
- * anything else, arrives with the read-only slice; until then a failure of
- * any kind still reaches the author as a traced error rather than a crash,
- * and the diagnostic line keeps its full detail.
+ * Only that failure is caught. Anything else is not a read failure — it is a
+ * defect — and is rethrown rather than presented as "Can't read the projects
+ * folder", which would name the wrong problem. This narrows the temporary
+ * catch-all RB-2 shipped with, which was waiting for exactly this contract.
+ *
+ * `now` is read once, so every row's `updatedAgo` is measured against the same
+ * instant.
  */
 export async function viewProjectListUseCase(
   deps: ProjectListUseCaseDeps,
 ): Promise<ProjectListView> {
+  let projects: readonly ProjectView[];
   try {
-    return { status: 'listed', projects: await listProjectsUseCase(deps) };
+    projects = await listProjectsUseCase(deps);
   } catch (failure) {
-    return { status: 'error', traceId: deps.tracer.trace(failure) };
+    if (!(failure instanceof ProjectFileFailure)) throw failure;
+    return { status: 'error', traceId: deps.tracer.trace(failure), location: failure.location };
   }
+
+  if (projects.length === 0) return { status: 'first-run' };
+
+  const now = deps.clock.now();
+  return {
+    status: 'listed',
+    projects: projects.map((project) => ({
+      id: project.id,
+      name: project.name,
+      updatedAt: project.updatedAt,
+      updatedAgo: updatedAgo(new Date(project.updatedAt), now),
+    })),
+  };
 }
 
 // --- SaveProject ----------------------------------------------------------

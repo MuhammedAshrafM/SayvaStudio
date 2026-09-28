@@ -25,6 +25,7 @@ export type {
   DeleteProjectRequest,
   DuplicateProjectRequest,
   OpenProjectRequest,
+  ProjectListItem,
   ProjectListUseCaseDeps,
   ProjectListView,
   ProjectUseCaseDeps,

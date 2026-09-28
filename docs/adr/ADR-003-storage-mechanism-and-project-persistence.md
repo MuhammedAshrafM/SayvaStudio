@@ -194,6 +194,7 @@ Rejected because it makes every format change break every existing Project with 
 - **`ProjectFileError` stays an Infrastructure implementation detail.** It realises the Domain-side contract; it is not the contract. Nothing in Domain, Application or Presentation imports it or anything else from `@sayva/infrastructure`.
 - **What it deliberately does not carry:** a trace ID. The error state's trace ID is a separate `SyStateBlock` contract (AC14), supplied by SR-11 below, and the file location must not stand in for it.
 - **What it does not change:** `findAll()` still fails the whole call on one unreadable file. Tolerant repository reads remain undecided, exactly as recorded above.
+- **Implemented 2026-09-28**, with the Project Picker's read-only slice. The contract is `ProjectFileFailure`, declared in `@sayva/domain` beside `ProjectRepository`: an `Error` whose one addition is `location`. `ProjectFileError` extends it and passes its `path` as that location. `viewProjectListUseCase` catches only this class and returns `{ status: 'error', traceId, location }`; any other failure is a defect and is rethrown untraced rather than shown as a read failure, which narrows the catch-all RB-2 shipped with.
 
 ## Amendment — SR-11: a Project list read failure carries a per-occurrence trace ID
 
@@ -205,7 +206,7 @@ Rejected because it makes every format change break every existing Project with 
 - **Why `IdGenerator` is not reused:** its contract is "supplies entity identity" (Domain Model §5). A trace identifies an occurrence of a failure, not an entity, and routing it through the entity-identity port would tell every future reader that traces are entities. The *technique* — `randomUUID` inside Infrastructure — is reused; the port is not.
 - **Scope, stated so it is not widened by accident:** only the Project list's read failure is traced. Nothing else calls the tracer. It is not a logging system, adds no external telemetry, and needs no configuration.
 - **Not persisted:** the trace ID is never written to the repository, a `.sayva` file, or any store. It exists in the returned View Model and in one line of the server's existing output, which the application neither stores nor reads back.
-- **What it does not change:** the frozen `SyStateBlock` contract; `listProjectsUseCase`, `ProjectView`, `ProjectUseCaseDeps` and the repository port; tolerant repository reads, still undecided. SR-10's Domain-side failure contract — the affected *location* — is still the read-only slice's to implement; this carries only the trace.
+- **What it does not change:** the frozen `SyStateBlock` contract; `listProjectsUseCase`, `ProjectView`, `ProjectUseCaseDeps` and the repository port; tolerant repository reads, still undecided. SR-10's Domain-side failure contract — the affected *location* — arrived separately, with the read-only slice; this carries only the trace.
 
 ## Status
 

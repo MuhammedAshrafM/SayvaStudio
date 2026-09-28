@@ -17,4 +17,4 @@ export type {
   SaveProjectRequest,
 } from './project-use-cases.js';
 export { ProjectNotFoundError, toProjectView } from './project-models.js';
-export type { ProjectListView, ProjectView } from './project-models.js';
+export type { ProjectListItem, ProjectListView, ProjectView } from './project-models.js';
