@@ -3139,7 +3139,7 @@
         "The four copy strings",
         "The two-column row content",
         "The workspace-root line in the header",
-        "The updatedAt presentation: compact relative time (Nm / Nh / Nd / Nw ago, floored), with the machine value in a <time> element's datetime attribute",
+        "The updatedAt presentation: compact relative time (Nm / Nh / Nd / Nw ago, floored), with the machine value in a <time> element's datetime attribute. An updatedAt later than the moment the page renders counts as zero elapsed time, so it reads 0m ago.",
         "The N shortcut for New Project"
       ],
       "blockedBy": "Delete semantics (two canonical sources contradict); ArchiveProject; Created->Active trigger; workspace root path; tolerant repository read. None resolved by this design."

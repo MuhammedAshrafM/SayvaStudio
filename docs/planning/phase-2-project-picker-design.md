@@ -1,6 +1,6 @@
 # Project Picker — Design
 
-**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6
+**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, and 2026-09-28 for the future-`updatedAt` rule
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits before `SyAppShell`
 **Authored:** 2026-09-14, on the design owner's instruction to execute the commission
 
@@ -123,6 +123,8 @@ Opening is by `ProjectId`, from the row. Three failure modes exist and each gets
 **`updatedAt` presentation (RB-3).** Compact relative time — the way the drawn Vocabulary grid shows its own `Updated` column, whose sample rows read `2h ago`, `1d ago` through `6d ago`, `1w ago` and `2w ago`. Minutes below an hour, hours below a day, days below a week, weeks from a week onward, each floored: `12m ago`, `5h ago`, `3d ago`, `2w ago`. The machine value stays in a `<time>` element's `datetime` attribute. The label is computed when the page renders and does not tick.
 
 Two parts extend the drawn precedent, which shows only `h`, `d` and `w`, and are stated so they are not mistaken for it. The **minute** unit, so an edit made moments ago does not read `0h ago`. And **weeks with no larger unit above them**, so no month, year or absolute-date format is introduced — a Project last edited a year ago reads `52w ago`.
+
+**A future `updatedAt`** (decision closure, 2026-09-28). An `updatedAt` later than the moment the page renders counts as zero elapsed time, so it reads `0m ago`.
 
 **Row actions:** `Open` (secondary `SyButton`) and `Duplicate` (ghost `SyButton`). **No contextual menu, and no icons anywhere in this surface.** `SyMenu`'s trigger would be an icon-only button, which needs an icon set — **D6, open**. Two text-labelled verbs avoid that entirely, and R14's eight-group menu does not bind here (ADR-004 WS-04). `SyMenu`'s contract also draws its contents *"from the entity action registry, not per-screen code"*, and no such registry exists in Phase 2.
 
