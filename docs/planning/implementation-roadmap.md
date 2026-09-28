@@ -175,6 +175,8 @@ flowchart TD
 > - **RB-6 — first-run renders without `New Project`** as a recorded temporary slice boundary; the action arrives with the Create slice. The header's `New Project` is the same action and is deferred with it. No substitute and no disabled button, and first-run is never a bare empty list.
 >
 > All of RB-2 to RB-6 are authored into the Claude Design project as amendments to Screens §04 and re-exported. With RB-2 resolved, nothing in the canonical design blocks the Picker's read-only slice.
+>
+> **§04 copy transcription, 2026-09-28.** §04 cited "the four copy strings" without stating them. The three that belong to §6 of the design, as approved at `8d0deb6`, are now transcribed into §04 verbatim and re-exported: first-run's heading "No projects yet" and line "Studio is looking in {root}. A project is one .sayva file.", and error's heading "Can't read the projects folder". Words only, with no formatting implied. The fourth string, §4's newer-schema reason, belongs to Open and is deliberately not transcribed.
 
 > **Still open in this phase:**
 > - `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".
