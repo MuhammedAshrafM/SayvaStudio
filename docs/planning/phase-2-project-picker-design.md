@@ -1,6 +1,6 @@
 # Project Picker — Design
 
-**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, and 2026-09-28 for the future-`updatedAt` rule
+**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, 2026-09-28 for the future-`updatedAt` rule, and 2026-09-29 for the Create Project decision closure (B1–B15)
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits before `SyAppShell`
 **Authored:** 2026-09-14, on the design owner's instruction to execute the commission
 
@@ -46,7 +46,7 @@ All 21 contracted fields, in the design's own shape.
 | **`goal`** | Get the author into the workspace they mean to work in, or into a new one, without asking them anything the filesystem already knows. |
 | **`layout`** | One column at every breakpoint. No rail, no scope bar, no sidebar, no inspector. Header, then list, then nothing. The column does not grow without bound — see §8 for the one value this design cannot set. |
 | **`scope`** | **None.** No scope bar (WS-02). Nothing here is language-scoped: the surface exists precisely because no workspace is open yet. |
-| **`appBar`** | A screen-local header: the product name, the workspace-root line (§12), and the single primary action `New Project`. The workspace-root line reads **"Studio is looking in {root}"** — the sentence the first-run line already begins with, so the states repeat the header rather than paraphrase it (RB-4). **Not `SyEntityHeader`** — that is one of the twelve patterns D1 deferred, and this header needs none of what it provides. |
+| **`appBar`** | A screen-local header: the product name, the workspace-root line (§12), and the single primary action `New Project`. The header, `New Project` included, is present in every state: with the list, and in first-run, loading and error (B15). The workspace-root line reads **"Studio is looking in {root}"** — the sentence the first-run line already begins with, so the states repeat the header rather than paraphrase it (RB-4). **Not `SyEntityHeader`** — that is one of the twelve patterns D1 deferred, and this header needs none of what it provides. |
 | **`columns`** | `name` · `updatedAt`. Two, deliberately. Not `id` (a UUID is not author-facing), not `schemaVersion` (an implementation detail, surfaced only when it blocks an open), not `state` (finding ①, and every Project in this phase is `Created` because `Created → Active` has no trigger). `updatedAt` is shown as compact relative time — see §5 (RB-3). |
 | **`filters`** | **None.** |
 | **`savedViews`** | **None.** Saved views are named URLs, and this surface has no route state to name. |
@@ -55,10 +55,10 @@ All 21 contracted fields, in the design's own shape.
 | **`inspector`** | **None.** `SyInspector` is a deferred pattern, and a Project has six fields, two of which are shown. |
 | **`queues`** | **None.** Nothing here hands a cursor to anything. |
 | **`jobs`** | **None.** Create, open and duplicate are each a single small file operation. The design's rule is that cardinality decides sync vs job; the cardinality here is one. |
-| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file. Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **per occurrence** (RB-2) — see §6. |
-| **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. See §8. |
+| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file, and in the `panel` size inside the Create drawer when a write fails (§3, B2). Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **per occurrence** (RB-2) — see §6. |
+| **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. `New Project`'s stated reason reads **"Creating a project needs a window at least 900px wide."** See §8. |
 | **`components`** | `SyButton` · `SyField` · `SyDrawer` · `SyStateBlock`. Four primitives, no patterns. |
-| **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`. |
+| **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`, deferred to a later slice (§10, B8). |
 
 ---
 
@@ -82,7 +82,9 @@ That is a **separate shell design concern**, belonging to whoever designs `SyApp
 
 ### §3 — Create Project
 
-**Surface: `SyDrawer`, right variant.** Finding ③ rules out `SyDialog`. The overlay selection rule assigns `SyDrawer` *"Do work beside context"*, and the context is real rather than a stretch: **Project names carry no uniqueness invariant** (Domain Model §3 requires only non-empty), so seeing the existing names while choosing a new one is what stops an author making a second "ArSL Curriculum" by accident. The drawer's contract also already supplies exactly the semantics a name form needs — `⌘Enter` submits, `Esc` closes, `dirty (blocks close)` protects a half-typed name.
+**Surface: `SyDrawer`, right variant.** Finding ③ rules out `SyDialog`. The overlay selection rule assigns `SyDrawer` *"Do work beside context"*, and the context is real rather than a stretch: **Project names carry no uniqueness invariant** (Domain Model §3 requires only non-empty), so seeing the existing names while choosing a new one is what stops an author making a second "ArSL Curriculum" by accident. The drawer's contract also already supplies the semantics a name form needs — `⌘Enter` submits, `Esc` closes.
+
+> **Amended 2026-09-29 (Create decision closure, B5).** This paragraph first read "`dirty (blocks close)` protects a half-typed name". **The Create drawer is never dirty.** A dirty drawer must prompt before discard, the prompt would be a `SyDialog`, and this surface does not use `SyDialog` (the next paragraph, and §9). So `Esc` and `Cancel` close the drawer directly. The protection given up is small: `SyField`'s own `Esc` reverts an in-progress edit before the drawer sees the key, so a prompt would only have guarded a name while focus sat outside the field.
 
 The hard rule — *"Never a modal for work that takes more than one decision"* — is satisfied either way: this is one decision. `SyDialog` stays reserved for the blocking decisions its contract names, which on this surface means delete alone, and delete is blocked.
 
@@ -98,7 +100,23 @@ The hard rule — *"Never a modal for work that takes more than one decision"* �
 
 **Copy.** Field label `Project name`. Invalid message: **"Give the project a name."** Confirm button: **`Create Project`** — a verb, per `SyButton`'s *"the label is the verb, never a generic confirmation"*.
 
+**Title (B3).** The drawer's title is **`New Project`** — the label of the action that opens it, so no copy is added.
+
+**Footer actions (B4, B13).** `Create Project` and **`Cancel`**. `Create Project` is the drawer's one primary action — P2 counts per surface, and the drawer is its own. `Cancel` is the visible control for `Esc`, which §10's *"every shortcut still has a visible control"* requires: a secondary `SyButton`, the label and tone `SyDialog`'s own dismiss uses.
+
+**When the invalid message shows (B13).** When a submission — `Create Project` or `⌘Enter` — is refused for its name. It stays until the next submission's result replaces it. Nothing is validated while typing.
+
+**A failed write (B2).** The drawer stays open and the typed name stays in its field. `SyStateBlock`'s `error` state renders in the drawer body, `panel` size, below the name field:
+
+- Heading **"Can't create the project"**.
+- The line names the location (ADR-003 SR-10).
+- `Retry` re-runs Create with the name currently in the field.
+
+Each failed write is its own occurrence with its own trace ID, recorded the same way as the list's (§6, ADR-003 SR-11). `Retry` takes focus, because the author's action caused the state. A write failure is never shown on the field: `SyField`'s invalid state belongs to the name alone.
+
 **Creation opens the new Project immediately.** The recipe's own test asks whether there is exactly one primary action; the author's intent in creating is to start working. Requiring a second click to open would make one intent into two actions. Opening follows the same hand-off as §2, and what the author then sees is the shell's concern.
+
+> **Temporary slice boundary (B1).** Until the Open slice, a successful create closes the drawer and the picker re-scans, so the new Project appears in the list by the `updatedAt` descending rule (§5). Opening it arrives with the Open slice, and nothing hands it off before then. Focus then returns to the control that opened the drawer while that control still exists (A07). When it does not — a create begun from first-run, which the list replaces — no other focus target is introduced until the Open slice (B14).
 
 > **Not decided here — `Created → Active` has no trigger in any canonical source.** Domain Model §8 defers to §3 and §3 names none. This design shows no lifecycle state (recipe `columns`, finding ①), so it neither depends on that gap nor closes it.
 
@@ -190,7 +208,7 @@ One column at all four breakpoints. The canonical breakpoint *meanings* are writ
 
 | | |
 |---|---|
-| `bp.sm` `< 900px` | **Read and open only.** `New Project` and `Duplicate` are disabled with a stated reason, per `SyButton`'s contract. This follows the canonical `bp.sm` rule — *"Read and review only; editors disabled with an explanation"* — rather than carving out an exception because this happens to be the surface where creating lives. |
+| `bp.sm` `< 900px` | **Read and open only.** `New Project` and `Duplicate` are disabled with a stated reason, per `SyButton`'s contract. This follows the canonical `bp.sm` rule — *"Read and review only; editors disabled with an explanation"* — rather than carving out an exception because this happens to be the surface where creating lives. `New Project`'s reason reads **"Creating a project needs a window at least 900px wide."** (B6). The header's `New Project` stays visible and disabled. First-run renders **no** action, and nothing stands in for it: `SyStateBlock`'s action has no disabled form, and its frozen contract is not widened to add one. |
 | `bp.md` `900–1279px` | Full behaviour. Right drawer. |
 | `bp.lg` `1280–1727px` | Full behaviour. The design target. |
 | `bp.xl` `≥ 1728px` | Full behaviour. One column still — the surface does not become multi-column at any width. |
@@ -232,13 +250,15 @@ Evaluated and **not** used, each for a stated reason:
 | `↑` `↓` | Move between rows |
 | `J` `K` | Move between rows — R05's product-wide vocabulary, adopted so the picker teaches the same grammar the shell uses |
 | `Enter` | Open the focused Project |
-| `N` | New Project — following the drawn Vocabulary screen's `New sign N` |
+| `N` | New Project — following the drawn Vocabulary screen's `New sign N`. **Temporary slice boundary (B8):** arrives in a later slice, with its behaviour in editable fields and its hint treatment |
 | `Esc` | Dismiss the topmost overlay, via the Phase 1 overlay substrate |
 | `⌘Enter` | Submit the create/duplicate drawer, per `SyDrawer`'s contract |
 
 **Not adopted, with reasons:** `⌥1…7` rail, `⌘L` scope, `⌘\` sidebar, `⌘/` inspector, `F6` pane cycle — all shell furniture with nothing here to act on. `X` select and `/` filter — no selection, no filter. `⌘Enter` as "side peek" — no side peek exists; the drawer's submit meaning is the contracted one on this surface.
 
-**`⌘K` reaches nothing**, because `SyPalette` is a deferred pattern. The rule *"No shortcut is the only path to an action"* still holds: every shortcut above has a visible control. The rule *"any action reachable by mouse in two clicks must be reachable by keyboard in three keys or fewer"* is **claimed** — open is `↓`+`Enter`, create is `N`.
+**`⌘K` reaches nothing**, because `SyPalette` is a deferred pattern. The rule *"No shortcut is the only path to an action"* still holds: every shortcut above has a visible control. The rule *"any action reachable by mouse in two clicks must be reachable by keyboard in three keys or fewer"* is **claimed** — open is `↓`+`Enter`, create is `N` once `N` arrives (B8). Until then, create is reached through its visible controls.
+
+**Why `N` is deferred (B8).** No canonical source settles two things. One is its hint: the drawn `New sign N` sets the hint in a monospace face with no token, and **D13** (no monospace family token) stays open and is not resolved here; `SyButton` also has no hint slot. The other is what the key does while an editable field has focus. Rather than invent either, `N` waits for a later slice.
 
 ### §11 — Route
 
