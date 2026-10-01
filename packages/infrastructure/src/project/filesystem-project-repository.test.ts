@@ -8,6 +8,7 @@ import {
   toProjectId,
   CURRENT_PROJECT_SCHEMA_VERSION,
   DomainError,
+  ProjectFileFailure,
   type Clock,
   type IdGenerator,
   type Project,
@@ -444,6 +445,53 @@ describe('the workspace root — SR-05', () => {
 
     await fresh.save(aProject());
     expect(await readdir(nested)).toEqual([`${UUID_A}.sayva`]);
+  });
+
+  describe('a root that cannot be created — SR-10, B11', () => {
+    /**
+     * A real, deterministic way for `mkdir -p` to fail on every platform: the
+     * root's path is already taken by a file. No mocking — this is the same
+     * condition an author would hit with a mistyped SAYVA_WORKSPACE_ROOT.
+     */
+    async function rootThatIsAFile(): Promise<string> {
+      const file = path.join(root, 'not-a-folder');
+      await writeFile(file, 'x', 'utf8');
+      return file;
+    }
+
+    it('fails as the port contract, located at the root', async () => {
+      const blocked = await rootThatIsAFile();
+      const error = await createFilesystemProjectRepository(blocked)
+        .save(aProject())
+        .catch((failure: unknown) => failure);
+
+      expect(error).toBeInstanceOf(ProjectFileError);
+      expect(error).toBeInstanceOf(ProjectFileFailure);
+      expect((error as ProjectFileError).location).toBe(path.resolve(blocked));
+      expect((error as ProjectFileError).path).toBe(path.resolve(blocked));
+      expect((error as ProjectFileError).message).toMatch(/could not be created/);
+    });
+
+    it('keeps the filesystem error as the cause, and nowhere else', async () => {
+      const blocked = await rootThatIsAFile();
+      const error = (await createFilesystemProjectRepository(blocked)
+        .save(aProject())
+        .catch((failure: unknown) => failure)) as ProjectFileError;
+
+      // The Node detail stays an Infrastructure detail, carried only here.
+      expect((error.cause as NodeJS.ErrnoException).code).toMatch(/^(ENOTDIR|EEXIST)$/);
+      expect(Object.keys(error).sort()).toEqual(['location', 'name', 'path']);
+    });
+
+    it('writes nothing when the root cannot be created', async () => {
+      const blocked = await rootThatIsAFile();
+      await createFilesystemProjectRepository(blocked)
+        .save(aProject())
+        .catch(() => undefined);
+
+      expect(await readdir(root)).toEqual(['not-a-folder']);
+      expect(await readFile(blocked, 'utf8')).toBe('x');
+    });
   });
 
   it('keeps two roots completely independent', async () => {

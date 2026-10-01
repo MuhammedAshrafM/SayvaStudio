@@ -10,8 +10,19 @@ import {
   CURRENT_PROJECT_SCHEMA_VERSION,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
+  ProjectNameRequiredError,
 } from './project.js';
 import { isProjectId, toProjectId } from './project-id.js';
+
+/** The error a call throws, for assertions that need more than `toThrow`. */
+function captureError(run: () => unknown): unknown {
+  try {
+    run();
+  } catch (error) {
+    return error;
+  }
+  throw new Error('expected the call to throw');
+}
 
 /** Deterministic ports — the whole reason IdGenerator and Clock exist. */
 function ids(...queue: string[]): IdGenerator {
@@ -57,6 +68,31 @@ describe('Project — invariant: Name required, non-empty', () => {
   it('enforces the same rule on rename, not only on creation', () => {
     const project = createProject({ name: 'ArSL Curriculum', schemaVersion: 1 }, deps);
     expect(() => renameProject(project, '  ', deps.clock)).toThrow(DomainError);
+  });
+
+  it('breaks as its own error, so the name rule can be told apart from every other', () => {
+    // The Create command maps exactly this to `invalid-name`; a message
+    // match would break the day the wording changed.
+    expect(() => createProject({ name: ' ', schemaVersion: 1 }, deps)).toThrow(
+      ProjectNameRequiredError,
+    );
+    const project = createProject({ name: 'ArSL Curriculum', schemaVersion: 1 }, deps);
+    expect(() => renameProject(project, '', deps.clock)).toThrow(ProjectNameRequiredError);
+  });
+
+  it('is still a DomainError, so nothing that catches DomainError changes', () => {
+    const error = captureError(() => createProject({ name: '', schemaVersion: 1 }, deps));
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error).toBeInstanceOf(ProjectNameRequiredError);
+    expect((error as Error).name).toBe('ProjectNameRequiredError');
+    expect((error as Error).message).toMatch(/name is required/i);
+  });
+
+  it('is not what any other invariant throws', () => {
+    // A bad schema version is a DomainError too — but not the name rule.
+    const error = captureError(() => createProject({ name: 'X', schemaVersion: 9999 }, deps));
+    expect(error).toBeInstanceOf(DomainError);
+    expect(error).not.toBeInstanceOf(ProjectNameRequiredError);
   });
 
   it('enforces it again on the way back from storage', () => {

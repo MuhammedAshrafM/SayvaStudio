@@ -1,12 +1,21 @@
 'use client';
 
-import { useId, useState, type ReactNode } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProjectListView } from '@sayva/application';
-import { SyStateBlock } from '@sayva/design-system';
+import { SyButton, SyStateBlock } from '@sayva/design-system';
+import { CreateProjectDrawer } from './create-project-drawer';
 
 /**
- * The pre-shell Project Picker — read-only slice.
+ * The pre-shell Project Picker.
  *
  * Canonical source: `Sayva Studio Screens.dc.html` §04 (specified-not-drawn),
  * with its planning-side text in docs/planning/phase-2-project-picker-design.md.
@@ -18,11 +27,16 @@ import { SyStateBlock } from '@sayva/design-system';
  * comes from a frozen primitive. The row is screen-local composition, not a
  * new component.
  *
- * Not in this slice, and deliberately absent rather than disabled: New
- * Project, in the header and in first-run (RB-6), and every row action. Open
- * has nowhere to hand a Project to until the shell exists, and Duplicate
- * arrives with its own slice. With no row action there is nothing for a
- * focusable row or a row keyboard map to do, so rows are plain list items.
+ * Two parts, because the header outlives the scan. `ProjectPickerFrame` is
+ * the header and the Create drawer, rendered by the route's layout so it
+ * stays mounted while the list loads, fails, retries and re-scans — which is
+ * what lets a drawer opened from the header survive the list arriving (B15).
+ * `ProjectPickerBody` and `ProjectPickerLoading` are the list's states,
+ * rendered by the page and its loading boundary.
+ *
+ * Not built, and deliberately absent rather than disabled: every row action.
+ * Open has nowhere to hand a Project to until the shell exists (B1), and
+ * Duplicate arrives with its own slice.
  */
 
 /** The product's name — the header's heading. */
@@ -31,43 +45,91 @@ const PRODUCT_NAME = 'Sayva Studio';
 /** RB-4: the header's line. RB-5: the loading state's accessible name. */
 const lookingIn = (root: string) => `Studio is looking in ${root}`;
 
+/** The header's single primary action, and first-run's (§04 appBar, §6). */
+const NEW_PROJECT = 'New Project';
+
+/** B6: New Project's stated reason below `bp.md`. */
+const NARROW_REASON = 'Creating a project needs a window at least 900px wide.';
+
+/** Opens the Create drawer, remembering which control did it (B14). */
+type OpenCreate = (opener: HTMLElement | null) => void;
+
+const OpenCreateContext = createContext<OpenCreate | null>(null);
+
+function useOpenCreate(): OpenCreate {
+  const openCreate = useContext(OpenCreateContext);
+  if (!openCreate) throw new Error('The Project Picker body renders inside ProjectPickerFrame.');
+  return openCreate;
+}
+
 /**
- * The single `main` landmark (§10), named by its own heading so the name is
- * the product's rather than new copy. Its heading is an `h1`; the state
- * blocks below keep their default `h2`, which is the level the contract lets
- * the caller choose.
+ * The single `main` landmark (§10), named by its own heading. Its heading is
+ * an `h1`; the state blocks below keep their default `h2`, and the drawer's
+ * title is `SyDrawer`'s own `h2`.
+ *
+ * The header is present in every state — with the list, and in first-run,
+ * loading and error (B15) — because it is rendered once, here, around them.
  */
-function Frame({ root, children }: { root: string; children: ReactNode }) {
+export function ProjectPickerFrame({ root, children }: { root: string; children: ReactNode }) {
   const headingId = useId();
+  const [creating, setCreating] = useState(false);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  const openCreate = useCallback<OpenCreate>((opener) => {
+    openerRef.current = opener;
+    setCreating(true);
+  }, []);
+  const closeCreate = useCallback(() => setCreating(false), []);
+
   return (
     <main aria-labelledby={headingId}>
       <header>
         <h1 id={headingId}>{PRODUCT_NAME}</h1>
         <p>{lookingIn(root)}</p>
+        <NewProject onOpen={openCreate} />
       </header>
-      {children}
+      <OpenCreateContext.Provider value={openCreate}>{children}</OpenCreateContext.Provider>
+      <CreateProjectDrawer open={creating} onClose={closeCreate} triggerRef={openerRef} />
     </main>
   );
 }
 
-export function ProjectPicker({ root, view }: { root: string; view: ProjectListView }) {
+/**
+ * The header's New Project, in both of the forms §8 gives it.
+ *
+ * From `bp.md` up it opens the Create drawer. Below it — `bp.sm`, "Read and
+ * review only" — it stays visible and disabled, with its stated reason (B6).
+ * `SyButton` gives the reason to assistive technology and leaves the visible
+ * statement to the screen ("Disabled is never used without an adjacent
+ * stated reason"), so the screen states it too; that copy is hidden from
+ * assistive technology only because the button already carries it.
+ *
+ * The switch is `md:` / `max-md:`, which compile from the `--breakpoint-md`
+ * token, so no width is written here: the token stays the one source for
+ * where `bp.sm` ends.
+ */
+function NewProject({ onOpen }: { onOpen: OpenCreate }) {
   return (
-    <Frame root={root}>
-      <ProjectPickerBody root={root} view={view} />
-    </Frame>
+    <>
+      <SyButton className="max-md:hidden" onClick={(event) => onOpen(event.currentTarget)}>
+        {NEW_PROJECT}
+      </SyButton>
+      <div className="md:hidden">
+        <SyButton disabled disabledReason={NARROW_REASON}>
+          {NEW_PROJECT}
+        </SyButton>
+        <p aria-hidden="true">{NARROW_REASON}</p>
+      </div>
+    </>
   );
 }
 
 /** The Suspense fallback while the scan is in flight — skeleton, not spinner. */
 export function ProjectPickerLoading({ root }: { root: string }) {
-  return (
-    <Frame root={root}>
-      <SyStateBlock state="loading" label={lookingIn(root)} />
-    </Frame>
-  );
+  return <SyStateBlock state="loading" label={lookingIn(root)} />;
 }
 
-function ProjectPickerBody({ root, view }: { root: string; view: ProjectListView }) {
+export function ProjectPickerBody({ root, view }: { root: string; view: ProjectListView }) {
   switch (view.status) {
     case 'listed':
       // `list` / `listitem`, never `role=grid` — that belongs to SyCollection
@@ -83,19 +145,52 @@ function ProjectPickerBody({ root, view }: { root: string; view: ProjectListView
       );
 
     case 'first-run':
-      // RB-6: heading and line now, no action until the Create slice — and
-      // nothing standing in for one.
-      return (
-        <SyStateBlock
-          state="first-run"
-          heading="No projects yet"
-          description={`${lookingIn(root)}. A project is one .sayva file.`}
-        />
-      );
+      return <FirstRun root={root} />;
 
     case 'error':
       return <ProjectListError traceId={view.traceId} location={view.location} />;
   }
+}
+
+/**
+ * First-run: heading, line, and New Project as its action — RB-6's boundary
+ * ends with the Create slice.
+ *
+ * Below `bp.md` it renders no action and nothing in its place (B6).
+ * `SyStateBlock`'s action has no disabled form, and its frozen contract is
+ * not widened to give it one, so the narrow form is the same block without
+ * the action. Only one of the two is ever displayed.
+ */
+function FirstRun({ root }: { root: string }) {
+  const openCreate = useOpenCreate();
+  const heading = 'No projects yet';
+  const description = `${lookingIn(root)}. A project is one .sayva file.`;
+
+  return (
+    <>
+      <SyStateBlock
+        className="max-md:hidden"
+        state="first-run"
+        heading={heading}
+        description={description}
+        action={{
+          label: NEW_PROJECT,
+          // The action's own button has focus when it is used, by pointer or
+          // key; it is the control focus returns to (B14).
+          onAction: () =>
+            openCreate(
+              document.activeElement instanceof HTMLElement ? document.activeElement : null,
+            ),
+        }}
+      />
+      <SyStateBlock
+        className="md:hidden"
+        state="first-run"
+        heading={heading}
+        description={description}
+      />
+    </>
+  );
 }
 
 /**

@@ -2,7 +2,9 @@ import {
   createProject,
   renameProject,
   toProjectId,
+  CURRENT_PROJECT_SCHEMA_VERSION,
   ProjectFileFailure,
+  ProjectNameRequiredError,
   type Clock,
   type FailureTracer,
   type IdGenerator,
@@ -12,6 +14,7 @@ import {
 import {
   ProjectNotFoundError,
   toProjectView,
+  type CreateProjectResult,
   type ProjectListView,
   type ProjectView,
 } from './project-models.js';
@@ -44,27 +47,68 @@ async function load(deps: ProjectUseCaseDeps, id: string): Promise<Project> {
 
 // --- CreateProject --------------------------------------------------------
 
-export type CreateProjectRequest = {
-  name: string;
-  /**
-   * The schema version the calling Studio build writes.
-   *
-   * Supplied by the caller because no canonical source states either the
-   * current build's version or the compatibility rule the Project invariant
-   * refers to. See `Project.schemaVersion` in @sayva/domain.
-   */
-  schemaVersion: number;
-  tags?: readonly string[];
-};
+/**
+ * The name, and nothing else — the Create decision closure's B9.
+ *
+ * `schemaVersion` is not here because the build supplies it, never the
+ * caller: ADR-003 SR-07 fixed `CURRENT_PROJECT_SCHEMA_VERSION`, and the
+ * canonical Create design has the author supply "a name and nothing else".
+ * `tags` is not here because no canonical source makes it author-facing.
+ */
+export type CreateProjectRequest = { name: string };
 
-/** Command. Creates a Project and persists it. */
+/**
+ * What the Create command needs: the ordinary Project dependencies plus the
+ * tracer. Its own type, like `ProjectListUseCaseDeps`, so the tracer reaches
+ * this command and the list query and nothing else (ADR-003 SR-11 and its
+ * Create extension) — never `ProjectUseCaseDeps` as a whole.
+ */
+export type CreateProjectUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer };
+
+/**
+ * Command. Creates a Project and persists it, reporting one of the three
+ * outcomes the canonical Create design shows (Screens §04 §3).
+ *
+ * Only two failures are outcomes, and each is caught by its exact type:
+ *
+ * - `ProjectNameRequiredError` — Domain's name rule — is `invalid-name`.
+ *   Nothing is written and nothing is traced: the author's name was
+ *   refused, the storage never came into it.
+ * - `ProjectFileFailure` — the port's failure contract (SR-10) — is
+ *   `write-failed`. The tracer is asked once for this occurrence (SR-11's
+ *   Create extension), and its `location` travels with the trace ID.
+ *
+ * Anything else — another invariant, a broken adapter, a bug — is a defect
+ * and is rethrown untraced, rather than dressed up as a name the author
+ * must fix or a folder they must repair.
+ */
 export async function createProjectUseCase(
-  deps: ProjectUseCaseDeps,
+  deps: CreateProjectUseCaseDeps,
   request: CreateProjectRequest,
-): Promise<ProjectView> {
-  const project = createProject(request, { ids: deps.ids, clock: deps.clock });
-  await deps.projects.save(project);
-  return toProjectView(project);
+): Promise<CreateProjectResult> {
+  let project: Project;
+  try {
+    project = createProject(
+      { name: request.name, schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      { ids: deps.ids, clock: deps.clock },
+    );
+  } catch (error) {
+    if (error instanceof ProjectNameRequiredError) return { status: 'invalid-name' };
+    throw error;
+  }
+
+  try {
+    await deps.projects.save(project);
+  } catch (failure) {
+    if (!(failure instanceof ProjectFileFailure)) throw failure;
+    return {
+      status: 'write-failed',
+      traceId: deps.tracer.trace(failure),
+      location: failure.location,
+    };
+  }
+
+  return { status: 'created', project: toProjectView(project) };
 }
 
 // --- OpenProject ----------------------------------------------------------

@@ -17,6 +17,7 @@ const EXPECTED_SURFACE = [
   'PROJECT_STATES',
   'PROJECT_TRANSITIONS_BLOCKED',
   'ProjectFileFailure',
+  'ProjectNameRequiredError',
   'assertProjectSchemaVersion',
   'createMetadata',
   'createProject',

@@ -3,6 +3,7 @@ import {
   createProject,
   restoreProject,
   CURRENT_PROJECT_SCHEMA_VERSION,
+  DomainError,
   ProjectFileFailure,
   type Clock,
   type IdGenerator,
@@ -19,6 +20,8 @@ import {
   openProjectUseCase,
   saveProjectUseCase,
   viewProjectListUseCase,
+  type CreateProjectRequest,
+  type CreateProjectUseCaseDeps,
   type ProjectUseCaseDeps,
 } from './project-use-cases.js';
 
@@ -78,40 +81,171 @@ const seeded = () => {
   return { project, ...memory };
 };
 
-describe('CreateProject', () => {
-  it('persists the project it creates', async () => {
+describe('CreateProject — the Create command (Create decision closure B9, B10)', () => {
+  /**
+   * A recording tracer, the same shape as the list query's below: it mints a
+   * visibly distinct value per call, so a command that cached, reused or
+   * invented a trace ID would show up.
+   */
+  function createDeps(overrides: Partial<CreateProjectUseCaseDeps> = {}) {
+    const traced: unknown[] = [];
     const memory = inMemoryRepository();
-    const view = await createProjectUseCase(deps({ projects: memory.repository }), {
-      name: 'ArSL Curriculum',
-      schemaVersion: 1,
+    const d: CreateProjectUseCaseDeps = {
+      ...deps({ projects: memory.repository }),
+      tracer: {
+        trace: (failure: unknown) => {
+          traced.push(failure);
+          return `trace-${traced.length}`;
+        },
+      },
+      ...overrides,
+    };
+    return { d, memory, traced };
+  }
+
+  /** A repository whose `save` fails the way the port's contract says it can. */
+  function failingSaves(failure: () => unknown): ProjectRepository {
+    const { repository } = inMemoryRepository();
+    return { ...repository, save: () => Promise.reject(failure()) };
+  }
+
+  const WHERE = '/workspace/3f2504e0-4f89-41d3-9a0c-0305e82c3301.sayva';
+
+  it('creates and persists a Project, and reports it created', async () => {
+    const { d, memory } = createDeps();
+    const result = await createProjectUseCase(d, { name: 'ArSL Curriculum' });
+
+    expect(result.status).toBe('created');
+    expect(memory.calls.save).toBe(1);
+    expect(memory.store.get(UUID_A)?.name).toBe('ArSL Curriculum');
+  });
+
+  it('keeps the name Domain keeps — trimmed', async () => {
+    const { d, memory } = createDeps();
+    await createProjectUseCase(d, { name: '  ArSL Curriculum  ' });
+    expect(memory.store.get(UUID_A)?.name).toBe('ArSL Curriculum');
+  });
+
+  it("supplies the schema version itself — the build's (B9, SR-07)", async () => {
+    const { d, memory } = createDeps();
+    const result = await createProjectUseCase(d, { name: 'X' });
+
+    expect(result).toMatchObject({
+      status: 'created',
+      project: { schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+    });
+    expect(memory.store.get(UUID_A)?.schemaVersion).toBe(CURRENT_PROJECT_SCHEMA_VERSION);
+  });
+
+  it('cannot be handed a schema version or tags by its caller (B9)', async () => {
+    const { d, memory } = createDeps();
+
+    // @ts-expect-error — B9: the request is `{ name }`; the caller has no schemaVersion to give.
+    const typed: CreateProjectRequest = { name: 'X', schemaVersion: 99 };
+    void typed;
+
+    // And at runtime, extra fields smuggled past the type are ignored.
+    const smuggled = { name: 'X', schemaVersion: 99, tags: ['injected'] } as CreateProjectRequest;
+    await createProjectUseCase(d, smuggled);
+
+    const stored = memory.store.get(UUID_A);
+    expect(stored?.schemaVersion).toBe(CURRENT_PROJECT_SCHEMA_VERSION);
+    expect(stored?.metadata.tags).toEqual([]);
+  });
+
+  it('takes identity and time from the IdGenerator and Clock ports', async () => {
+    const { d } = createDeps({ ids: ids(UUID_B), clock: clockAt('2031-03-10T08:00:00.000Z') });
+    const result = await createProjectUseCase(d, { name: 'X' });
+
+    expect(result).toMatchObject({
+      status: 'created',
+      project: {
+        id: UUID_B,
+        state: 'Created',
+        createdAt: '2031-03-10T08:00:00.000Z',
+        updatedAt: '2031-03-10T08:00:00.000Z',
+      },
+    });
+  });
+
+  it('returns a serializable Response Model, never the Domain entity (AD-02)', async () => {
+    const { d } = createDeps();
+    const result = await createProjectUseCase(d, { name: 'X' });
+
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+    expect(result.status === 'created' && result.project).not.toHaveProperty('metadata');
+  });
+
+  it.each(['', '   ', '\t\n'])(
+    'reports %j as invalid-name, and writes and traces nothing',
+    async (name) => {
+      const { d, memory, traced } = createDeps();
+
+      expect(await createProjectUseCase(d, { name })).toEqual({ status: 'invalid-name' });
+      expect(memory.calls.save).toBe(0);
+      expect(traced).toEqual([]);
+    },
+  );
+
+  it('rethrows any other Domain failure as a defect, untraced — it is not a name problem', async () => {
+    // A broken IdGenerator: Domain refuses the id, which is not the name rule.
+    const { d, memory, traced } = createDeps({ ids: ids('not-a-uuid') });
+
+    await expect(createProjectUseCase(d, { name: 'ArSL Curriculum' })).rejects.toBeInstanceOf(
+      DomainError,
+    );
+    expect(memory.calls.save).toBe(0);
+    expect(traced).toEqual([]);
+  });
+
+  it('reports a ProjectFileFailure as write-failed, with its location and a minted trace ID', async () => {
+    const failure = new ProjectFileFailure('could not be written', WHERE);
+    const { d, traced } = createDeps({ projects: failingSaves(() => failure) });
+
+    expect(await createProjectUseCase(d, { name: 'X' })).toEqual({
+      status: 'write-failed',
+      traceId: 'trace-1',
+      location: WHERE,
+    });
+    // The tracer is handed the failure itself, once, so its record has the detail.
+    expect(traced).toEqual([failure]);
+  });
+
+  it('asks for a new trace ID for every failed write — occurrence, not kind', async () => {
+    const { d } = createDeps({
+      projects: failingSaves(() => new ProjectFileFailure('could not be written', WHERE)),
     });
 
-    expect(view.id).toBe(UUID_A);
-    expect(memory.store.get(UUID_A)?.name).toBe('ArSL Curriculum');
-    expect(memory.calls.save).toBe(1);
+    const first = await createProjectUseCase(d, { name: 'X' });
+    const second = await createProjectUseCase(d, { name: 'X' });
+
+    expect(first).toMatchObject({ status: 'write-failed', traceId: 'trace-1' });
+    expect(second).toMatchObject({ status: 'write-failed', traceId: 'trace-2' });
   });
 
-  it('returns a Response Model, never the Domain entity (AD-02)', async () => {
-    const view = await createProjectUseCase(deps(), { name: 'X', schemaVersion: 1 });
+  it('carries nothing out of a failed write but its status, trace ID and location', async () => {
+    const { d } = createDeps({
+      projects: failingSaves(
+        () => new ProjectFileFailure('could not be written', WHERE, { cause: new Error('EACCES') }),
+      ),
+    });
+    const result = await createProjectUseCase(d, { name: 'X' });
 
-    // Serializable: dates as ISO strings, nothing with methods or Date objects.
-    expect(view.createdAt).toBe('2026-09-01T10:00:00.000Z');
-    expect(JSON.parse(JSON.stringify(view))).toEqual(view);
-    expect(view).not.toHaveProperty('metadata');
+    expect(Object.keys(result).sort()).toEqual(['location', 'status', 'traceId']);
+    expect(JSON.parse(JSON.stringify(result))).toEqual(result);
   });
 
-  it('refuses an empty name, because Domain does', async () => {
-    await expect(createProjectUseCase(deps(), { name: '  ', schemaVersion: 1 })).rejects.toThrow(
-      /name is required/i,
-    );
+  it('rethrows a write failure that is not the port contract, untraced', async () => {
+    const { d, traced } = createDeps({ projects: failingSaves(() => new TypeError('a defect')) });
+
+    await expect(createProjectUseCase(d, { name: 'X' })).rejects.toBeInstanceOf(TypeError);
+    expect(traced).toEqual([]);
   });
 
-  it('does not persist anything when the invariant fails', async () => {
-    const memory = inMemoryRepository();
-    await expect(
-      createProjectUseCase(deps({ projects: memory.repository }), { name: '', schemaVersion: 1 }),
-    ).rejects.toThrow();
-    expect(memory.calls.save).toBe(0);
+  it('traces nothing when the write succeeds', async () => {
+    const { d, traced } = createDeps();
+    await createProjectUseCase(d, { name: 'X' });
+    expect(traced).toEqual([]);
   });
 });
 
@@ -460,8 +594,11 @@ describe('the use cases hold ports, not adapters', () => {
   it('runs the whole set without any storage implementation', async () => {
     const memory = inMemoryRepository();
     const d = deps({ projects: memory.repository, ids: ids(UUID_A, UUID_B) });
+    const untraced = { trace: () => 'unused' };
 
-    const created = await createProjectUseCase(d, { name: 'One', schemaVersion: 1 });
+    const result = await createProjectUseCase({ ...d, tracer: untraced }, { name: 'One' });
+    if (result.status !== 'created') throw new Error(`expected created, got ${result.status}`);
+    const created = result.project;
     await openProjectUseCase(d, { id: created.id });
     await saveProjectUseCase(d, { id: created.id, name: 'One renamed' });
     const copy = await duplicateProjectUseCase(d, { id: created.id, name: 'Two' });

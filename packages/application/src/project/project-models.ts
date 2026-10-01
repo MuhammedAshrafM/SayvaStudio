@@ -55,6 +55,27 @@ export type ProjectListView =
   | { readonly status: 'first-run' }
   | { readonly status: 'error'; readonly traceId: string; readonly location: string };
 
+/**
+ * What the Create command reports — the Create decision closure's B10.
+ *
+ * A Command's Response Model, shaped like the Blueprint's result object and
+ * discriminated the way `ProjectListView` is. Three outcomes, because the
+ * canonical Create design (Screens §04 §3) has three things to show:
+ *
+ * - `created` — the Project was written. It carries the new Project as a
+ *   Response Model, never the entity (AD-02).
+ * - `invalid-name` — Domain refused the name. The drawer shows its invalid
+ *   message; nothing was written.
+ * - `write-failed` — storage refused the write. `location` is where
+ *   (ADR-003 SR-10) and `traceId` is which occurrence (SR-11's Create
+ *   extension). Neither the Domain failure nor its Infrastructure cause
+ *   crosses into the UI — only these two strings.
+ */
+export type CreateProjectResult =
+  | { readonly status: 'created'; readonly project: ProjectView }
+  | { readonly status: 'invalid-name' }
+  | { readonly status: 'write-failed'; readonly traceId: string; readonly location: string };
+
 /** The one place a Domain entity becomes a Response Model. */
 export function toProjectView(project: Project): ProjectView {
   return {

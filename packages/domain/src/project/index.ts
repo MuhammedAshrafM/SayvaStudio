@@ -6,6 +6,7 @@ export {
   CURRENT_PROJECT_SCHEMA_VERSION,
   PROJECT_STATES,
   PROJECT_TRANSITIONS_BLOCKED,
+  ProjectNameRequiredError,
 } from './project.js';
 export type { CreateProjectInput, Project, ProjectState, RestoreProjectInput } from './project.js';
 export { isProjectId, newProjectId, toProjectId } from './project-id.js';

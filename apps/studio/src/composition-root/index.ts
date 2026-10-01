@@ -1,6 +1,10 @@
 import 'server-only';
 
-import type { ProjectListUseCaseDeps, ProjectUseCaseDeps } from '@sayva/application';
+import type {
+  CreateProjectUseCaseDeps,
+  ProjectListUseCaseDeps,
+  ProjectUseCaseDeps,
+} from '@sayva/application';
 import {
   createConsoleFailureTracer,
   createCryptoIdGenerator,
@@ -98,6 +102,22 @@ export function projectListDeps(): ProjectListUseCaseDeps {
   return cachedListDeps;
 }
 
+let cachedCreateDeps: CreateProjectUseCaseDeps | undefined;
+
+/**
+ * The dependencies of the Create command: the ordinary Project ones plus the
+ * failure tracer — ADR-003 SR-11's Create extension.
+ *
+ * A third set rather than a reuse of `projectListDeps()`: the extension wires
+ * the tracer into the Create command only, and a shared set would let the
+ * two traced use cases drift into one without anyone deciding it. It is
+ * still never added to `projectUseCaseDeps()`.
+ */
+export function projectCreateDeps(): CreateProjectUseCaseDeps {
+  cachedCreateDeps ??= { ...projectUseCaseDeps(), tracer: createConsoleFailureTracer() };
+  return cachedCreateDeps;
+}
+
 /**
  * Test seam, not production API.
  *
@@ -109,4 +129,5 @@ export function resetCompositionRoot(): void {
   cachedRoot = undefined;
   cachedDeps = undefined;
   cachedListDeps = undefined;
+  cachedCreateDeps = undefined;
 }

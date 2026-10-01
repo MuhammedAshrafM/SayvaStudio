@@ -150,7 +150,15 @@ export function createFilesystemProjectRepository(workspaceRoot: string): Projec
      * provide.
      */
     async save(project: Project): Promise<void> {
-      await mkdir(root, { recursive: true });
+      // A root that cannot be created is the port's failure contract too
+      // (ADR-003 SR-10, extended by the Create decision closure, B11), located
+      // at the root itself. Without this the Node error escaped the port
+      // raw, and a caller could not tell a storage failure from a defect.
+      try {
+        await mkdir(root, { recursive: true });
+      } catch (error) {
+        throw new ProjectFileError(root, 'could not be created.', { cause: error });
+      }
       const destination = pathFor(project.id);
       const temporary = `${destination}.${randomUUID()}.tmp`;
 

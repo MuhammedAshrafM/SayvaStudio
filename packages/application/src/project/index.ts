@@ -9,6 +9,7 @@ export {
 } from './project-use-cases.js';
 export type {
   CreateProjectRequest,
+  CreateProjectUseCaseDeps,
   DeleteProjectRequest,
   DuplicateProjectRequest,
   OpenProjectRequest,
@@ -17,4 +18,9 @@ export type {
   SaveProjectRequest,
 } from './project-use-cases.js';
 export { ProjectNotFoundError, toProjectView } from './project-models.js';
-export type { ProjectListItem, ProjectListView, ProjectView } from './project-models.js';
+export type {
+  CreateProjectResult,
+  ProjectListItem,
+  ProjectListView,
+  ProjectView,
+} from './project-models.js';

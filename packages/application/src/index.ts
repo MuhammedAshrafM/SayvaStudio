@@ -22,6 +22,8 @@ export {
 } from './project/index.js';
 export type {
   CreateProjectRequest,
+  CreateProjectResult,
+  CreateProjectUseCaseDeps,
   DeleteProjectRequest,
   DuplicateProjectRequest,
   OpenProjectRequest,

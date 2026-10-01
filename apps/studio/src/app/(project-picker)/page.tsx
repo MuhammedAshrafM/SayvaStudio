@@ -1,6 +1,6 @@
 import { viewProjectListUseCase } from '@sayva/application';
 import { projectListDeps, workspaceRoot } from '@/composition-root';
-import { ProjectPicker } from '@/project-picker/project-picker';
+import { ProjectPickerBody } from '@/project-picker/project-picker';
 
 /**
  * Rendered per request, not at build time.
@@ -13,7 +13,8 @@ import { ProjectPicker } from '@/project-picker/project-picker';
 export const dynamic = 'force-dynamic';
 
 /**
- * The pre-shell Project Picker at the application root (ADR-004).
+ * The pre-shell Project Picker's list, at the application root (ADR-004). The
+ * header and the Create drawer are the layout's, around it.
  *
  * A Server Component doing exactly what AD-07 allows: invoke a Query use case
  * and render the View Model it returns. Which state to show, the order of the
@@ -23,5 +24,5 @@ export const dynamic = 'force-dynamic';
  */
 export default async function HomePage() {
   const view = await viewProjectListUseCase(projectListDeps());
-  return <ProjectPicker root={workspaceRoot()} view={view} />;
+  return <ProjectPickerBody root={workspaceRoot()} view={view} />;
 }

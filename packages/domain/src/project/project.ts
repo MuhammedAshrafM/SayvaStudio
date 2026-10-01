@@ -64,11 +64,25 @@ export type Project = {
  * no Language yet". The list arrives with the type it holds.
  */
 
+/**
+ * The name invariant, broken — Domain Model §3's "Name required, non-empty".
+ *
+ * Its own class rather than a bare `DomainError`, so a caller can tell this
+ * one rule apart from every other invariant without reading a message. The
+ * Create command maps exactly this to its `invalid-name` result, and treats
+ * any other Domain failure as the defect it is. Still a `DomainError`: the
+ * rule is Domain's, and nothing that already catches `DomainError` changes.
+ */
+export class ProjectNameRequiredError extends DomainError {
+  constructor() {
+    super('Project name is required and must not be empty.');
+    this.name = 'ProjectNameRequiredError';
+  }
+}
+
 function assertName(name: string): string {
   const trimmed = name.trim();
-  if (trimmed.length === 0) {
-    throw new DomainError('Project name is required and must not be empty.');
-  }
+  if (trimmed.length === 0) throw new ProjectNameRequiredError();
   return trimmed;
 }
 
