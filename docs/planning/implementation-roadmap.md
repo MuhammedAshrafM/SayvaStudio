@@ -201,6 +201,38 @@ flowchart TD
 > - **B14 — focus after success.** A07 as implemented: focus returns to the trigger while it exists. From first-run, whose trigger the list replaces, no other target is introduced until the Open slice.
 > - **B15 — the header's `New Project`** is present in every state (list, first-run, loading, error): the literal appBar.
 
+> **Open decision closure, 2026-10-03 — OD-1 to OD-8.** A readiness analysis found Open blocked three ways: opening had nowhere to land, two confirmed product requirements had no record, and Screens §04 §11 forbade the only carrier that is both per tab and refresh-safe. Each item below is ruled by the owner and recorded in [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md), [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) **WS-05** and [ADR-003](../adr/ADR-003-storage-mechanism-and-project-persistence.md) **SR-11**. The design items are authored into Screens §04, then re-exported and read back. **Open is not implemented, and this closure does not authorize its implementation.**
+> - **Context — PR-OPEN-01 and PR-OPEN-02**, product requirements confirmed by the owner on 2026-10-01. Each browser tab must be able to work with a different Project independently, and a refreshed tab must keep the Project it had open. On a refresh the only per-tab state a server sees is the URL, which is why OD-1 exists.
+> - **Identifiers.** The conversation's `DR-O…` and `DR-C…` identifiers are retired for `OD-…`, because "DR-O2" and "DR-C1" read almost exactly like ADR-002's DR-02 and DR-01. `OP-…` are ADR-005's rules.
+> - **OD-1 (ruled as DR-C1, 2026-10-01; the shape on 2026-10-03) — the workspace URL.** An opened Project is reached at `/workspace/{projectId}`, a temporary pre-shell workspace URL and the one narrow exception to §04 §11. It is resolved on every request through the existing `openProjectUseCase`. It sits outside the URL contract, which keeps its eleven routes, and it is **not** route twelve: discrepancy #4 and the handoff's "12 routes" are untouched. Blueprint §6 and AD-07 are unchanged.
+> - **OD-2 (DR-O3) — zero Languages are valid.** Read from Domain Model §3 and §7, whose invariants require no Language. The frozen Domain Model is not edited.
+> - **OD-3 (DR-O1) — a temporary pre-shell Workspace Entry**, not `SyAppShell`. It shows the opened Project's name and supports the zero-Language state. It has no `SyScopeBar`, rail icons, pane persistence, `SyCollection`, Language creation or listing, shell routes or lifecycle display, and **no Back to Projects or other return control**: returning is by navigating to `/`. It is replaced by the shell. Its design is commissioned in [the Workspace Entry design commission](./phase-2-workspace-entry-design-commission.md).
+> - **OD-4 (DR-C2) — following a URL is not reopening.** A workspace URL always opens the Project it identifies, from a refresh, history, a bookmark, a copied URL or a restored tab. `/` always shows the Picker, and no last-opened Project is remembered.
+> - **OD-5 (DR-C3) — a URL identifies and grants nothing.** A copied workspace URL opens the Project wherever the matching file exists. It grants no access, is not an authentication credential, and is not portable between installations; that is Phase 12's Import/Export.
+> - **OD-6 (DR-C6) — two temporary failure categories.** *Not here*: a malformed ProjectId, no matching file, a missing workspace folder, or a changed folder setting. *Can't read*: corrupt JSON, invalid content, an id/file-name mismatch, a permission failure, and — temporarily — a newer schema version. §04 §4's newer-schema treatment stays the target.
+> - **OD-7 (DR-O4) — Tab only, for now.** Tab reaches each row's `Open` in visual order, and `Enter` or `Space` activates it. No roving focus. `↑` `↓` and `J` `K` are deferred to a later slice. `Esc`, `⌘Enter` and `N`'s boundary (B8) are unchanged. Until row movement arrives, the three-keys claim does not hold for open.
+> - **OD-8 (DR-O5) — validate, then navigate.** `Open` reads the Project first, showing `SyButton`'s contracted `loading` state, and navigates only on success. Can't read replaces the row with `SyStateBlock`'s inline-row `error`, and `Retry` re-scans.
+> - **Copy and traces.** Can't read's heading is "Can't open the project", with the location and a trace ID per occurrence. Not here is announced as "Can't find that project" in a screen-local assertive live region, once per occurrence, and never traced. ADR-003 SR-11 now traces three failure categories: the Project-list read, the Create write and the Open read. Its guarantees are unchanged.
+> - **The `findAll` limitation stays.** One unreadable file still fails the whole list, so the inline-row error appears only when a file becomes unreadable after the scan. If the file is still unreadable, `Retry`'s re-scan shows "Can't read the projects folder" with a new trace ID; a repaired file's row returns; a removed file's row is gone.
+> - **Sequencing.** Before Open can be built:
+>   - the not-found announcement's transport is ruled;
+>   - the Workspace Entry design is commissioned, approved, authored into Claude Design, and exported and read back;
+>   - implementation is separately authorized.
+>
+>   B1's temporary boundary — a successful create stays in the picker — lifts with the Open slice, as B1 records.
+> - **Still open after this closure:**
+>   - how "Can't find that project" reaches the picker after a workspace URL returns to `/`;
+>   - the Workspace Entry's design;
+>   - concurrent editing of one Project in two tabs;
+>   - tolerant repository reads;
+>   - a distinct newer-schema contract;
+>   - a missing folder versus a missing Project, and a permission failure versus corruption;
+>   - the shell's URLs;
+>   - the exact shape of Open's serializable result;
+>   - how the Picker's validation reaches `openProjectUseCase`, within Blueprint §6 and AD-07;
+>   - whether a row's `Open` needs an accessible name beyond its label;
+>   - discrepancy #4.
+
 > **Still open in this phase:**
 > - `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".
 > - **Delete semantics are contradicted across canonical sources.** Domain Model §8 states "Delete is explicit and destructive"; the design's rule **R20** states "Soft delete by default. Impact preview computed server-side from the graph and shown before confirmation." Both are canonical. The implementation follows the Domain Model. Recorded as unresolved: `DeleteProject`, `ArchiveProject` and R20 are all unchanged, and archive is **not** assumed to be the soft delete.

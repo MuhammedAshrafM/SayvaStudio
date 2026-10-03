@@ -1,6 +1,6 @@
 # Project Picker — Design
 
-**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, 2026-09-28 for the future-`updatedAt` rule, and 2026-09-29 for the Create Project decision closure (B1–B15)
+**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, 2026-09-28 for the future-`updatedAt` rule, and 2026-09-29 for the Create Project decision closure (B1–B15), and 2026-10-03 for the Open decisions (OD-1 to OD-8, [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md))
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits before `SyAppShell`
 **Authored:** 2026-09-14, on the design owner's instruction to execute the commission
 
@@ -42,7 +42,7 @@ All 21 contracted fields, in the design's own shape.
 | **`template`** | **None of L1–L7.** The seven templates are shell templates; this surface precedes the shell (ADR-004 WS-01). Recorded as `pre-shell`, a new template class of one. |
 | **`status`** | `proposed` — not `canonical-drawn`. No screen has been drawn. |
 | **`source`** | This document, answering `phase-2-project-picker-design-commission.md` under ADR-004. |
-| **`url`** | The application root. **Adds no entry to the canonical URL contract**, and is not the missing twelfth route of recorded discrepancy #4. See §11. |
+| **`url`** | The application root. **Adds no entry to the canonical URL contract**, and is not the missing twelfth route of recorded discrepancy #4. See §11. Opening navigates to `/workspace/{projectId}`, the temporary pre-shell workspace URL and the one exception to §11's no Project id in a URL. It also adds no entry to the URL contract and is **not** the missing twelfth route (OD-1). |
 | **`goal`** | Get the author into the workspace they mean to work in, or into a new one, without asking them anything the filesystem already knows. |
 | **`layout`** | One column at every breakpoint. No rail, no scope bar, no sidebar, no inspector. Header, then list, then nothing. The column does not grow without bound — see §8 for the one value this design cannot set. |
 | **`scope`** | **None.** No scope bar (WS-02). Nothing here is language-scoped: the surface exists precisely because no workspace is open yet. |
@@ -70,13 +70,17 @@ All 21 contracted fields, in the design's own shape.
 
 **Exit.** Opening a Project ends the picker: it hands the opened `ProjectId` to the application shell and relinquishes the surface. **The picker's responsibility ends there.**
 
+> **Temporary pre-shell boundary (OD-3, OD-2; [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) WS-05).** Until the shell exists, opening navigates to `/workspace/{projectId}` (§11), which shows a temporary pre-shell **Workspace Entry** — not `SyAppShell`, and replaced by the shell when the shell is designed and built. It shows the opened Project's name. A Project with zero Languages is valid ([ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-06), and the Workspace Entry supports that state. It uses no `SyScopeBar`, rail icons, pane persistence, `SyCollection`, shell routes or lifecycle display, and it neither creates nor lists Languages. Its design is commissioned in [the Workspace Entry design commission](./phase-2-workspace-entry-design-commission.md) and is not defined here.
+
 **Where opening lands — outside this design.** A Project may have zero Languages, and in this phase always does. The shell must therefore provide an appropriate zero-Language entry state.
 
 That is a **separate shell design concern**, belonging to whoever designs `SyAppShell` in the phase that builds it. This design does not define it, does not assume any particular form for it, and creates no shell contract. `SyAppShell` is untouched.
 
-**Returning to the picker.** By navigating to the application root. No control is added inside the shell — `SyAppShell` has no "close workspace" affordance and this design does not give it one.
+**Returning to the picker.** By navigating to the application root. No control is added inside the shell — `SyAppShell` has no "close workspace" affordance and this design does not give it one. Nor is one added inside the temporary Workspace Entry (OD-3): no Back to Projects button, link, menu item or keyboard shortcut.
 
 **Automatic reopen — no.** Reopening the last Project requires persisted per-user state, and no canonical source defines a store for it. (`SyAppShell`'s *"persisted per user"* covers pane sizes, inside the shell.) Instead the picker orders by `updatedAt` descending, so the most recently edited Project is first — the same benefit from data that already exists.
+
+**Following a URL is not reopening (OD-4).** Entering the application root always shows the picker, and no last-opened Project is remembered. A workspace URL always opens the Project it identifies, however it is reached — a refresh, history, a bookmark, a copied URL, or the browser restoring its tabs — and each browser tab identifies its own Project through its own URL (ADR-005 OP-03, OP-04).
 
 **Exit confirmation — none.** There is no unsaved state to lose: `SaveProject` is explicit and the `.sayva` file is written atomically (ADR-003 SR-06). If the shell later holds unsaved edits, that is the shell's concern and `SyDrawer`'s contracted `dirty (blocks close)` is the existing pattern for it.
 
@@ -131,6 +135,31 @@ Opening is by `ProjectId`, from the row. Three failure modes exist and each gets
 | **Not found** (`ProjectNotFoundError`) | Only reachable if the file vanished between the scan and the open. The list re-scans; the row is simply gone. The failure is announced in an **assertive** live region (A16 — assertive for errors). |
 
 **Recovery is in place.** The picker is the top-level surface; there is nowhere to dismiss to.
+
+> **Amended 2026-10-03 (Open decisions OD-6 and OD-8; [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-07, OP-08).** The table above stays as written. What follows is how Open behaves until finer distinctions are decided.
+
+**Open validates before it navigates (OD-8).** The Project is read first, and only a Project that reads cleanly is navigated to, at `/workspace/{projectId}`. A failed Open never navigates. While the read is in flight, `Open` shows `SyButton`'s contracted `loading` state: the label persists, `aria-busy` is set and focus is kept.
+
+**Temporary failure classification (OD-6).** Every failure is either *not here* or *can't read*.
+
+| | Cases | From the picker's `Open` | At a workspace URL |
+|---|---|---|---|
+| **Not here** | A malformed ProjectId; a valid ProjectId with no matching file; a missing workspace folder; a changed folder setting under which the Project no longer resolves | Absence, not failure: **no trace ID**. The list re-scans, and a screen-local assertive live region announces **"Can't find that project"** once per occurrence (A16). | Returns to the application root, where the picker announces **"Can't find that project"** once, untraced. How the announcement reaches the picker across that navigation is **not decided** (below). |
+| **Can't read** | Corrupt JSON; invalid Project content; a Project id that does not match its file name; a permission failure; a newer schema version, **temporarily** | The row is replaced in place by `SyStateBlock`'s `error` state, `inline row` variant. Heading **"Can't open the project"**; the line names the location; its own trace ID per occurrence, recorded the same way as the list's (§6, ADR-003 SR-11). `Retry` re-scans, and takes focus because the author's action caused the state. | The Workspace Entry shows `SyStateBlock`'s `error` state: heading **"Can't open the project"**, the line naming the location, its own trace ID. `Retry` re-runs the resolution. Its size, placement and focus on arrival belong to the commissioned Workspace Entry design. |
+
+**While the list read is not tolerant (§5).** `findAll()` fails the whole list on any one unreadable file, so the picker never lists one. The inline-row error is reachable only when a file becomes unreadable after the scan that listed it. `Retry`'s re-scan then:
+
+- shows the list's own error, **"Can't read the projects folder"**, with a new trace ID, if the file is still unreadable;
+- returns the row, if the file was repaired;
+- drops the row, if the file was removed.
+
+Per-row isolation of unreadable files is not claimed; it needs the tolerant read that is still blocked (§5, Blocked dependencies 1).
+
+**Temporary rule — newer schema version.** A newer schema version is *can't read* until it can be told apart from an unreadable file. The newer-schema row of the table above remains the target, and its copy is still deliberately not transcribed into §04.
+
+**The not-found announcement surface.** A screen-local assertive live region with exactly the text **"Can't find that project"**. It adds no Design System primitive: `SyToast` and `SyInlineBanner` stay registered-not-contracted (O3), and `SyStateBlock`'s `error` state, which requires a trace ID, is not changed to fit an absence that has none.
+
+**Its transport after navigation — not decided.** When a workspace URL is not here, the request returns to `/`, and the picker's live region has to learn there that it has something to announce. No canonical source and no existing code provides a way to do that, and no query parameter, cookie, session store, browser storage, global event or other transport is chosen here. Implementing that path waits for a ruling (Blocked dependencies 8).
 
 ### §5 — Listing and discovery
 
@@ -247,16 +276,18 @@ Evaluated and **not** used, each for a stated reason:
 
 | | |
 |---|---|
-| `↑` `↓` | Move between rows |
-| `J` `K` | Move between rows — R05's product-wide vocabulary, adopted so the picker teaches the same grammar the shell uses |
+| `↑` `↓` | Move between rows. **Temporary slice boundary (OD-7):** arrives in a later slice |
+| `J` `K` | Move between rows — R05's product-wide vocabulary, adopted so the picker teaches the same grammar the shell uses. **Temporary slice boundary (OD-7):** arrives in a later slice |
 | `Enter` | Open the focused Project |
 | `N` | New Project — following the drawn Vocabulary screen's `New sign N`. **Temporary slice boundary (B8):** arrives in a later slice, with its behaviour in editable fields and its hint treatment |
 | `Esc` | Dismiss the topmost overlay, via the Phase 1 overlay substrate |
 | `⌘Enter` | Submit the create/duplicate drawer, per `SyDrawer`'s contract |
 
+> **Temporary slice boundary (OD-7).** `↑` `↓` and `J` `K` row movement arrive in a later slice. Until then Tab reaches each row's `Open` in visual order, and `Enter` or `Space` activates it, as `SyButton`'s contract gives it. No roving focus is introduced. Every other key in the map is unchanged, including `Esc`, `⌘Enter` and `N`'s own boundary (B8). `Open` keeps its visible label; no `aria-label` or new copy is added.
+
 **Not adopted, with reasons:** `⌥1…7` rail, `⌘L` scope, `⌘\` sidebar, `⌘/` inspector, `F6` pane cycle — all shell furniture with nothing here to act on. `X` select and `/` filter — no selection, no filter. `⌘Enter` as "side peek" — no side peek exists; the drawer's submit meaning is the contracted one on this surface.
 
-**`⌘K` reaches nothing**, because `SyPalette` is a deferred pattern. The rule *"No shortcut is the only path to an action"* still holds: every shortcut above has a visible control. The rule *"any action reachable by mouse in two clicks must be reachable by keyboard in three keys or fewer"* is **claimed** — open is `↓`+`Enter`, create is `N` once `N` arrives (B8). Until then, create is reached through its visible controls.
+**`⌘K` reaches nothing**, because `SyPalette` is a deferred pattern. The rule *"No shortcut is the only path to an action"* still holds: every shortcut above has a visible control. The rule *"any action reachable by mouse in two clicks must be reachable by keyboard in three keys or fewer"* is **claimed** — open is `↓`+`Enter`, create is `N` once `N` arrives (B8). Until then, create is reached through its visible controls. **During OD-7's boundary the claim does not hold for open:** open is Tab to the row's `Open`, then `Enter`, and a row further down the list takes more Tab presses than three keys allow. It is claimed again when `↑` `↓` and `J` `K` arrive.
 
 **Why `N` is deferred (B8).** No canonical source settles two things. One is its hint: the drawn `New sign N` sets the hint in a monospace face with no token, and **D13** (no monospace family token) stays open and is not resolved here; `SyButton` also has no hint slot. The other is what the key does while an editable field has focus. Rather than invent either, `N` waits for a later slice.
 
@@ -266,7 +297,9 @@ Evaluated and **not** used, each for a stated reason:
 
 It occupies the application root, which is where an application with no workspace open necessarily starts. Every one of the canonical contract's eleven routes presupposes an open workspace; adding a twelfth is forbidden, and **this surface is explicitly not the missing twelfth route of recorded discrepancy #4**.
 
-**No Project id appears in any URL.** A Project id only resolves on a machine whose workspace root holds that file, and ADR-003 SR-05 makes the root machine-local — so a Project URL would be a link that works for exactly one person. The URL-encoding rule for list state has nothing to encode: there are no filters, no saved views, and one fixed sort.
+**No Project id appears in any URL but the Workspace Entry's, the one exception below.** A Project id only resolves on a machine whose workspace root holds that file, and ADR-003 SR-05 makes the root machine-local — so a Project URL would be a link that works for exactly one person. The URL-encoding rule for list state has nothing to encode: there are no filters, no saved views, and one fixed sort.
+
+**One narrow exception (OD-1, OD-5; [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-01, OP-05).** The temporary pre-shell workspace URL, `/workspace/{projectId}`, carries the opened Project's id, so each browser tab identifies its own Project and a refresh resolves the same one again. The reason above still holds, and the exception inherits it: the URL identifies a Project within the configured projects folder, grants no access, is not an authentication credential, and is not portable — elsewhere it opens a Project only where the matching file exists. It adds no entry to the URL contract, which keeps its eleven routes, and it is **not** the missing twelfth route of recorded discrepancy #4.
 
 ### §12 — Workspace root
 
@@ -313,9 +346,16 @@ Carried forward unresolved. None is decided by this design.
 | 5 | **Workspace root path** — the mechanism is ruled (ADR-003 SR-09: `SAYVA_WORKSPACE_ROOT`, read only in the Composition Root); the directory it points at stays a deployment decision. | Nothing now — §12's displayed location comes from SR-09. | Deployment |
 | 6 | **D6, the icon set.** | Nothing today — the design uses no icons. Blocks `SyMenu` if a third row action is ever needed. | Design owner |
 | 7 | **`SaveProject` — "saved" is ambiguous.** No source says what a save does on this surface, or whether it belongs here. Recorded, **not** resolved, and specifically not resolved as Rename. | Nothing here — no save affordance is placed. | Design owner |
+| 8 | **Not-found announcement transport.** How "Can't find that project" reaches the picker after a workspace URL returns to `/`. No existing mechanism carries it, and none is chosen. | The workspace URL's *not here* path (§4). | Project owner |
+| 9 | **The Workspace Entry's design.** Commissioned in [the Workspace Entry design commission](./phase-2-workspace-entry-design-commission.md). | Open's destination (§2). | Design owner |
+| 10 | **A newer schema version versus an unreadable file.** Temporarily one category, *can't read*. | §4's newer-schema target treatment. | Architecture |
+| 11 | **A missing folder versus a missing Project; a permission failure versus a corrupt file.** Each pair shares one category. | Nothing now. | Architecture |
+| 12 | **The same Project open in two tabs.** Concurrent editing is not decided. | Nothing now — the picker edits nothing in a Project. | Project owner |
+| 13 | **Repeated `Open` labels.** Each row's `Open` keeps its visible label; whether it needs more is open. | Nothing now — no `aria-label` or new copy is added. | Design owner |
+| 14 | **Shell URLs.** Whether the shell's own routes carry the ProjectId. | The shell, not this surface. | Design owner + Architecture |
 
 **Withdrawn from this table since the first draft:** the `bp.xl` content-column maximum width, which is **not applicable** to a pre-shell surface rather than missing from it (§8). And item 7 above is a restatement: the first draft resolved the "saved" ambiguity as Rename, which no canonical source supports; it is now recorded as ambiguous and left open. And the error state's trace ID, added as item 8 by readiness ruling RB-2 and resolved by it on 2026-09-24 — see §6.
 
-The zero-Language entry state was never a dependency of this design and is not one now — it is a **separate shell design concern** (§2).
+The zero-Language entry state was never a dependency of this design and is not one now — it is a **separate shell design concern** (§2). Until the shell exists, the temporary Workspace Entry supports it (§2, OD-2, OD-3).
 
 **Untouched throughout:** the vendored design sources, every `design-system` contract, **D4**, **D6** and all other open decisions, `DeleteProject`, `ArchiveProject`, the `Created → Active` transition, the workspace root implementation, `SyScopeBar`, `SyCollection`, and all application, domain and infrastructure code.

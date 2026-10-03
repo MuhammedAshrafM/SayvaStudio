@@ -113,7 +113,7 @@ Rejected: the rail is explicitly seven domains bound to `⌥1…7`, and every on
 
 - The Project surface has no canonical design at all, so one must be commissioned before implementation. That is the point of the ruling rather than a side effect: it replaces four rulings and a port amendment with one design.
 - Responsive behaviour has no owner here. `SyAppShell` *"owns responsive behaviour — no screen defines its own breakpoint handling"*, and the four breakpoint tokens define their meaning in terms of shell panes (`bp.md` = *"Rail + one pane; sidebar and inspector become overlays"*). The ranges are canonical; what happens in them outside the shell is not.
-- Where opening a Project lands is now an explicit question. Every content route needs a `:lang`, and Phase 2's freeze point says a Project here is *"correctly still an empty shell — no Language yet"* — so a newly created Project has no language to route to.
+- Where opening a Project lands is now an explicit question. Every content route needs a `:lang`, and Phase 2's freeze point says a Project here is *"correctly still an empty shell — no Language yet"* — so a newly created Project has no language to route to. **WS-05 (below) answers it until the shell exists.**
 
 ## Explicitly not decided here
 
@@ -123,6 +123,26 @@ Rejected: the rail is explicitly seven domains bound to `⌥1…7`, and every on
 - **D4**, **D6**, and every other open design decision.
 - **The workspace root path** — ADR-003 SR-05 fixes only that it is injected.
 - **Whether the picker has a route at all**, and what it is. The URL contract has no Projects route and one must not be invented.
+
+## Amendment — WS-05: opening a Project lands on a temporary pre-shell Workspace Entry
+
+**Approved 2026-10-03 as Open decision OD-3** (ruled as DR-O1, option B; see [ADR-005](./ADR-005-opening-a-project-the-workspace-url.md)). It answers this ADR's Consequence *"Where opening a Project lands is now an explicit question"* for as long as the shell does not exist. It places a surface; it does not design one.
+
+- **Decision:** opening a Project leads to a **temporary pre-shell Workspace Entry**, reached at **`/workspace/{projectId}`** (ADR-005 OP-01). It is **not `SyAppShell`**, and like the Picker it sits before the shell. It shows the opened Project's identity, its name. It supports the valid zero-Language state (ADR-005 OP-06), which every Project in Phase 2 is in. It is **replaced by the shell** when the shell is designed and built.
+- **Excluded:**
+  - `SyAppShell`, and `SyScopeBar`, which stays uncontracted per **O3**.
+  - The rail and its icons, so **D6** is not needed.
+  - Pane persistence.
+  - Creating or listing Languages.
+  - `SyCollection`.
+  - Shell routes.
+  - Any display of the Project's lifecycle state, since `Created → Active` still has no trigger.
+- **No return control.** The Workspace Entry has no Back to Projects button, link, menu item or keyboard shortcut. Returning to the Picker is by navigating to `/`, which always shows the Picker (ADR-005 OP-04). This matches Screens §04 §2, where no control is added inside the shell either.
+- **Which design rules bind**, following WS-04's precedent for the Picker:
+  - **Bind regardless**, as product-wide accessibility and quality rules: the 2px accent focus ring at 2px offset, never removed; 44px touch targets; usable to 200% zoom; colour is never the only signal (P5); **A16**'s live-region policy; and **AC13**. The frozen contracts of any Phase 1 primitive it uses bind with that primitive — `SyStateBlock`'s, for its loading and error states.
+  - **Do not bind automatically**, because they belong to the shell or to the seven workspaces: `SyAppShell`'s *"owns responsive behaviour"*, its pane landmarks and its *"Panes resizable, persisted per user"*; `SyEntityHeader`'s *"Every workspace, without exception"*, a pattern D1 deferred; **R19**'s *"All seven"* scope; and the shell-furniture keys of **R05** — `⌥1…7`, `⌘L`, `⌘\`, `⌘/` and `F6` — which have nothing to act on here. Each is a question for the commission, as under WS-04.
+- **What it leaves to design:** everything the Workspace Entry looks like and says. Its structure, how the Project's name is presented, the zero-Language state, the loading state and its accessible label, how the can't-read error is placed, its copy, focus on arrival, and its responsive behaviour are all commissioned in [the Workspace Entry design commission](../planning/phase-2-workspace-entry-design-commission.md). Implementation waits for that design.
+- **What it does not change:** WS-01 to WS-04, the Picker's responsibilities, the URL contract's eleven routes, and every Design System contract.
 
 ## Status
 
