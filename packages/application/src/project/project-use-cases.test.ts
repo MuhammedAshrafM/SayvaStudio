@@ -11,7 +11,7 @@ import {
   type ProjectId,
   type ProjectRepository,
 } from '@sayva/domain';
-import { ProjectNotFoundError } from './project-models.js';
+import { ProjectNotFoundError, toProjectView } from './project-models.js';
 import {
   createProjectUseCase,
   deleteProjectUseCase,
@@ -22,6 +22,7 @@ import {
   viewProjectListUseCase,
   type CreateProjectRequest,
   type CreateProjectUseCaseDeps,
+  type OpenProjectUseCaseDeps,
   type ProjectUseCaseDeps,
 } from './project-use-cases.js';
 
@@ -249,30 +250,164 @@ describe('CreateProject — the Create command (Create decision closure B9, B10)
   });
 });
 
-describe('OpenProject', () => {
-  it('reads a project back by id', async () => {
-    const { repository, project } = seeded();
-    const view = await openProjectUseCase(deps({ projects: repository }), { id: project.id });
-    expect(view.name).toBe('ArSL Curriculum');
+describe('OpenProject — result and tracing (ADR-005 OP-09)', () => {
+  /**
+   * A recording tracer, the same shape as the Create and list ones: a
+   * visibly distinct value per call, so a use case that cached, reused or
+   * invented a trace ID would show up.
+   */
+  function openDeps(repository: ProjectRepository) {
+    const traced: unknown[] = [];
+    const d: OpenProjectUseCaseDeps = {
+      ...deps({ projects: repository }),
+      tracer: {
+        trace: (failure: unknown) => {
+          traced.push(failure);
+          return `trace-${traced.length}`;
+        },
+      },
+    };
+    return { d, traced };
+  }
+
+  /** Counts reads, so "no repository call" is an observation, not an assumption. */
+  function counted(repository: ProjectRepository) {
+    const reads: string[] = [];
+    const counting: ProjectRepository = {
+      ...repository,
+      findById: (id: ProjectId) => {
+        reads.push(id);
+        return repository.findById(id);
+      },
+    };
+    return { repository: counting, reads };
+  }
+
+  const WHERE = 'C:/authoring/projects/3f2504e0-4f89-41d3-9a0c-0305e82c3301.sayva';
+  /** The port's failure contract (SR-10), with a framework-style digest attached. */
+  const fileFailure = () =>
+    Object.assign(new ProjectFileFailure(`Project file "${WHERE}" is not valid JSON.`, WHERE), {
+      digest: '2102856004',
+    });
+
+  /** A repository whose read fails with `failure`, and which still counts writes. */
+  function failingReads(failure: () => unknown) {
+    const memory = inMemoryRepository();
+    const repository: ProjectRepository = {
+      ...memory.repository,
+      findById: () => Promise.reject(failure()),
+    };
+    return { repository, calls: memory.calls };
+  }
+
+  const MALFORMED = ['not-a-uuid', '', ` ${UUID_A}`, `${UUID_A}.sayva`, `../${UUID_A}`];
+
+  it('opens a readable Project as its Response Model', async () => {
+    const { project, repository } = seeded();
+    const { repository: reading, reads } = counted(repository);
+    const { d, traced } = openDeps(reading);
+
+    const result = await openProjectUseCase(d, { id: project.id });
+
+    expect(result).toEqual({ status: 'opened', project: toProjectView(project) });
+    expect(reads).toEqual([project.id]);
+    expect(traced).toEqual([]);
   });
 
-  it('fails loudly on an id nothing answers to', async () => {
-    await expect(openProjectUseCase(deps(), { id: UUID_B })).rejects.toBeInstanceOf(
-      ProjectNotFoundError,
-    );
+  it.each(MALFORMED)('a malformed id (%j) is not here — no read, no trace', async (id) => {
+    const { repository, reads } = counted(inMemoryRepository().repository);
+    const { d, traced } = openDeps(repository);
+
+    const result = await openProjectUseCase(d, { id });
+
+    expect(result).toEqual({ status: 'not-here' });
+    expect(reads).toEqual([]);
+    expect(traced).toEqual([]);
   });
 
-  it('rejects a malformed id rather than searching for it', async () => {
-    await expect(openProjectUseCase(deps(), { id: 'not-a-uuid' })).rejects.toThrow(
-      /canonical UUID/i,
-    );
+  it('never echoes the id it was given', async () => {
+    const { d } = openDeps(inMemoryRepository().repository);
+    for (const id of ['../../etc/passwd-not-a-uuid', UUID_B]) {
+      const result = await openProjectUseCase(d, { id });
+      expect(JSON.stringify(result)).not.toContain(id);
+    }
   });
 
-  it('changes nothing it reads', async () => {
-    const { repository, calls, project } = seeded();
-    await openProjectUseCase(deps({ projects: repository }), { id: project.id });
-    expect(calls.save).toBe(0);
-    expect(calls.delete).toBe(0);
+  it('an id nothing answers to is not here, untraced', async () => {
+    const { repository, reads } = counted(inMemoryRepository().repository);
+    const { d, traced } = openDeps(repository);
+
+    const result = await openProjectUseCase(d, { id: UUID_B });
+
+    expect(result).toEqual({ status: 'not-here' });
+    expect(reads).toEqual([UUID_B]);
+    expect(traced).toEqual([]);
+  });
+
+  it('a ProjectFileFailure is cant-read, traced exactly once with its location', async () => {
+    const failure = fileFailure();
+    const { repository } = failingReads(() => failure);
+    const { d, traced } = openDeps(repository);
+
+    const result = await openProjectUseCase(d, { id: UUID_A });
+
+    expect(result).toEqual({ status: 'cant-read', traceId: 'trace-1', location: WHERE });
+    expect(traced).toHaveLength(1);
+    expect(traced[0]).toBe(failure);
+    expect(JSON.stringify(result)).not.toContain('2102856004');
+  });
+
+  it('each failed open is its own occurrence, with its own trace ID', async () => {
+    const { repository } = failingReads(fileFailure);
+    const { d, traced } = openDeps(repository);
+
+    const first = await openProjectUseCase(d, { id: UUID_A });
+    const second = await openProjectUseCase(d, { id: UUID_A });
+
+    expect(first).toMatchObject({ status: 'cant-read', traceId: 'trace-1' });
+    expect(second).toMatchObject({ status: 'cant-read', traceId: 'trace-2' });
+    expect(traced).toHaveLength(2);
+  });
+
+  it.each([
+    ['a plain Error', () => new Error('adapter bug')],
+    ['a DomainError', () => new DomainError('an invariant this read should never meet')],
+  ])('rethrows %s untraced — a defect, not a read failure', async (_name, make) => {
+    const error = make();
+    const { repository } = failingReads(() => error);
+    const { d, traced } = openDeps(repository);
+
+    await expect(openProjectUseCase(d, { id: UUID_A })).rejects.toBe(error);
+    expect(traced).toEqual([]);
+  });
+
+  it('never writes, whatever the outcome', async () => {
+    const opened = seeded();
+    await openProjectUseCase(openDeps(opened.repository).d, { id: opened.project.id });
+    await openProjectUseCase(openDeps(opened.repository).d, { id: UUID_B });
+    await openProjectUseCase(openDeps(opened.repository).d, { id: 'not-a-uuid' });
+    expect(opened.calls).toEqual({ save: 0, delete: 0 });
+
+    const failing = failingReads(fileFailure);
+    await openProjectUseCase(openDeps(failing.repository).d, { id: UUID_A });
+    expect(failing.calls).toEqual({ save: 0, delete: 0 });
+  });
+
+  it('every outcome survives a serialization boundary unchanged, carrying only its own fields', async () => {
+    const { project, repository } = seeded();
+    const results = [
+      await openProjectUseCase(openDeps(repository).d, { id: project.id }),
+      await openProjectUseCase(openDeps(repository).d, { id: UUID_B }),
+      await openProjectUseCase(openDeps(failingReads(fileFailure).repository).d, { id: UUID_A }),
+    ];
+
+    expect(results.map((r) => r.status)).toEqual(['opened', 'not-here', 'cant-read']);
+    expect(results.map((r) => Object.keys(r).sort())).toEqual([
+      ['project', 'status'],
+      ['status'],
+      ['location', 'status', 'traceId'],
+    ]);
+    for (const result of results) expect(JSON.parse(JSON.stringify(result))).toEqual(result);
   });
 });
 
@@ -599,7 +734,8 @@ describe('the use cases hold ports, not adapters', () => {
     const result = await createProjectUseCase({ ...d, tracer: untraced }, { name: 'One' });
     if (result.status !== 'created') throw new Error(`expected created, got ${result.status}`);
     const created = result.project;
-    await openProjectUseCase(d, { id: created.id });
+    const opened = await openProjectUseCase({ ...d, tracer: untraced }, { id: created.id });
+    expect(opened.status).toBe('opened');
     await saveProjectUseCase(d, { id: created.id, name: 'One renamed' });
     const copy = await duplicateProjectUseCase(d, { id: created.id, name: 'Two' });
     expect(await listProjectsUseCase(d)).toHaveLength(2);

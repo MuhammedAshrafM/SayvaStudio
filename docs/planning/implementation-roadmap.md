@@ -228,10 +228,27 @@ flowchart TD
 >   - a distinct newer-schema contract;
 >   - a missing folder versus a missing Project, and a permission failure versus corruption;
 >   - the shell's URLs;
->   - the exact shape of Open's serializable result;
+>   - the exact shape of Open's serializable result — decided 2026-10-05 as ADR-005 **OP-09** (M1, below);
 >   - how the Picker's validation reaches `openProjectUseCase`, within Blueprint §6 and AD-07;
 >   - whether a row's `Open` needs an accessible name beyond its label;
 >   - discrepancy #4.
+
+> **Open contract (M1), approved 2026-10-05 — [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-09.** The Workspace Entry readiness review found Open's result and tracing contract missing. The owner approved it and closed its three questions. **Implemented 2026-10-05** — see the last bullet.
+> - **Contract.** `openProjectUseCase` changes in place; no second Open use case is introduced. It returns `OpenProjectResult`:
+>   - `opened`, carrying a `ProjectView`;
+>   - `not-here`, with no payload and no trace;
+>   - `cant-read`, carrying `traceId` and `location`. The status is spelled `cant-read`, ADR-005's own category name.
+> - **Classification.**
+>   - A malformed id is `not-here`, with no repository call and no trace.
+>   - A missing Project is `not-here`, untraced.
+>   - A `ProjectFileFailure` is `cant-read`, traced exactly once.
+>   - Anything else is rethrown untraced.
+>
+>   No Domain change: `isProjectId` already exists.
+> - **Tracing.** The tracer exists only in `OpenProjectUseCaseDeps`; `ProjectUseCaseDeps` is unchanged. The Composition Root gains `projectOpenDeps()`.
+> - **One resolution per request.** The page and its metadata share one result. The later route slice uses React's `cache` only as request-scoped memoization: it is not a persistent cache or a global store, and every request still resolves the Project once, as OP-02 requires.
+> - **Scope.** Nothing else from the Workspace Entry readiness review is decided here.
+> - **Implemented 2026-10-05.** The Application types and use case, and `projectOpenDeps()` in the Composition Root, are built and tested. Nothing calls them yet; the workspace route and its request-scoped resolver arrive with the route slice.
 
 > **Still open in this phase:**
 > - `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".

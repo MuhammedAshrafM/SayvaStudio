@@ -2,6 +2,7 @@ import 'server-only';
 
 import type {
   CreateProjectUseCaseDeps,
+  OpenProjectUseCaseDeps,
   ProjectListUseCaseDeps,
   ProjectUseCaseDeps,
 } from '@sayva/application';
@@ -118,6 +119,22 @@ export function projectCreateDeps(): CreateProjectUseCaseDeps {
   return cachedCreateDeps;
 }
 
+let cachedOpenDeps: OpenProjectUseCaseDeps | undefined;
+
+/**
+ * The dependencies of Open: the ordinary Project ones plus the failure
+ * tracer — ADR-003 SR-11's Open extension, wired as ADR-005 OP-09 fixes.
+ *
+ * Its own set, for the reason the Create set is: the tracer reaches each
+ * traced operation through that operation's dependencies, and a shared set
+ * would let them drift into one without anyone deciding it. It is never
+ * merged into `projectUseCaseDeps()`.
+ */
+export function projectOpenDeps(): OpenProjectUseCaseDeps {
+  cachedOpenDeps ??= { ...projectUseCaseDeps(), tracer: createConsoleFailureTracer() };
+  return cachedOpenDeps;
+}
+
 /**
  * Test seam, not production API.
  *
@@ -130,4 +147,5 @@ export function resetCompositionRoot(): void {
   cachedDeps = undefined;
   cachedListDeps = undefined;
   cachedCreateDeps = undefined;
+  cachedOpenDeps = undefined;
 }

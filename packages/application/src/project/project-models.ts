@@ -76,6 +76,26 @@ export type CreateProjectResult =
   | { readonly status: 'invalid-name' }
   | { readonly status: 'write-failed'; readonly traceId: string; readonly location: string };
 
+/**
+ * What opening a Project reports — ADR-005 OP-09.
+ *
+ * A Query's Response Model, discriminated like `CreateProjectResult`. One
+ * branch per category OP-07 defines, and no others:
+ *
+ * - `opened` — the Project read cleanly. It carries the existing Response
+ *   Model, never the entity (AD-02).
+ * - `not-here` — nothing answers to the id: it is malformed, or no file
+ *   holds it. Absence, not failure, so it carries nothing at all — no trace,
+ *   no location, and not the id it was given.
+ * - `cant-read` — a file is there and cannot be read, a newer schema version
+ *   included (OD-6). `location` is where (ADR-003 SR-10) and `traceId` is
+ *   which occurrence (SR-11's Open extension).
+ */
+export type OpenProjectResult =
+  | { readonly status: 'opened'; readonly project: ProjectView }
+  | { readonly status: 'not-here' }
+  | { readonly status: 'cant-read'; readonly traceId: string; readonly location: string };
+
 /** The one place a Domain entity becomes a Response Model. */
 export function toProjectView(project: Project): ProjectView {
   return {

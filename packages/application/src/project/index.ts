@@ -13,6 +13,7 @@ export type {
   DeleteProjectRequest,
   DuplicateProjectRequest,
   OpenProjectRequest,
+  OpenProjectUseCaseDeps,
   ProjectListUseCaseDeps,
   ProjectUseCaseDeps,
   SaveProjectRequest,
@@ -20,6 +21,7 @@ export type {
 export { ProjectNotFoundError, toProjectView } from './project-models.js';
 export type {
   CreateProjectResult,
+  OpenProjectResult,
   ProjectListItem,
   ProjectListView,
   ProjectView,

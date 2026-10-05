@@ -1,5 +1,6 @@
 import {
   createProject,
+  isProjectId,
   renameProject,
   toProjectId,
   CURRENT_PROJECT_SCHEMA_VERSION,
@@ -15,6 +16,7 @@ import {
   ProjectNotFoundError,
   toProjectView,
   type CreateProjectResult,
+  type OpenProjectResult,
   type ProjectListView,
   type ProjectView,
 } from './project-models.js';
@@ -113,14 +115,55 @@ export async function createProjectUseCase(
 
 // --- OpenProject ----------------------------------------------------------
 
+/** The raw id as it arrived — a route parameter, not yet known to be one. */
 export type OpenProjectRequest = { id: string };
 
-/** Query. Reads one Project without touching its state. */
+/**
+ * What Open needs: the ordinary Project dependencies plus the tracer — ADR-003
+ * SR-11's Open extension. Its own type, like the list query's and the Create
+ * command's, so the tracer reaches Open through Open's dependencies and never
+ * through `ProjectUseCaseDeps` as a whole (ADR-005 OP-09).
+ */
+export type OpenProjectUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer };
+
+/**
+ * Query. Opens one Project, reporting one of the three outcomes ADR-005 OP-07
+ * defines, in the order OP-09 fixes:
+ *
+ * 1. An id `isProjectId` rejects is `not-here`, before any read and without a
+ *    trace. It never reaches `toProjectId`, whose error message would echo it.
+ * 2. `findById` answering `null` is `not-here`, untraced: no file holds that
+ *    id — the file, the workspace folder, or the folder setting has changed.
+ * 3. `ProjectFileFailure` — the port's failure contract (SR-10) — is
+ *    `cant-read`. The tracer is asked once for this occurrence, and the
+ *    failure's `location` travels with the trace ID.
+ * 4. Anything else is a defect and is rethrown untraced, rather than
+ *    presented as a file the author must repair.
+ * 5. Otherwise the Project is `opened`, as its Response Model.
+ *
+ * It reads and never writes. The mapping to a Response Model sits outside
+ * the read's `try`, so a mapping defect can never pass for a read failure.
+ */
 export async function openProjectUseCase(
-  deps: ProjectUseCaseDeps,
+  deps: OpenProjectUseCaseDeps,
   request: OpenProjectRequest,
-): Promise<ProjectView> {
-  return toProjectView(await load(deps, request.id));
+): Promise<OpenProjectResult> {
+  if (!isProjectId(request.id)) return { status: 'not-here' };
+
+  let project: Project | null;
+  try {
+    project = await deps.projects.findById(toProjectId(request.id));
+  } catch (failure) {
+    if (!(failure instanceof ProjectFileFailure)) throw failure;
+    return {
+      status: 'cant-read',
+      traceId: deps.tracer.trace(failure),
+      location: failure.location,
+    };
+  }
+
+  if (project === null) return { status: 'not-here' };
+  return { status: 'opened', project: toProjectView(project) };
 }
 
 /**

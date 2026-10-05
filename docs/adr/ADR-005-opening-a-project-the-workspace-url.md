@@ -64,7 +64,7 @@ The `{projectId}` route parameter is validated and resolved by the existing **`o
 
 A Server Component that renders the workspace calls that Query and renders what it returns, which is AD-07's rule as written. Architecture Blueprint §6 and AD-07 are unchanged.
 
-Nothing else holds "the open Project": no cookie, no session store, no browser storage, no server-side context and no token. A later Command that acts on the opened Project receives the ProjectId as an explicit argument and resolves it again.
+Nothing else holds "the open Project": no cookie, no session store, no browser storage, no server-side context and no token. A later Command that acts on the opened Project receives the ProjectId as an explicit argument and resolves it again. OP-09 (below) adds that each request resolves it exactly once.
 
 ### Each tab holds its own Project, and a refresh keeps it (OP-03)
 
@@ -114,7 +114,7 @@ Until finer distinctions are decided, every failure to open is either **not here
 - **Not here is absence, not failure.** It is never traced.
 - **Can't read** carries the failure's location (SR-10) and its own trace ID for each occurrence (ADR-003 SR-11, extended for Open).
 - **A newer schema version is can't read, temporarily.** Screens §04 §4's newer-schema treatment — the row rendered normally with `Open` disabled and its reason stated — remains the target. Reaching it needs a newer schema version to be told apart from an unreadable file, which is deferred. No repository or Domain contract changes here.
-- `openProjectUseCase` throws today. Under SR-10, Application maps a failure into a serializable state and Presentation never inspects an error, so the Open slice needs Open's outcomes as a serializable result, as the Create decision closure's B10 did for Create. Its exact shape is the implementing slice's.
+- `openProjectUseCase` throws today. Under SR-10, Application maps a failure into a serializable state and Presentation never inspects an error, so the Open slice needs Open's outcomes as a serializable result, as the Create decision closure's B10 did for Create. Its exact shape is the implementing slice's. **OP-09 (below) fixes it.**
 
 ### Open validates first, then navigates (OP-08)
 
@@ -207,11 +207,55 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
 - **A distinct contract and state for a newer schema version.** It is can't read until then.
 - **A missing workspace folder versus a missing Project**, and **a permission failure versus a corrupt file**. Each pair shares one category.
 - **The shell's URLs**, including whether its routes carry the ProjectId.
-- **The exact shape of Open's serializable result.**
+- **The exact shape of Open's serializable result.** Decided by OP-09 (below).
 - **How the Picker's validation reaches `openProjectUseCase`.** It is the implementing slice's, within Blueprint §6 and AD-07, which this ADR does not amend.
 - **The repeated `Open` buttons' accessible name.** Each keeps its visible label, `Open`. No `aria-label` and no new copy is added, and whether a row's `Open` needs more is open.
 - **The URL contract's route-count discrepancy (#4).**
 - **Save, Duplicate, Delete, Archive and Rename.** All unchanged.
+
+## Amendment — OP-09: Open's result and tracing contract
+
+**Approved 2026-10-05 as M1**, the Open result and tracing contract identified by the Workspace Entry readiness review. Three questions were closed the same day: React's `cache` is used only as request-scoped memoization, `openProjectUseCase` is changed in place, and the third status is spelled `cant-read`. This fixes what OP-07 left to the implementing slice. **Implemented 2026-10-05** — see the last bullet.
+
+- **Contract:** `openProjectUseCase(deps: OpenProjectUseCaseDeps, request: OpenProjectRequest): Promise<OpenProjectResult>`.
+  - The existing use case changes in place. No second Open use case is introduced.
+  - `OpenProjectRequest` stays `{ id: string }`, the raw route value.
+  - It remains a Query: it reads and never writes. The trace is diagnostic output, as it is for the list query.
+- **Result:**
+
+  ```ts
+  type OpenProjectResult =
+    | { readonly status: 'opened'; readonly project: ProjectView }
+    | { readonly status: 'not-here' }
+    | { readonly status: 'cant-read'; readonly traceId: string; readonly location: string };
+  ```
+
+  - `opened` carries the existing `ProjectView`, so no new Response Model is added.
+  - `not-here` carries no payload: no id, no trace and no location.
+  - `cant-read` carries exactly the trace ID and the location. Its spelling is OP-07's category name.
+  - There is no other status. A newer schema version is `cant-read` (OD-6).
+- **Classification, in this order:**
+  1. A value `isProjectId` rejects is `not-here`, before any repository call and without a trace. It is never passed to `toProjectId`, so it is never echoed.
+  2. `findById` returning `null` is `not-here`, untraced. This covers a missing file, a missing workspace folder and a changed folder setting.
+  3. `findById` throwing `ProjectFileFailure` is `cant-read`, traced exactly once, with that failure's `location`.
+  4. Anything else is a defect and is rethrown untraced.
+  5. Otherwise the result is `opened`, with `toProjectView` of the Project read.
+
+  No Domain change is needed: `isProjectId` is already public Domain API and tests the same pattern as `toProjectId`. Open no longer throws `ProjectNotFoundError`; `load` and that error are unchanged for Save, Duplicate and Delete.
+- **Tracing**, under ADR-003 SR-11's Open extension:
+  - The tracer exists only in `OpenProjectUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer }`. `ProjectUseCaseDeps` is unchanged.
+  - The Composition Root wires it as its own set, `projectOpenDeps()`: `projectUseCaseDeps()` plus a console `FailureTracer`. `resetCompositionRoot()` clears it, and it is never merged into the base set or shared with the list and Create sets.
+  - The adapter mints a fresh identifier per call and writes one line to the server's diagnostic output. One use-case call that ends in `cant-read` is one occurrence with one trace ID.
+- **One resolution per request**, refining OP-02:
+  - Each workspace request calls `openProjectUseCase` exactly once, and the page and its metadata both derive from that single result.
+  - The route slice shares it through React's `cache`, used only as request-scoped memoization. Next.js documents it as "scoped to the current request only", with no sharing between requests. It is not a persistent cache or a global store, and every request still resolves the Project, as OP-02 requires.
+  - The use case itself does not memoize. Application depends on Domain only (ADR-002 DR-02), so React stays in Presentation.
+- **What it does not change:** Domain, the `ProjectRepository` and `FailureTracer` ports, the Infrastructure adapters, Architecture Blueprint §6, AD-02, AD-07, ADR-002, and ADR-003 SR-11, which already covers this. It decides nothing about the workspace route or its UI, how the Picker's validation reaches `openProjectUseCase`, the not-found announcement transport (OP-08), or any other open Workspace Entry question.
+- **Implemented 2026-10-05**, with the M1 slice:
+  - `OpenProjectResult` is declared beside `CreateProjectResult`.
+  - `openProjectUseCase` takes `OpenProjectUseCaseDeps` and returns `OpenProjectResult`, in the order above.
+  - The Composition Root's `projectOpenDeps()` wires a console `FailureTracer` into Open's set alone, and `resetCompositionRoot()` clears it.
+  - Nothing calls it yet. The workspace route, and the request-scoped resolver that shares one result per request, arrive with the route slice.
 
 ## Status
 
