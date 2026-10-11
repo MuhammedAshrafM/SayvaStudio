@@ -494,6 +494,63 @@ describe('the workspace root — SR-05', () => {
     });
   });
 
+  describe('findById on a root that is not a directory — SR-10, extended 2026-10-11', () => {
+    /**
+     * The root's path is taken by a file. Reading beneath it fails `ENOENT`
+     * on Windows and `ENOTDIR` on POSIX; this runs whichever one the platform
+     * produces, and the root-not-a-directory test file injects both, so each
+     * runs on any platform.
+     */
+    let fileRoot: string;
+
+    beforeEach(async () => {
+      fileRoot = path.join(root, 'not-a-folder');
+      await writeFile(fileRoot, 'x', 'utf8');
+    });
+
+    const openFrom = (workspaceRoot: string): Promise<unknown> =>
+      createFilesystemProjectRepository(workspaceRoot)
+        .findById(toProjectId(UUID_A))
+        .catch((failure: unknown) => failure);
+
+    it('fails as the port contract, located at the root', async () => {
+      const error = await openFrom(fileRoot);
+
+      expect(error).toBeInstanceOf(ProjectFileError);
+      expect(error).toBeInstanceOf(ProjectFileFailure);
+      expect((error as ProjectFileError).location).toBe(path.resolve(fileRoot));
+      expect((error as ProjectFileError).path).toBe(path.resolve(fileRoot));
+      expect((error as ProjectFileError).message).toMatch(/is not a directory/);
+    });
+
+    it('carries no read error as its cause, and no fields beyond location, name and path', async () => {
+      const error = (await openFrom(fileRoot)) as ProjectFileError;
+
+      // Decided from the root, so neither platform's read error is carried.
+      expect(error.cause).toBeUndefined();
+      expect(Object.keys(error).sort()).toEqual(['location', 'name', 'path']);
+    });
+
+    it("reads without writing: the file in the root's place is untouched", async () => {
+      await openFrom(fileRoot);
+
+      expect(await readdir(root)).toEqual(['not-a-folder']);
+      expect(await readFile(fileRoot, 'utf8')).toBe('x');
+    });
+  });
+
+  describe('findById where nothing is there — unchanged', () => {
+    it('answers null for a root that does not exist', async () => {
+      const missing = createFilesystemProjectRepository(path.join(root, 'not-created-yet'));
+      await expect(missing.findById(toProjectId(UUID_A))).resolves.toBeNull();
+    });
+
+    it('answers null for a missing Project file in a root that is a directory', async () => {
+      await repository.save(aProject('Another', UUID_B));
+      await expect(repository.findById(toProjectId(UUID_A))).resolves.toBeNull();
+    });
+  });
+
   it('keeps two roots completely independent', async () => {
     const other = createFilesystemProjectRepository(path.join(root, 'other'));
     await repository.save(aProject('Mine', UUID_A));

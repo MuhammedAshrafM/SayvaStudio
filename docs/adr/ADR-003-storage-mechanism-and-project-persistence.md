@@ -196,6 +196,16 @@ Rejected because it makes every format change break every existing Project with 
 - **What it does not change:** `findAll()` still fails the whole call on one unreadable file. Tolerant repository reads remain undecided, exactly as recorded above.
 - **Implemented 2026-09-28**, with the Project Picker's read-only slice. The contract is `ProjectFileFailure`, declared in `@sayva/domain` beside `ProjectRepository`: an `Error` whose one addition is `location`. `ProjectFileError` extends it and passes its `path` as that location. `viewProjectListUseCase` catches only this class and returns `{ status: 'error', traceId, location }`; any other failure is a defect and is rethrown untraced rather than shown as a read failure, which narrows the catch-all RB-2 shipped with.
 - **Extended 2026-09-29 (Create Project decision closure, B11).** `save` creates the workspace root before it writes (SR-05, SR-06). A failure to create that root is now the same contract: a `ProjectFileError` located at the workspace root, not a raw filesystem error escaping the port. Write and rename failures were already this contract, located at the Project file. This covers exactly what Create needs; no other repository operation changes, and the Node error stays an Infrastructure detail carried only as `cause`.
+- **Extended 2026-10-11 (reading a workspace root that is not a directory).** The decision covers the two reads, `findById` and `findAll`. When a configured workspace root exists but is not a directory, each fails with the port's failure contract, located at the root, on every platform. Neither reports the root as absent.
+  - `findById` changed to fail this way. Before, it depended on the platform. Windows reports `ENOENT` for a path beneath a file, so `findById` answered `null`. POSIX reports `ENOTDIR`, so `findById` failed, but located at the Project file rather than the root.
+  - `findAll` already fails this way on both platforms ("could not be listed"). That behaviour is kept.
+  - The adapter decides this by inspecting the root, never by the error code.
+  - The writes are outside this decision and do not change:
+    - `save` already fails at the root on both platforms, because the root cannot be created (B11, "could not be created").
+    - `delete` is not decided. Today it succeeds on Windows, as if the Project were already gone, and fails on POSIX, located at the Project file.
+  - A root that does not exist is unchanged. It stays an empty workspace — `null` from `findById`, an empty list from `findAll` — as Screens §04 §12 states: "A missing root is an empty workspace, not an error."
+  - Not decided: a root that does not exist because one of its parent folders is a file. Today it reads as absent on Windows and fails on POSIX.
+  - **Implemented 2026-10-11.** `findById` inspects the root only after a read has failed or found no file, so opening a Project that is there costs nothing extra. A root that does not exist, or cannot be inspected, leaves the read's own outcome. The tests inject each platform's read error, so both paths run on any platform; at implementation they were run on Windows only.
 
 ## Amendment — SR-11: a Project list read failure carries a per-occurrence trace ID
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Project, ProjectId, ProjectRepository } from '@sayva/domain';
 import {
@@ -96,9 +96,43 @@ export function createFilesystemProjectRepository(workspaceRoot: string): Projec
     return project;
   }
 
+  /**
+   * Fails when the workspace root exists but is not a directory — ADR-003
+   * SR-10, extended 2026-10-11.
+   *
+   * Decided from the root itself, never from the error a read produced:
+   * reading a path beneath a file fails `ENOENT` on Windows and `ENOTDIR` on
+   * POSIX, so the code alone would split one condition across two outcomes.
+   * A root that does not exist, or cannot be inspected, passes — a missing
+   * root stays an empty workspace, and every other failure keeps its own
+   * classification.
+   */
+  async function assertRootIsADirectory(): Promise<void> {
+    const stats = await stat(root).catch(() => null);
+    if (stats !== null && !stats.isDirectory()) {
+      throw new ProjectFileError(root, 'is not a directory.');
+    }
+  }
+
   return {
+    /**
+     * The Project with this id, or `null` when its file is not there.
+     *
+     * A root that exists but is not a directory is not "not there": it is
+     * the port's failure contract, located at the root, on every platform.
+     * The root is inspected only once a read has not succeeded, so opening a
+     * Project that is there costs nothing extra.
+     */
     async findById(id: ProjectId): Promise<Project | null> {
-      return read(pathFor(id));
+      let project: Project | null;
+      try {
+        project = await read(pathFor(id));
+      } catch (error) {
+        await assertRootIsADirectory();
+        throw error;
+      }
+      if (project === null) await assertRootIsADirectory();
+      return project;
     },
 
     /**

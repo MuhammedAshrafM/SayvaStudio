@@ -102,19 +102,20 @@ Until finer distinctions are decided, every failure to open is either **not here
 | Category | Case | What happens today |
 |---|---|---|
 | **Not here** | A malformed ProjectId | `toProjectId` rejects it with a `DomainError` before any path is built. Domain also exports `isProjectId`. |
-| | A valid ProjectId with no matching file | `findById` returns `null`, and `openProjectUseCase` throws `ProjectNotFoundError`. |
-| | A missing workspace folder | The same: the file is absent. It matches SR-05, where a missing root is an empty workspace. |
+| | A valid ProjectId with no matching file | `findById` returns `null`, and `openProjectUseCase` throws `ProjectNotFoundError`. *(Corrected 2026-10-11: since OP-09, implemented 2026-10-05, `openProjectUseCase` no longer throws `ProjectNotFoundError`. `findById` returning `null` is `not-here`, untraced.)* |
+| | A missing workspace folder | The same: the file is absent. It matches SR-05, where a missing root is an empty workspace. *(Corrected 2026-10-11: the rule is Screens §04 §12's — "A missing root is an empty workspace, not an error" — and §6's "root empty or absent". SR-05 does not state it.)* |
 | | A changed folder setting, so the Project no longer resolves | The same: the file is absent from the folder now configured. |
 | **Can't read** | Corrupt JSON | `ProjectFileFailure` (ADR-003 SR-10), realised by `ProjectFileError` naming the file. |
 | | Invalid Project content | The same. |
 | | A Project id that does not match its file name (SR-04) | The same. |
 | | A permission failure | The same. |
 | | A newer schema version (SR-07), **temporarily** | The same. SR-07's rejection reaches the caller only as the `cause` of a `ProjectFileFailure`; there is no distinct contract for it. |
+| | A workspace root that exists but is not a directory | Decided and implemented 2026-10-11 (ADR-003 SR-10, extended, which records how it was verified): `findById` fails with `ProjectFileFailure` located at the root, on every platform, so Open reports can't read. Before the implementation it depended on the platform. On Windows `findById` returned `null`, so Open reported not here. On POSIX it failed with `ProjectFileFailure` located at the Project file, not the root. `findAll` and `save` already failed at the root on both platforms, and are unchanged. `delete` is outside the decision and not decided. |
 
 - **Not here is absence, not failure.** It is never traced.
 - **Can't read** carries the failure's location (SR-10) and its own trace ID for each occurrence (ADR-003 SR-11, extended for Open).
 - **A newer schema version is can't read, temporarily.** Screens §04 §4's newer-schema treatment — the row rendered normally with `Open` disabled and its reason stated — remains the target. Reaching it needs a newer schema version to be told apart from an unreadable file, which is deferred. No repository or Domain contract changes here.
-- `openProjectUseCase` throws today. Under SR-10, Application maps a failure into a serializable state and Presentation never inspects an error, so the Open slice needs Open's outcomes as a serializable result, as the Create decision closure's B10 did for Create. Its exact shape is the implementing slice's. **OP-09 (below) fixes it.**
+- `openProjectUseCase` throws today. Under SR-10, Application maps a failure into a serializable state and Presentation never inspects an error, so the Open slice needs Open's outcomes as a serializable result, as the Create decision closure's B10 did for Create. Its exact shape is the implementing slice's. **OP-09 (below) fixes it.** *(Corrected 2026-10-11: that was so when OP-07 was decided. Since OP-09, implemented 2026-10-05, `openProjectUseCase` returns `OpenProjectResult` and no longer throws `ProjectNotFoundError`: a missing Project, where `findById` returns `null`, is `not-here`, and a `ProjectFileFailure` is `cant-read`. Only a defect is still thrown.)*
 
 ### Open validates first, then navigates (OP-08)
 
@@ -212,6 +213,8 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
 - **The repeated `Open` buttons' accessible name.** Each keeps its visible label, `Open`. No `aria-label` and no new copy is added, and whether a row's `Open` needs more is open.
 - **The URL contract's route-count discrepancy (#4).**
 - **Save, Duplicate, Delete, Archive and Rename.** All unchanged.
+- **A root that does not exist because a parent folder is a file.** It reads as absent on Windows and fails on POSIX, for the Project list as well as for Open (ADR-003 SR-10, extended 2026-10-11).
+- **What `delete` does when the workspace root exists but is not a directory.** The 2026-10-11 decision covers the two reads, `findById` and `findAll`. `delete` keeps its current behaviour (ADR-003 SR-10, extended 2026-10-11).
 
 ## Amendment — OP-09: Open's result and tracing contract
 
@@ -236,7 +239,7 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
   - There is no other status. A newer schema version is `cant-read` (OD-6).
 - **Classification, in this order:**
   1. A value `isProjectId` rejects is `not-here`, before any repository call and without a trace. It is never passed to `toProjectId`, so it is never echoed.
-  2. `findById` returning `null` is `not-here`, untraced. This covers a missing file, a missing workspace folder and a changed folder setting.
+  2. `findById` returning `null` is `not-here`, untraced. This covers a missing file, a missing workspace folder and a changed folder setting. A workspace root that exists but is not a directory is not among them: under ADR-003 SR-10, extended 2026-10-11, `findById` fails for it with `ProjectFileFailure` located at the root, which is step 3. Implemented 2026-10-11. Before that, Windows reached this step with `null`, and POSIX reached step 3 located at the Project file.
   3. `findById` throwing `ProjectFileFailure` is `cant-read`, traced exactly once, with that failure's `location`.
   4. Anything else is a defect and is rethrown untraced.
   5. Otherwise the result is `opened`, with `toProjectView` of the Project read.
