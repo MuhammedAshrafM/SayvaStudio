@@ -36,4 +36,10 @@ export default defineConfig({
    * The Next config is untouched — `preserve` is right for what it configures.
    */
   oxc: { jsx: { runtime: 'automatic' } },
+  /**
+   * Route files import through the app's `@/*` path alias, as `next build`
+   * resolves it from tsconfig.json. Vite reads the same mapping rather than
+   * a copy of it, so a test can import a route exactly as Next does.
+   */
+  resolve: { tsconfigPaths: true },
 });
