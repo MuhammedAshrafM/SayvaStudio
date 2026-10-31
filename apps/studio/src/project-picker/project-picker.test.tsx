@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { axe } from '@sayva/vitest-config/axe';
-import type { ProjectListView } from '@sayva/application';
+import type { OpenProjectResult, ProjectListView } from '@sayva/application';
+import { SyButton, SyStateBlock } from '@sayva/design-system';
+import { clearOpenArrival, isOpenArrival, markOpenArrival } from '../workspace-entry/open-arrival';
+import { openProjectAction } from './open-project-action';
 import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './project-picker.js';
 
 /**
@@ -13,15 +16,20 @@ import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './p
  * which on a per-request page is exactly `router.refresh()`.
  */
 
-const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
-// The Server Action reaches the server-only Composition Root; the header's
-// Create drawer imports it, so it is replaced here. create-project.test.tsx
-// exercises it.
+const { refresh, push } = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push }) }));
+// Both Server Actions reach the server-only Composition Root, so both are
+// replaced here. create-project.test.tsx exercises Create;
+// open-project-action.test.ts runs Open's against a real workspace.
 vi.mock('./create-project-action', () => ({ createProjectAction: vi.fn() }));
+vi.mock('./open-project-action', () => ({ openProjectAction: vi.fn() }));
+const openAction = vi.mocked(openProjectAction);
 
 afterEach(() => {
   refresh.mockClear();
+  push.mockClear();
+  openAction.mockReset();
+  clearOpenArrival();
 });
 
 const ROOT = 'C:/authoring/projects';
@@ -62,6 +70,14 @@ function describedBy(element: Element): string {
     .map((id) => document.getElementById(id)?.textContent ?? '')
     .join(' ')
     .trim();
+}
+
+/** The class list the frozen SyButton gives its secondary variant. */
+function classOfSecondaryButton(): string {
+  const { container, unmount } = render(<SyButton variant="secondary">x</SyButton>);
+  const className = container.querySelector('button')!.className;
+  unmount();
+  return className;
 }
 
 /** The loading boundary inside the same frame. */
@@ -148,7 +164,11 @@ describe('listed', () => {
     render(picker(listed));
 
     const names = screen.getAllByRole('listitem').map((item) => item.textContent);
-    expect(names).toEqual(['ArSL Curriculum 1h ago', 'BSL Pilot 3d ago', 'ASL Foundations 2w ago']);
+    expect(names).toEqual([
+      'ArSL Curriculum 1h ago Open',
+      'BSL Pilot 3d ago Open',
+      'ASL Foundations 2w ago Open',
+    ]);
   });
 
   it('shows updatedAt as RB-3 relative time, with the machine value in <time datetime>', () => {
@@ -163,13 +183,15 @@ describe('listed', () => {
     ]);
   });
 
-  it('gives rows no actions and no focus stops', () => {
-    // Open has nowhere to go until the shell exists; Duplicate is its own
-    // slice. A focusable row with nothing to do would be a trap.
+  it('gives each row exactly one action, Open, as a secondary SyButton (§5)', () => {
+    // Duplicate, the design's other row action, is its own slice.
     const { container } = render(picker(listed));
+    const secondary = classOfSecondaryButton();
 
     for (const item of screen.getAllByRole('listitem')) {
-      expect(within(item).queryByRole('button')).toBeNull();
+      const buttons = within(item).getAllByRole('button');
+      expect(buttons.map((b) => b.textContent)).toEqual(['Open']);
+      expect(buttons[0]!.className).toBe(secondary);
       expect(within(item).queryByRole('link')).toBeNull();
     }
     expect(container.querySelectorAll('[tabindex]')).toHaveLength(0);
@@ -348,19 +370,24 @@ describe('what this slice must not show — any state', () => {
     ['loading', () => render(loadingPicker())],
   ] as const;
 
-  it.each(every)(
-    'offers no Open, Duplicate, Delete, Archive or Rename action (%s)',
-    (_label, show) => {
-      show();
-      // Checked on the controls, not on all text: a Project's name is the
-      // author's content and may contain any of these words. New Project is
-      // no longer on this list — the Create slice brings it.
-      const controls = [...screen.queryAllByRole('button'), ...screen.queryAllByRole('link')];
-      for (const control of controls) {
-        expect(control.textContent).not.toMatch(/\bopen\b|duplicate|delete|archive|rename/i);
-      }
-    },
-  );
+  it.each(every)('offers no Duplicate, Delete, Archive or Rename action (%s)', (_label, show) => {
+    show();
+    // Checked on the controls, not on all text: a Project's name is the
+    // author's content and may contain any of these words. New Project and
+    // Open are no longer on this list — their slices bring them.
+    const controls = [...screen.queryAllByRole('button'), ...screen.queryAllByRole('link')];
+    for (const control of controls) {
+      expect(control.textContent).not.toMatch(/duplicate|delete|archive|rename/i);
+    }
+  });
+
+  it.each(every)('offers Open only on a listed row (%s)', (label, show) => {
+    show();
+    const opens = screen.queryAllByRole('button', { name: 'Open' });
+
+    expect(opens).toHaveLength(label === 'listed' ? 3 : 0);
+    for (const open of opens) expect(open.closest('li')).not.toBeNull();
+  });
 
   it.each(every)(
     'disables nothing but the narrow New Project, which states its reason (%s)',
@@ -379,5 +406,711 @@ describe('what this slice must not show — any state', () => {
   it.each(every)('never shows the PP-02 proof label (%s)', (_label, show) => {
     show();
     expect(screen.queryByText(/Workspace root:/)).toBeNull();
+  });
+});
+
+describe('Open — ADR-005 OP-08, the approved Picker Open rulings', () => {
+  const IDS = ['id-1', 'id-2', 'id-3'] as const;
+
+  const openButtons = () => screen.getAllByRole('button', { name: 'Open' });
+  const row = (index: number) => screen.getAllByRole('listitem')[index]!;
+  const openIn = (index: number) => within(row(index)).getByRole('button', { name: 'Open' });
+  const liveRegion = () => document.querySelector('[aria-live="assertive"]')!;
+
+  /** Lets the action's promise and the transitions it starts run to the end. */
+  const settle = () => act(async () => new Promise((resolve) => setTimeout(resolve, 0)));
+
+  function deferred() {
+    let resolve!: (result: OpenProjectResult) => void;
+    const promise = new Promise<OpenProjectResult>((done) => (resolve = done));
+    return { promise, resolve };
+  }
+
+  const opened = (id: string): OpenProjectResult => ({
+    status: 'opened',
+    project: {
+      id,
+      name: 'ArSL Curriculum',
+      schemaVersion: 1,
+      state: 'Created',
+      createdAt: '2026-09-11T10:00:00.000Z',
+      updatedAt: '2026-09-28T08:00:00.000Z',
+      tags: [],
+    },
+  });
+  const notHere: OpenProjectResult = { status: 'not-here' };
+  const unreadable = (traceId = TRACE): OpenProjectResult => ({
+    status: 'cant-read',
+    traceId,
+    location: WHERE,
+  });
+
+  /** The same list without one row — what a re-scan returns once its file is gone. */
+  const listedWithout = (id: string): ProjectListView =>
+    listed.status === 'listed'
+      ? { status: 'listed', projects: listed.projects.filter((p) => p.id !== id) }
+      : listed;
+
+  describe('the control', () => {
+    it.each(IDS.map((id, index) => [id, index] as const))(
+      "reads the row's own ProjectId (%s)",
+      async (id, index) => {
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+
+        fireEvent.click(openIn(index));
+        await settle();
+
+        expect(openAction).toHaveBeenCalledTimes(1);
+        expect(openAction).toHaveBeenCalledWith(id);
+      },
+    );
+
+    it('is a native button, so Enter and Space activate it — no tabindex, no role override', () => {
+      render(picker(listed));
+      for (const open of openButtons()) {
+        expect(open.tagName).toBe('BUTTON');
+        expect(open.getAttribute('type')).toBe('button');
+        expect(open.hasAttribute('tabindex')).toBe(false);
+        expect(open.hasAttribute('role')).toBe(false);
+      }
+    });
+
+    it("puts the Open buttons in the rows' visual order, which is the Tab order", () => {
+      render(picker(listed));
+      const order = openButtons().map((open) => open.closest('li')!.textContent);
+      expect(order).toEqual(screen.getAllByRole('listitem').map((item) => item.textContent));
+    });
+
+    it('stays available below bp.md: never disabled, never hidden by a breakpoint (§8)', () => {
+      render(picker(listed));
+      for (const open of openButtons()) {
+        expect(open.hasAttribute('disabled')).toBe(false);
+        expect(open.closest('.md\\:hidden, .max-md\\:hidden')).toBeNull();
+      }
+    });
+
+    it('keeps its visible label and adds no aria-label (blocked item 13)', () => {
+      render(picker(listed));
+      for (const open of openButtons()) {
+        expect(open.textContent).toBe('Open');
+        expect(open.hasAttribute('aria-label')).toBe(false);
+      }
+    });
+  });
+
+  describe('one Open in flight (Ruling 4)', () => {
+    it('shows SyButton loading while the read is in flight: label kept, aria-busy, focus kept', async () => {
+      const pending = deferred();
+      openAction.mockReturnValue(pending.promise);
+      render(picker(listed));
+      const open = openIn(1);
+      open.focus();
+
+      fireEvent.click(open);
+
+      expect(open.getAttribute('aria-busy')).toBe('true');
+      expect(open.textContent).toBe('Open');
+      expect(document.activeElement).toBe(open);
+      expect(openIn(0).getAttribute('aria-busy')).toBeNull();
+      expect(openIn(2).getAttribute('aria-busy')).toBeNull();
+
+      await act(async () => pending.resolve(notHere));
+    });
+
+    it('ignores a second activation of the same Open', async () => {
+      const pending = deferred();
+      openAction.mockReturnValue(pending.promise);
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      fireEvent.click(openIn(0));
+      fireEvent.click(openIn(0));
+
+      expect(openAction).toHaveBeenCalledTimes(1);
+      await act(async () => pending.resolve(notHere));
+    });
+
+    it("ignores every other row's Open until the first one finishes", async () => {
+      const pending = deferred();
+      openAction.mockReturnValue(pending.promise);
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      fireEvent.click(openIn(1));
+      fireEvent.click(openIn(2));
+
+      expect(openAction).toHaveBeenCalledTimes(1);
+      expect(openAction).toHaveBeenCalledWith('id-1');
+
+      await act(async () => pending.resolve(notHere));
+      await settle();
+
+      // Finished: Open works again.
+      openAction.mockResolvedValue(notHere);
+      fireEvent.click(openIn(1));
+      await settle();
+      expect(openAction).toHaveBeenLastCalledWith('id-2');
+    });
+
+    it('does not stay stuck when a navigation completes without leaving the Picker', async () => {
+      openAction.mockResolvedValue(opened('id-1'));
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      await settle();
+      expect(push).toHaveBeenCalledTimes(1);
+
+      // Here `push` returns and nothing unmounts — an interrupted navigation.
+      expect(openIn(0).getAttribute('aria-busy')).toBeNull();
+      openAction.mockResolvedValue(notHere);
+      fireEvent.click(openIn(1));
+      await settle();
+      expect(openAction).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('opened', () => {
+    it("marks the arrival as Open's, then navigates to the workspace URL", async () => {
+      openAction.mockResolvedValue(opened('id-2'));
+      render(picker(listed));
+
+      fireEvent.click(openIn(1));
+      await settle();
+
+      expect(isOpenArrival('id-2')).toBe(true);
+      expect(push).toHaveBeenCalledTimes(1);
+      expect(push).toHaveBeenCalledWith('/workspace/id-2');
+      expect(refresh).not.toHaveBeenCalled();
+    });
+
+    it('encodes the ProjectId into the URL', async () => {
+      const odd = 'a b/c?d#e';
+      openAction.mockResolvedValue(opened(odd));
+      render(
+        picker({
+          status: 'listed',
+          projects: [
+            { id: odd, name: 'Odd', updatedAt: '2026-09-28T08:00:00.000Z', updatedAgo: '1h ago' },
+          ],
+        }),
+      );
+
+      fireEvent.click(openIn(0));
+      await settle();
+
+      expect(push).toHaveBeenCalledWith('/workspace/a%20b%2Fc%3Fd%23e');
+      expect(isOpenArrival(odd)).toBe(true);
+    });
+
+    it('still navigates when the list changed while the read was in flight', async () => {
+      const pending = deferred();
+      openAction.mockReturnValue(pending.promise);
+      const { rerender } = render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      rerender(picker(listedWithout('id-1')));
+      await act(async () => pending.resolve(opened('id-1')));
+      await settle();
+
+      // The read was clean; the workspace route resolves it again (OP-02).
+      expect(push).toHaveBeenCalledWith('/workspace/id-1');
+    });
+  });
+
+  describe('not here (Rulings 5 and 6)', () => {
+    it('never navigates, re-scans, and announces exactly "Can\'t find that project"', async () => {
+      openAction.mockResolvedValue(notHere);
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      await settle();
+
+      expect(push).not.toHaveBeenCalled();
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(liveRegion().textContent).toBe("Can't find that project");
+      expect(isOpenArrival('id-1')).toBe(false);
+    });
+
+    it('uses an assertive, atomic, visually hidden live region present before any announcement', () => {
+      render(picker(listed));
+      const region = liveRegion();
+
+      expect(region.getAttribute('aria-atomic')).toBe('true');
+      expect(region.className).toBe('sr-only');
+      expect(region.textContent).toBe('');
+      expect(region.closest('main')).not.toBeNull();
+    });
+
+    it('announces each occurrence afresh, as a new node', async () => {
+      openAction.mockResolvedValue(notHere);
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      await settle();
+      const first = liveRegion().firstElementChild;
+
+      fireEvent.click(openIn(1));
+      await settle();
+      const second = liveRegion().firstElementChild;
+
+      expect(first).not.toBeNull();
+      expect(second).not.toBe(first);
+      expect(liveRegion().textContent).toBe("Can't find that project");
+    });
+
+    describe('once delivered, the words are cleared', () => {
+      // The clearing is timed, so these tests own the clock. `settle` waits
+      // on a real timer, so they settle by advancing the fake one instead.
+      const settleOnFakeTimers = () => act(() => vi.advanceTimersByTimeAsync(0));
+      const elapse = (ms: number) => act(() => vi.advanceTimersByTimeAsync(ms));
+
+      /** Every announcement the region makes: each node added with words in it. */
+      function recordAnnouncements(region: Element): string[] {
+        const said: string[] = [];
+        new MutationObserver((changes) => {
+          for (const change of changes)
+            for (const node of change.addedNodes) if (node.textContent) said.push(node.textContent);
+        }).observe(region, { childList: true, subtree: true, characterData: true });
+        return said;
+      }
+
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      async function notFoundOnce(index = 0) {
+        fireEvent.click(openIn(index));
+        await settleOnFakeTimers();
+      }
+
+      it('keeps the words long enough to be announced, then empties the region', async () => {
+        vi.useFakeTimers();
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+
+        await notFoundOnce();
+        expect(liveRegion().textContent).toBe("Can't find that project");
+        await elapse(1000);
+        expect(liveRegion().textContent).toBe("Can't find that project");
+
+        await elapse(1000);
+        expect(liveRegion().textContent).toBe('');
+        expect(liveRegion().childElementCount).toBe(0);
+        // The region itself stays, ready for the next occurrence.
+        expect(liveRegion().getAttribute('aria-live')).toBe('assertive');
+      });
+
+      it('announces the same words again after clearing, from an empty region', async () => {
+        vi.useFakeTimers();
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+        const said = recordAnnouncements(liveRegion());
+
+        await notFoundOnce(0);
+        await elapse(2000);
+        expect(liveRegion().textContent).toBe('');
+
+        await notFoundOnce(1);
+        expect(liveRegion().textContent).toBe("Can't find that project");
+        expect(said).toEqual(["Can't find that project", "Can't find that project"]);
+      });
+
+      it('announces nothing when it clears — one announcement per occurrence', async () => {
+        vi.useFakeTimers();
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+        const said = recordAnnouncements(liveRegion());
+
+        await notFoundOnce();
+        await elapse(5000);
+
+        expect(said).toEqual(["Can't find that project"]);
+        expect(liveRegion().textContent).toBe('');
+      });
+
+      it('gives an occurrence that arrives while the last is shown its own node and full time', async () => {
+        vi.useFakeTimers();
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+        const said = recordAnnouncements(liveRegion());
+
+        await notFoundOnce(0);
+        const first = liveRegion().firstElementChild;
+        await elapse(1500);
+        await notFoundOnce(1);
+
+        expect(liveRegion().firstElementChild).not.toBe(first);
+        expect(liveRegion().childElementCount).toBe(1);
+        expect(said).toEqual(["Can't find that project", "Can't find that project"]);
+        // The second occurrence's words outlast the first one's lifetime.
+        await elapse(1000);
+        expect(liveRegion().textContent).toBe("Can't find that project");
+        await elapse(1000);
+        expect(liveRegion().textContent).toBe('');
+      });
+
+      it('neither navigates nor shows a trace ID while announcing or after clearing', async () => {
+        vi.useFakeTimers();
+        openAction.mockResolvedValue(notHere);
+        render(picker(listed));
+
+        await notFoundOnce();
+        await elapse(2000);
+
+        expect(push).not.toHaveBeenCalled();
+        expect(isOpenArrival('id-1')).toBe(false);
+        expect(screen.queryByText(/Trace ID/)).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+      });
+    });
+
+    it('shows no trace ID and adds no error block', async () => {
+      openAction.mockResolvedValue(notHere);
+      render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      await settle();
+
+      expect(screen.queryByText(/Trace ID/)).toBeNull();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('moves no focus when the row is gone — focus is left to the browser', async () => {
+      openAction.mockResolvedValue(notHere);
+      const { rerender } = render(picker(listed));
+      const open = openIn(0);
+      open.focus();
+
+      fireEvent.click(open);
+      await settle();
+      expect(document.activeElement).toBe(open);
+
+      // The re-scan comes back without the row.
+      rerender(picker(listedWithout('id-1')));
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+      expect(document.activeElement).toBe(document.body);
+    });
+
+    it('passes an accessibility check after announcing', async () => {
+      openAction.mockResolvedValue(notHere);
+      const { container } = render(picker(listed));
+      fireEvent.click(openIn(0));
+      await settle();
+      expect(await axe(container)).toHaveNoViolations();
+    });
+  });
+
+  describe("can't read — the inline-row error (OP-08)", () => {
+    async function openUnreadable(index = 1, traceId = TRACE) {
+      openAction.mockResolvedValue(unreadable(traceId));
+      const view = render(picker(listed));
+      fireEvent.click(openIn(index));
+      await settle();
+      return view;
+    }
+
+    it('never navigates and replaces only that row with the frozen error, inline size', async () => {
+      await openUnreadable(1);
+
+      expect(push).not.toHaveBeenCalled();
+      expect(refresh).not.toHaveBeenCalled();
+      const alert = within(row(1)).getByRole('alert');
+      expect(within(alert).getByRole('heading', { name: "Can't open the project" })).toBeTruthy();
+      expect(within(alert).getByText(WHERE)).toBeTruthy();
+      expect(alert.textContent).toContain(`Trace ID ${TRACE}`);
+      expect(within(row(1)).queryByRole('button', { name: 'Open' })).toBeNull();
+      // The other rows keep their Open.
+      expect(within(row(0)).getByRole('button', { name: 'Open' })).toBeTruthy();
+      expect(within(row(2)).getByRole('button', { name: 'Open' })).toBeTruthy();
+      expect(isOpenArrival('id-2')).toBe(false);
+    });
+
+    it("hands Retry focus, because the author's Open caused the state", async () => {
+      await openUnreadable(1);
+      expect(document.activeElement).toBe(within(row(1)).getByRole('button', { name: 'Retry' }));
+    });
+
+    it('offers nothing but Retry inside the row', async () => {
+      await openUnreadable(1);
+      expect(
+        within(row(1))
+          .getAllByRole('button')
+          .map((b) => b.textContent),
+      ).toEqual(['Retry']);
+    });
+
+    it('Retry re-scans, and a repaired file returns as a normal row', async () => {
+      const { rerender } = await openUnreadable(1);
+
+      fireEvent.click(within(row(1)).getByRole('button', { name: 'Retry' }));
+      expect(refresh).toHaveBeenCalledTimes(1);
+      rerender(picker(listed));
+
+      expect(within(row(1)).getByRole('button', { name: 'Open' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('Retry re-scans, and a removed file leaves no row', async () => {
+      const { rerender } = await openUnreadable(1);
+
+      fireEvent.click(within(row(1)).getByRole('button', { name: 'Retry' }));
+      rerender(picker(listedWithout('id-2')));
+
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it("Retry re-scans, and a still-unreadable file shows the list's own error (findAll)", async () => {
+      const { rerender } = await openUnreadable(1);
+
+      fireEvent.click(within(row(1)).getByRole('button', { name: 'Retry' }));
+      rerender(picker({ ...failed, traceId: 'a-new-occurrence' }));
+
+      expect(screen.getByRole('heading', { name: "Can't read the projects folder" })).toBeTruthy();
+      expect(screen.getByRole('alert').textContent).toContain('Trace ID a-new-occurrence');
+    });
+
+    describe("focus once Retry's re-scan answers (F1)", () => {
+      /**
+       * A re-scan's answer, as the route delivers it: a new view, even when
+       * nothing in it changed. The picker tells an answer from the view it
+       * already has by exactly that.
+       */
+      const rescanned = (view: ProjectListView): ProjectListView => structuredClone(view);
+
+      const retryRow = (index: number) =>
+        fireEvent.click(within(row(index)).getByRole('button', { name: 'Retry' }));
+
+      it("hands the list's own Retry focus when the file is still unreadable", async () => {
+        const { rerender } = await openUnreadable(1);
+
+        retryRow(1);
+        rerender(picker(rescanned({ ...failed, traceId: 'a-new-occurrence' })));
+
+        const alert = screen.getByRole('alert');
+        expect(
+          within(alert).getByRole('heading', { name: "Can't read the projects folder" }),
+        ).toBeTruthy();
+        expect(document.activeElement).toBe(within(alert).getByRole('button', { name: 'Retry' }));
+      });
+
+      it("hands the returning row's Open focus when the file was repaired", async () => {
+        const { rerender } = await openUnreadable(1);
+
+        retryRow(1);
+        rerender(picker(rescanned(listed)));
+
+        expect(document.activeElement).toBe(openIn(1));
+        expect(openIn(1).closest('li')!.textContent).toContain('BSL Pilot');
+        expect(screen.queryByRole('alert')).toBeNull();
+      });
+
+      it('moves no focus when the file was removed — the row is gone (Ruling 6)', async () => {
+        const { rerender } = await openUnreadable(1);
+
+        retryRow(1);
+        rerender(picker(listedWithout('id-2')));
+
+        expect(screen.getAllByRole('listitem')).toHaveLength(2);
+        expect(document.activeElement).toBe(document.body);
+      });
+
+      it('moves no focus when the removed file was the last one — first-run', async () => {
+        openAction.mockResolvedValue(unreadable());
+        const only: ProjectListView = {
+          status: 'listed',
+          projects: [
+            {
+              id: 'id-2',
+              name: 'BSL Pilot',
+              updatedAt: '2026-09-25T09:00:00.000Z',
+              updatedAgo: '3d ago',
+            },
+          ],
+        };
+        const { rerender } = render(picker(only));
+        fireEvent.click(openIn(0));
+        await settle();
+
+        retryRow(0);
+        rerender(picker(firstRun));
+
+        expect(screen.getAllByRole('heading', { name: 'No projects yet' }).length).toBeGreaterThan(
+          0,
+        );
+        expect(document.activeElement).toBe(document.body);
+      });
+
+      it('waits for the answer: the view Retry was pressed on moves nothing', async () => {
+        const { rerender } = await openUnreadable(1);
+
+        retryRow(1);
+        // Re-rendered, but not re-scanned: the same view Retry was pressed on.
+        rerender(picker(listed));
+        expect(document.activeElement).not.toBe(openIn(1));
+
+        rerender(picker(rescanned(listed)));
+        expect(document.activeElement).toBe(openIn(1));
+      });
+
+      it('takes no focus for a background re-scan — the failure stays, focus stays put', async () => {
+        const { rerender } = await openUnreadable(1);
+        (document.activeElement as HTMLElement | null)?.blur();
+
+        // A re-scan no Retry started — another row's not-here, or a Create.
+        rerender(picker(rescanned(listed)));
+
+        expect(within(row(1)).getByRole('alert')).toBeTruthy();
+        expect(document.activeElement).toBe(document.body);
+      });
+
+      it("takes no focus for a list error nobody's Retry caused", () => {
+        const { rerender } = render(picker(listed));
+
+        rerender(picker(rescanned(failed)));
+
+        expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Retry' }));
+      });
+
+      it('is spent once answered: the next re-scan, restored or failed, moves no focus', async () => {
+        const { rerender } = await openUnreadable(1);
+        retryRow(1);
+        rerender(picker(rescanned(listed)));
+        expect(document.activeElement).toBe(openIn(1));
+        (document.activeElement as HTMLElement | null)?.blur();
+
+        rerender(picker(rescanned(listed)));
+        expect(document.activeElement).toBe(document.body);
+
+        rerender(picker(rescanned({ ...failed, traceId: 'someone-elses-re-scan' })));
+        expect(document.activeElement).not.toBe(screen.getByRole('button', { name: 'Retry' }));
+      });
+
+      it("keeps the list error's own Retry rule: a failure after its Retry takes focus", async () => {
+        const { rerender } = await openUnreadable(1);
+        retryRow(1);
+        rerender(picker(rescanned({ ...failed, traceId: 'first' })));
+        (document.activeElement as HTMLElement | null)?.blur();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+        (document.activeElement as HTMLElement | null)?.blur();
+        rerender(picker(rescanned({ ...failed, traceId: 'second' })));
+
+        expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Retry' }));
+      });
+
+      it('passes an accessibility check after a repaired row returns with focus', async () => {
+        const { container, rerender } = await openUnreadable(1);
+        retryRow(1);
+        rerender(picker(rescanned(listed)));
+        expect(await axe(container)).toHaveNoViolations();
+      });
+    });
+
+    describe('wrapping, locally — a long location never widens the row (F2)', () => {
+      /** The override the picker adds; jsdom has no layout, so the browser measures the rest. */
+      const OVERRIDE = [
+        '[&>p:first-of-type]:wrap-anywhere',
+        'max-md:flex-wrap',
+        'max-md:[&>p:first-of-type]:basis-full',
+      ];
+
+      it('lets the location break anywhere, and the row wrap below bp.md', async () => {
+        await openUnreadable(1);
+        const alert = within(row(1)).getByRole('alert');
+
+        expect(alert.className.split(/\s+/)).toEqual(expect.arrayContaining(OVERRIDE));
+      });
+
+      it("aims at the location: it is the block's first p, ahead of the trace ID", async () => {
+        await openUnreadable(1);
+        const alert = within(row(1)).getByRole('alert');
+
+        expect(alert.querySelector(':scope > p:first-of-type')!.textContent).toBe(WHERE);
+        expect(alert.querySelector(':scope > p:last-of-type')!.textContent).toBe(
+          `Trace ID ${TRACE}`,
+        );
+      });
+
+      it("only adds to the frozen inline error's own classes — nothing removed", async () => {
+        const frozen = render(
+          <SyStateBlock
+            state="error"
+            size="inline"
+            heading="x"
+            description="y"
+            traceId="z"
+            action={{ label: 'Retry', onAction: () => {} }}
+          />,
+        );
+        const own = frozen.getByRole('alert').className.split(/\s+/);
+        frozen.unmount();
+
+        await openUnreadable(1);
+        const classes = within(row(1)).getByRole('alert').className.split(/\s+/);
+
+        expect(classes.filter((c) => !OVERRIDE.includes(c)).sort()).toEqual([...own].sort());
+      });
+
+      it('changes no other SyStateBlock — the list error keeps its frozen classes', () => {
+        render(picker(failed));
+        const classes = screen.getByRole('alert').className.split(/\s+/);
+
+        for (const override of OVERRIDE) expect(classes).not.toContain(override);
+      });
+    });
+
+    it('gives a second failure on the same row its own trace ID and hands Retry focus again', async () => {
+      const { rerender } = await openUnreadable(1);
+      fireEvent.click(within(row(1)).getByRole('button', { name: 'Retry' }));
+      rerender(picker(listed));
+      (document.activeElement as HTMLElement | null)?.blur();
+
+      openAction.mockResolvedValue(unreadable('a-second-occurrence'));
+      fireEvent.click(openIn(1));
+      await settle();
+
+      expect(row(1).textContent).toContain('Trace ID a-second-occurrence');
+      expect(document.activeElement).toBe(within(row(1)).getByRole('button', { name: 'Retry' }));
+    });
+
+    it('ignores a failure for a row the list no longer has', async () => {
+      const pending = deferred();
+      openAction.mockReturnValue(pending.promise);
+      const { rerender } = render(picker(listed));
+
+      fireEvent.click(openIn(0));
+      rerender(picker(listedWithout('id-1')));
+      await act(async () => pending.resolve(unreadable()));
+      await settle();
+
+      expect(screen.queryByRole('alert')).toBeNull();
+      expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    });
+
+    it('passes an accessibility check', async () => {
+      const { container } = await openUnreadable(1);
+      expect(await axe(container)).toHaveNoViolations();
+    });
+  });
+
+  describe('the arrival mark (Ruling 2)', () => {
+    it('is dropped when the Picker mounts, so a stale mark cannot outlive it', () => {
+      markOpenArrival('id-3');
+      render(picker(listed));
+      expect(isOpenArrival('id-3')).toBe(false);
+    });
+  });
+
+  it('passes an accessibility check while an Open is pending', async () => {
+    const pending = deferred();
+    openAction.mockReturnValue(pending.promise);
+    const { container } = render(picker(listed));
+    fireEvent.click(openIn(0));
+
+    expect(await axe(container)).toHaveNoViolations();
+    await act(async () => pending.resolve(notHere));
   });
 });

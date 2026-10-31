@@ -209,7 +209,7 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
 - **A missing workspace folder versus a missing Project**, and **a permission failure versus a corrupt file**. Each pair shares one category.
 - **The shell's URLs**, including whether its routes carry the ProjectId.
 - **The exact shape of Open's serializable result.** Decided by OP-09 (below).
-- **How the Picker's validation reaches `openProjectUseCase`.** It is the implementing slice's, within Blueprint §6 and AD-07, which this ADR does not amend.
+- **How the Picker's validation reaches `openProjectUseCase`.** It is the implementing slice's, within Blueprint §6 and AD-07, which this ADR does not amend. *(Decided 2026-10-31 as a narrow exception: OP-10, below.)*
 - **The repeated `Open` buttons' accessible name.** Each keeps its visible label, `Open`. No `aria-label` and no new copy is added, and whether a row's `Open` needs more is open.
 - **The URL contract's route-count discrepancy (#4).**
 - **Save, Duplicate, Delete, Archive and Rename.** All unchanged.
@@ -259,6 +259,18 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
   - `openProjectUseCase` takes `OpenProjectUseCaseDeps` and returns `OpenProjectResult`, in the order above.
   - The Composition Root's `projectOpenDeps()` wires a console `FailureTracer` into Open's set alone, and `resetCompositionRoot()` clears it.
   - Nothing calls it yet. The workspace route, and the request-scoped resolver that shares one result per request, arrive with the route slice.
+
+## Amendment — OP-10: the Picker's Open reads through a read-only Server Action
+
+**Approved 2026-10-31** by the project owner, with the Picker Open slice. It settles one item that "Explicitly not decided here" left to that slice: how the Picker's validation reaches `openProjectUseCase`.
+
+- **The need.** OP-08 has `Open` read the Project before it navigates, and the result decides whether there is a navigation at all. The read is triggered by the author, in the browser, before any route changes. A Server Component cannot serve it, because a Server Component renders a route.
+- **Decision.** One Server Action, `openProjectAction(projectId)`, delivers that read.
+  - It calls the existing Query, `openProjectUseCase(projectOpenDeps(), { id })`, and returns its serializable `OpenProjectResult` unchanged.
+  - It is read-only. It writes nothing, holds no logic of its own, and adds no Application or Domain abstraction. As the Create action does, it checks only that the value arrived as a string. The use case keeps every classification, including `not-here` for a malformed ProjectId.
+  - Its `cant-read` is traced once, as OP-09 and ADR-003 SR-11 already require.
+- **Why a Server Action.** It is the only way this application already has for a Client Component to reach the server; the Create command uses one. Blueprint §6's route for reading Query results from the client, TanStack Query, is not a dependency here, and serving it would need a Route Handler outside the uses §6 lists for one.
+- **An exception, not a rule.** Blueprint §6 keeps Server Actions as the delivery mechanism for Command use cases, and this amendment does not change it. The exception covers only the Picker's `Open`, a client-triggered read that must finish before navigating. Any other Query reached through a Server Action needs its own decision.
 
 ## Status
 

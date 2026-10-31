@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { axe } from '@sayva/vitest-config/axe';
+import { clearOpenArrival, isOpenArrival, markOpenArrival } from './open-arrival.js';
 import { WorkspaceEntry, WorkspaceEntryLoading } from './workspace-entry.js';
 import type { WorkspaceResult } from './workspace-entry-copy.js';
 
@@ -8,16 +9,24 @@ import type { WorkspaceResult } from './workspace-entry-copy.js';
  * The Workspace Entry, tested against its canonical design (Screens §04.1)
  * and the frozen `SyStateBlock` contract it renders through.
  *
- * `useRouter` is the one thing jsdom cannot provide — there is no App Router
- * here — so it is replaced by a recorder. Retry's contract is "re-runs the
- * resolution", which on a per-request page is exactly `router.refresh()`.
+ * The App Router is the one thing jsdom cannot provide, so its two hooks are
+ * stand-ins: `useRouter` records Retry's `router.refresh()` — "re-runs the
+ * resolution" on a per-request page — and `useParams` supplies the route's
+ * ProjectId, as `/workspace/{projectId}` would.
  */
 
-const { refresh } = vi.hoisted(() => ({ refresh: vi.fn() }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
+const { refresh, route } = vi.hoisted(() => ({
+  refresh: vi.fn(),
+  route: { projectId: '3f2504e0-4f89-41d3-9a0c-0305e82c3301' },
+}));
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh }),
+  useParams: () => route,
+}));
 
 afterEach(() => {
   refresh.mockClear();
+  clearOpenArrival();
 });
 
 const PROJECT_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
@@ -43,9 +52,14 @@ const cantRead = (traceId = TRACE): WorkspaceResult => ({
   location: WHERE,
 });
 
-/** Every element a Tab key could reach. */
+/**
+ * Every element a Tab key could reach. `tabindex="-1"` is focusable from
+ * script only — the h1's arrival target (WE-A3) — and is not a Tab stop.
+ */
 const tabStops = (container: HTMLElement) =>
-  container.querySelectorAll('a[href], button, input, select, textarea, [tabindex]');
+  container.querySelectorAll(
+    'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])',
+  );
 
 describe('resolved — the Project opened', () => {
   it('is one main landmark, named by the Project name', () => {
@@ -230,5 +244,111 @@ describe('what this surface must not show — any state', () => {
     for (const role of ['banner', 'navigation', 'complementary', 'contentinfo', 'search']) {
       expect(screen.queryAllByRole(role)).toHaveLength(0);
     }
+  });
+});
+
+describe('focus on arrival — §04.1 focus table, WE-A3', () => {
+  const OTHER_PROJECT = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+  const h1 = () => screen.getByRole('heading', { level: 1 });
+  const retryButton = () => screen.getByRole('button', { name: 'Retry' });
+
+  it('arriving from Open: the h1 takes focus once the Project renders', () => {
+    markOpenArrival(PROJECT_ID);
+    render(<WorkspaceEntry result={opened} />);
+
+    expect(document.activeElement).toBe(h1());
+  });
+
+  it('makes the h1 focusable from script without adding a Tab stop', () => {
+    markOpenArrival(PROJECT_ID);
+    const { container } = render(<WorkspaceEntry result={opened} />);
+
+    expect(h1().getAttribute('tabindex')).toBe('-1');
+    expect(tabStops(container)).toHaveLength(0);
+  });
+
+  it('consumes the mark once: a later arrival at the same Project moves no focus', () => {
+    markOpenArrival(PROJECT_ID);
+    const first = render(<WorkspaceEntry result={opened} />);
+    expect(isOpenArrival(PROJECT_ID)).toBe(false);
+    first.unmount();
+
+    // A Back or Forward navigation remounts the surface with no new mark.
+    render(<WorkspaceEntry result={opened} />);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('a direct URL or history arrival, with no mark, moves no focus', () => {
+    render(<WorkspaceEntry result={opened} />);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('a mark for another Project neither moves focus nor is consumed', () => {
+    markOpenArrival(OTHER_PROJECT);
+    render(<WorkspaceEntry result={opened} />);
+
+    expect(document.activeElement).toBe(document.body);
+    expect(isOpenArrival(OTHER_PROJECT)).toBe(true);
+  });
+
+  it("arriving from Open into can't read hands Retry focus — Open caused the state", () => {
+    markOpenArrival(PROJECT_ID);
+    render(<WorkspaceEntry result={cantRead()} />);
+
+    expect(document.activeElement).toBe(retryButton());
+    expect(isOpenArrival(PROJECT_ID)).toBe(false);
+  });
+
+  it("can't read on a direct load still leaves focus alone", () => {
+    render(<WorkspaceEntry result={cantRead()} />);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('a Retry that succeeds hands the h1 focus', () => {
+    const { rerender } = render(<WorkspaceEntry result={cantRead()} />);
+    fireEvent.click(retryButton());
+
+    rerender(<WorkspaceEntry result={opened} />);
+
+    expect(document.activeElement).toBe(h1());
+  });
+
+  it('a Retry that fails again keeps the existing behaviour: Retry takes focus', () => {
+    markOpenArrival(PROJECT_ID);
+    const { rerender } = render(<WorkspaceEntry result={cantRead()} />);
+    fireEvent.click(retryButton());
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    rerender(<WorkspaceEntry result={cantRead(ANOTHER_TRACE)} />);
+
+    expect(document.activeElement).toBe(retryButton());
+    expect(screen.getByText(/^Trace ID/).textContent).toBe(`Trace ID ${ANOTHER_TRACE}`);
+  });
+
+  it('does not take focus back when the resolved state re-renders', () => {
+    markOpenArrival(PROJECT_ID);
+    const { rerender } = render(<WorkspaceEntry result={opened} />);
+    h1().blur();
+
+    rerender(<WorkspaceEntry result={{ ...opened }} />);
+
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it('reads the mark for the route it is on', () => {
+    markOpenArrival(OTHER_PROJECT);
+    route.projectId = OTHER_PROJECT;
+    try {
+      render(<WorkspaceEntry result={opened} />);
+      expect(document.activeElement).toBe(h1());
+    } finally {
+      route.projectId = PROJECT_ID;
+    }
+  });
+
+  it('passes an accessibility check with the h1 focused', async () => {
+    markOpenArrival(PROJECT_ID);
+    const { container } = render(<WorkspaceEntry result={opened} />);
+    expect(await axe(container)).toHaveNoViolations();
   });
 });

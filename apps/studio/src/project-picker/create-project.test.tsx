@@ -4,7 +4,9 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { axe } from '@sayva/vitest-config/axe';
 import type { CreateProjectResult, ProjectListView } from '@sayva/application';
 import { SyButton, SyStateBlock } from '@sayva/design-system';
+import { isOpenArrival } from '../workspace-entry/open-arrival';
 import { createProjectAction } from './create-project-action';
+import { openProjectAction } from './open-project-action';
 import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './project-picker.js';
 
 /**
@@ -23,6 +25,9 @@ import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './p
 const { refresh, push } = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push, replace: push }) }));
 vi.mock('./create-project-action', () => ({ createProjectAction: vi.fn() }));
+// The Picker's rows import the Open action, which reaches the same
+// server-only Composition Root. Open is not exercised here.
+vi.mock('./open-project-action', () => ({ openProjectAction: vi.fn() }));
 const action = vi.mocked(createProjectAction);
 
 const ROOT = 'C:/authoring/projects';
@@ -370,8 +375,12 @@ describe('success — the temporary Create/Open boundary (B1)', () => {
     openFromHeader();
     await submit();
 
+    // Rows now carry Open (the Open slice), so its absence no longer proves
+    // anything. What B1 rules is that Create does not open: no Open read, no
+    // arrival mark, no navigation.
     expect(push).not.toHaveBeenCalled();
-    expect(screen.queryByRole('button', { name: /^open/i })).toBeNull();
+    expect(vi.mocked(openProjectAction)).not.toHaveBeenCalled();
+    expect(isOpenArrival('3f2504e0-4f89-41d3-9a0c-0305e82c3301')).toBe(false);
   });
 
   it('returns focus to the header New Project that opened it (A07, B14)', async () => {

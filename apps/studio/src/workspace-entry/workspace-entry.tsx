@@ -1,8 +1,9 @@
 'use client';
 
-import { useId, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useId, useRef, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { SyStateBlock } from '@sayva/design-system';
+import { consumeOpenArrival, isOpenArrival } from './open-arrival';
 import {
   CANT_OPEN_THE_PROJECT,
   NO_LANGUAGES_LINE,
@@ -27,21 +28,49 @@ import {
  * navigating to `/`. Not here never reaches this component — the route
  * redirects first (F7).
  *
- * Temporary boundaries of this first slice, each a ruling rather than an
+ * Focus on arrival follows §04.1's focus table. It moves only when Open
+ * caused the arrival — told apart by the in-memory mark Open sets before it
+ * navigates (`open-arrival`), since Back and Forward are client-side
+ * navigations too — or when the author's Retry succeeded:
+ * - arrived from Open and resolved, or resolved after Retry: the h1;
+ * - arrived from Open and can't read: Retry, by `SyStateBlock`'s own rule;
+ * - a document load or a history navigation: nowhere.
+ * The mark is read once, when this surface first renders, and cleared after
+ * it commits. It is read in the state initializer rather than consumed there
+ * because rendering may run twice; it is only read for this Project.
+ *
+ * Temporary boundaries of this slice, each a ruling rather than an
  * oversight:
  * - Retry has no loading state. `SyStateBlock`'s action has none to pass,
  *   and the frozen contract is not widened.
  * - Loading is `SyStateBlock`'s own two-bar skeleton, not §04.1's three
  *   lines, for the same reason.
- * - Focus is never moved on arrival. Focus to the h1 after Open (WE-A3), and
- *   after a Retry that succeeds, arrive with the Picker's Open.
  * - Loading has no tab title of its own — see `WorkspaceEntryLoading`.
  */
 export function WorkspaceEntry({ result }: { result: WorkspaceResult }) {
+  const { projectId } = useParams<{ projectId: string }>();
+  const router = useRouter();
+  const [arrivedFromOpen] = useState(() => isOpenArrival(projectId));
+  const [retried, setRetried] = useState(false);
+
+  useEffect(() => {
+    consumeOpenArrival(projectId);
+  }, [projectId]);
+
+  function retry() {
+    setRetried(true);
+    router.refresh();
+  }
+
   return result.status === 'opened' ? (
-    <OpenedProject name={result.project.name} />
+    <OpenedProject name={result.project.name} takeFocus={arrivedFromOpen || retried} />
   ) : (
-    <CantOpenTheProject traceId={result.traceId} location={result.location} />
+    <CantOpenTheProject
+      traceId={result.traceId}
+      location={result.location}
+      userCaused={arrivedFromOpen || retried}
+      onRetry={retry}
+    />
   );
 }
 
@@ -53,13 +82,23 @@ export function WorkspaceEntry({ result }: { result: WorkspaceResult }) {
  * Type tokens only, as §04.1 names them: `heading.lg` for the name, which is
  * plain text rather than mono and wraps rather than truncating; `heading.md`
  * and `body` for the zero-Language heading and line. No Tab stop.
+ *
+ * The h1 is the arrival target (WE-A3): focusable from script through
+ * `tabIndex={-1}`, which adds no Tab stop. It takes focus once it renders
+ * when Open caused the arrival or the author's Retry succeeded; the global
+ * focus-visible rule then shows the ring when that came from the keyboard.
  */
-function OpenedProject({ name }: { name: string }) {
+function OpenedProject({ name, takeFocus }: { name: string; takeFocus: boolean }) {
   const headingId = useId();
+  const heading = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    if (takeFocus) heading.current?.focus();
+  }, [takeFocus]);
 
   return (
     <main aria-labelledby={headingId}>
-      <h1 id={headingId} className="text-heading-lg wrap-break-word">
+      <h1 ref={heading} id={headingId} tabIndex={-1} className="text-heading-lg wrap-break-word">
         {name}
       </h1>
       <h2 className="text-heading-md">{NO_LANGUAGES_YET}</h2>
@@ -85,15 +124,22 @@ function OpenedProject({ name }: { name: string }) {
  *
  * Focus follows the frozen contract, as the Picker's error state does: the
  * action "receives focus on appearance only when the user's action caused
- * the state". On first paint Retry does not take focus; once the author has
- * pressed it, a failure that comes back does. Keyed by trace ID because each
- * occurrence is its own appearance — without the key the block would update
- * in place and never hand focus back.
+ * the state". The author's action is the Open that navigated here, or their
+ * Retry; on a document load Retry does not take focus. Keyed by trace ID
+ * because each occurrence is its own appearance — without the key the block
+ * would update in place and never hand focus back.
  */
-function CantOpenTheProject({ traceId, location }: { traceId: string; location: string }) {
-  const router = useRouter();
-  const [retried, setRetried] = useState(false);
-
+function CantOpenTheProject({
+  traceId,
+  location,
+  userCaused,
+  onRetry,
+}: {
+  traceId: string;
+  location: string;
+  userCaused: boolean;
+  onRetry: () => void;
+}) {
   return (
     <main aria-label={CANT_OPEN_THE_PROJECT}>
       <SyStateBlock
@@ -103,14 +149,8 @@ function CantOpenTheProject({ traceId, location }: { traceId: string; location: 
         heading={CANT_OPEN_THE_PROJECT}
         description={couldNotRead(location)}
         traceId={traceId}
-        userInitiated={retried}
-        action={{
-          label: RETRY,
-          onAction: () => {
-            setRetried(true);
-            router.refresh();
-          },
-        }}
+        userInitiated={userCaused}
+        action={{ label: RETRY, onAction: onRetry }}
       />
     </main>
   );

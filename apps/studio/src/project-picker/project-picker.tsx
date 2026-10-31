@@ -2,17 +2,22 @@
 
 import {
   createContext,
+  startTransition,
   useCallback,
   useContext,
+  useEffect,
   useId,
   useRef,
   useState,
+  useTransition,
   type ReactNode,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { ProjectListView } from '@sayva/application';
+import type { ProjectListItem, ProjectListView } from '@sayva/application';
 import { SyButton, SyStateBlock } from '@sayva/design-system';
+import { clearOpenArrival, markOpenArrival } from '@/workspace-entry/open-arrival';
 import { CreateProjectDrawer } from './create-project-drawer';
+import { openProjectAction } from './open-project-action';
 
 /**
  * The pre-shell Project Picker.
@@ -22,10 +27,11 @@ import { CreateProjectDrawer } from './create-project-drawer';
  * The surface sits before `SyAppShell` (ADR-004), so there is no rail, no
  * scope bar and no `SyCollection` — a header, then the list or one state.
  *
- * Specified, not drawn: this adds no spacing, colour, typography or layout of
- * its own. Structure and copy come from the design; every visual treatment
- * comes from a frozen primitive. The row is screen-local composition, not a
- * new component.
+ * Specified, not drawn: this adds no spacing, colour or typography of its
+ * own. Structure and copy come from the design; every visual treatment comes
+ * from a frozen primitive. The row is screen-local composition, not a new
+ * component. One layout override exists, approved and local to the Picker:
+ * the inline-row error wraps (`INLINE_ROW_ERROR_WRAPS`).
  *
  * Two parts, because the header outlives the scan. `ProjectPickerFrame` is
  * the header and the Create drawer, rendered by the route's layout so it
@@ -34,9 +40,9 @@ import { CreateProjectDrawer } from './create-project-drawer';
  * `ProjectPickerBody` and `ProjectPickerLoading` are the list's states,
  * rendered by the page and its loading boundary.
  *
- * Not built, and deliberately absent rather than disabled: every row action.
- * Open has nowhere to hand a Project to until the shell exists (B1), and
- * Duplicate arrives with its own slice.
+ * Each row's one action is `Open` (§5, ADR-005 OP-08). Duplicate, the
+ * design's other row action, is deliberately absent rather than disabled: it
+ * arrives with its own slice.
  */
 
 /** The product's name — the header's heading. */
@@ -51,6 +57,36 @@ const NEW_PROJECT = 'New Project';
 /** B6: New Project's stated reason below `bp.md`. */
 const NARROW_REASON = 'Creating a project needs a window at least 900px wide.';
 
+/** A row's action (§5), and what its failures say (ADR-005 OP-08, §04 §4). */
+const OPEN = 'Open';
+const CANT_OPEN_THE_PROJECT = "Can't open the project";
+const CANT_FIND_THAT_PROJECT = "Can't find that project";
+const RETRY = 'Retry';
+
+/**
+ * How long an announcement stays in the live region before it is cleared.
+ * A screen reader takes the words when the region changes; this leaves room
+ * for one that is slow to, and after it, browsing the page finds nothing
+ * stale. Clearing announces nothing: the region reports additions only.
+ */
+const ANNOUNCEMENT_LIFETIME_MS = 2000;
+
+/**
+ * The inline-row error's one local override. `SyStateBlock`'s inline size is
+ * a single row that never wraps, and a long location — a Windows path has
+ * few places to break — pushed the row, and the page, wider than the window.
+ *
+ * The location is the block's first `p`. It may break anywhere, so no path
+ * is clipped or widens the row, at any width: that alone ends the overflow,
+ * and from `bp.md` up the row is otherwise unchanged. Below `bp.md` the row
+ * also wraps, with the location on a full line of its own, so it is not
+ * squeezed into a column beside the heading. The switch is `max-md:`, from
+ * the `--breakpoint-md` token, as New Project's is. Nothing changes for any
+ * other `SyStateBlock`.
+ */
+const INLINE_ROW_ERROR_WRAPS =
+  '[&>p:first-of-type]:wrap-anywhere max-md:flex-wrap max-md:[&>p:first-of-type]:basis-full';
+
 /** Opens the Create drawer, remembering which control did it (B14). */
 type OpenCreate = (opener: HTMLElement | null) => void;
 
@@ -62,6 +98,17 @@ function useOpenCreate(): OpenCreate {
   return openCreate;
 }
 
+/** Announces, in the frame's live region, that an Open found no Project. */
+type AnnounceNotHere = () => void;
+
+const AnnounceNotHereContext = createContext<AnnounceNotHere | null>(null);
+
+function useAnnounceNotHere(): AnnounceNotHere {
+  const announce = useContext(AnnounceNotHereContext);
+  if (!announce) throw new Error('The Project Picker body renders inside ProjectPickerFrame.');
+  return announce;
+}
+
 /**
  * The single `main` landmark (§10), named by its own heading. Its heading is
  * an `h1`; the state blocks below keep their default `h2`, and the drawer's
@@ -69,10 +116,25 @@ function useOpenCreate(): OpenCreate {
  *
  * The header is present in every state — with the list, and in first-run,
  * loading and error (B15) — because it is rendered once, here, around them.
+ *
+ * So is the not-found announcement (ADR-005 OP-08): a screen-local
+ * assertive live region, here rather than in the list because an Open that
+ * finds nothing re-scans, and the region has to outlive the list it reports
+ * on. Visually hidden: no canonical source gives it a visual treatment, and
+ * a sighted author sees the row go. Each occurrence renders a new node, so
+ * the same words are announced again; the region itself is always present,
+ * as a live region must be before its content changes. The words are cleared
+ * once delivered (`ANNOUNCEMENT_LIFETIME_MS`), so they are not met again
+ * later as if new; the next occurrence starts from an empty region.
+ *
+ * Mounting the frame drops any arrival mark an earlier Open left behind
+ * without arriving, so a later visit cannot mistake it for its own.
  */
 export function ProjectPickerFrame({ root, children }: { root: string; children: ReactNode }) {
   const headingId = useId();
   const [creating, setCreating] = useState(false);
+  // The occurrence being announced, counted from 1; 0 while there is none.
+  const [notFound, setNotFound] = useState(0);
   const openerRef = useRef<HTMLElement | null>(null);
 
   const openCreate = useCallback<OpenCreate>((opener) => {
@@ -80,6 +142,18 @@ export function ProjectPickerFrame({ root, children }: { root: string; children:
     setCreating(true);
   }, []);
   const closeCreate = useCallback(() => setCreating(false), []);
+  const announceNotHere = useCallback<AnnounceNotHere>(() => setNotFound((n) => n + 1), []);
+
+  useEffect(() => {
+    clearOpenArrival();
+  }, []);
+
+  // A later occurrence restarts the lifetime for its own words.
+  useEffect(() => {
+    if (notFound === 0) return;
+    const clear = setTimeout(() => setNotFound(0), ANNOUNCEMENT_LIFETIME_MS);
+    return () => clearTimeout(clear);
+  }, [notFound]);
 
   return (
     <main aria-labelledby={headingId}>
@@ -88,7 +162,14 @@ export function ProjectPickerFrame({ root, children }: { root: string; children:
         <p>{lookingIn(root)}</p>
         <NewProject onOpen={openCreate} />
       </header>
-      <OpenCreateContext.Provider value={openCreate}>{children}</OpenCreateContext.Provider>
+      <OpenCreateContext.Provider value={openCreate}>
+        <AnnounceNotHereContext.Provider value={announceNotHere}>
+          {children}
+        </AnnounceNotHereContext.Provider>
+      </OpenCreateContext.Provider>
+      <div aria-live="assertive" aria-atomic="true" className="sr-only">
+        {notFound > 0 ? <span key={notFound}>{CANT_FIND_THAT_PROJECT}</span> : null}
+      </div>
       <CreateProjectDrawer open={creating} onClose={closeCreate} triggerRef={openerRef} />
     </main>
   );
@@ -129,27 +210,186 @@ export function ProjectPickerLoading({ root }: { root: string }) {
   return <SyStateBlock state="loading" label={lookingIn(root)} />;
 }
 
+/**
+ * A row's Retry and the re-scan it started: the row, the view it was pressed
+ * on, and — once it arrives — the view that answered it.
+ */
+type RowRetry = {
+  readonly projectId: string;
+  readonly on: ProjectListView;
+  readonly answer?: ProjectListView;
+};
+
+/**
+ * The list's states, and where focus goes when a row's Retry is answered.
+ *
+ * Every re-scan answers with a new view, so the answer to a row's Retry is
+ * the first view after the one it was pressed on. Focus follows that answer
+ * and nothing else — the author's action caused it:
+ * - still unreadable: the list's own error appears (findAll), and its Retry
+ *   takes focus;
+ * - repaired: the row returns, and its `Open` takes focus;
+ * - removed: the row is gone, and focus is left alone (Ruling 6).
+ * The next view after the answer is someone else's re-scan — a not-here, the
+ * list's own Retry, a Create — so the Retry is spent and moves nothing more.
+ * The intent lives here because the list it came from does not outlive an
+ * error answer.
+ */
 export function ProjectPickerBody({ root, view }: { root: string; view: ProjectListView }) {
+  const [retry, setRetry] = useState<RowRetry | null>(null);
+
+  // Adjusted while rendering, as React prescribes for state that follows a
+  // prop: the first new view is recorded as the answer, a later one ends it.
+  if (retry && view !== retry.on && view !== retry.answer) {
+    setRetry(retry.answer ? null : { ...retry, answer: view });
+  }
+  const answered = retry?.answer === view ? retry.projectId : null;
+
   switch (view.status) {
     case 'listed':
-      // `list` / `listitem`, never `role=grid` — that belongs to SyCollection
-      // (§10). Order is the View Model's: PP-04 decides it, this preserves it.
       return (
-        <ul>
-          {view.projects.map((project) => (
-            <li key={project.id}>
-              {project.name} <time dateTime={project.updatedAt}>{project.updatedAgo}</time>
-            </li>
-          ))}
-        </ul>
+        <ProjectList
+          projects={view.projects}
+          restored={answered}
+          onRetry={(projectId) => setRetry({ projectId, on: view })}
+        />
       );
 
     case 'first-run':
       return <FirstRun root={root} />;
 
     case 'error':
-      return <ProjectListError traceId={view.traceId} location={view.location} />;
+      return (
+        <ProjectListError
+          traceId={view.traceId}
+          location={view.location}
+          answersRowRetry={answered !== null}
+        />
+      );
   }
+}
+
+/** A row Open found unreadable: the failure's trace ID and location. */
+type UnreadableRow = { readonly traceId: string; readonly location: string };
+
+/**
+ * The listed Projects, each with its `Open` — ADR-005 OP-08, Screens §04 §4.
+ *
+ * `list` / `listitem`, never `role=grid`, which belongs to SyCollection
+ * (§10). The order is the View Model's: PP-04 decides it, this preserves it.
+ *
+ * Open reads the Project before it navigates, through the read-only action
+ * OP-10 allows, and acts on the Query's own classification:
+ * - `opened` marks the arrival as Open's and navigates to the workspace URL,
+ *   which resolves the Project again (OP-02). Nothing is handed across.
+ * - `not-here` re-scans, so the row is gone, and the frame announces it.
+ *   Focus is not moved: nothing names a target for it.
+ * - `cant-read` replaces the row in place with the inline-row error. Its
+ *   Retry re-scans; only an Open produces this state, so Retry takes focus.
+ *   The error stays until the re-scan answers, and where focus goes then is
+ *   `ProjectPickerBody`'s: a row that returns hands its `Open` focus.
+ *
+ * One Open at a time across the whole list. Server Actions run one after
+ * another, so a second Open would otherwise navigate after the first. While
+ * one reads or navigates, the transition is pending and every Open ignores
+ * activation — its own `SyButton` loading state already does — and none is
+ * disabled, since a disabled button needs a stated reason. The active one
+ * keeps its label, is `aria-busy` and keeps focus.
+ */
+function ProjectList({
+  projects,
+  restored,
+  onRetry,
+}: {
+  projects: readonly ProjectListItem[];
+  /** The row a Retry's answer brought back, if this view is that answer. */
+  restored: string | null;
+  onRetry: (projectId: string) => void;
+}) {
+  const router = useRouter();
+  const announceNotHere = useAnnounceNotHere();
+  const [opening, setOpening] = useState<string | null>(null);
+  const [pending, startOpening] = useTransition();
+  const [unreadable, setUnreadable] = useState<Readonly<Record<string, UnreadableRow>>>({});
+  const restoredOpen = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (restored) restoredOpen.current?.focus();
+  }, [restored]);
+
+  function open(projectId: string) {
+    if (pending) return;
+    setOpening(projectId);
+    startOpening(async () => {
+      const result = await openProjectAction(projectId);
+      startOpening(() => {
+        if (result.status === 'opened') {
+          markOpenArrival(projectId);
+          router.push(`/workspace/${encodeURIComponent(projectId)}`);
+        } else if (result.status === 'not-here') {
+          announceNotHere();
+          router.refresh();
+        } else {
+          setUnreadable((rows) => ({
+            ...rows,
+            [projectId]: { traceId: result.traceId, location: result.location },
+          }));
+        }
+      });
+    });
+  }
+
+  /**
+   * The row's Retry re-scans (OP-08). Its failure is forgotten in the same
+   * transition, so the error — and Retry, with focus — stays until the
+   * re-scan answers rather than flashing back to a row that may be gone.
+   */
+  function retry(projectId: string) {
+    startTransition(() => {
+      setUnreadable((rows) =>
+        Object.fromEntries(Object.entries(rows).filter(([id]) => id !== projectId)),
+      );
+      onRetry(projectId);
+      router.refresh();
+    });
+  }
+
+  return (
+    <ul>
+      {projects.map((project) => {
+        const failure = unreadable[project.id];
+        return (
+          <li key={project.id}>
+            {failure ? (
+              <SyStateBlock
+                key={failure.traceId}
+                className={INLINE_ROW_ERROR_WRAPS}
+                state="error"
+                size="inline"
+                heading={CANT_OPEN_THE_PROJECT}
+                description={failure.location}
+                traceId={failure.traceId}
+                userInitiated
+                action={{ label: RETRY, onAction: () => retry(project.id) }}
+              />
+            ) : (
+              <>
+                {project.name} <time dateTime={project.updatedAt}>{project.updatedAgo}</time>{' '}
+                <SyButton
+                  ref={project.id === restored ? restoredOpen : undefined}
+                  variant="secondary"
+                  loading={pending && opening === project.id}
+                  onClick={() => open(project.id)}
+                >
+                  {OPEN}
+                </SyButton>
+              </>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 }
 
 /**
@@ -205,7 +445,9 @@ function FirstRun({ root }: { root: string }) {
  * `userInitiated` follows the frozen contract exactly: the action "receives
  * focus on appearance only when the user's action caused the state". An
  * error present on first paint does not take focus; once the author has
- * pressed Retry, a failure that comes back is one they caused.
+ * pressed Retry, a failure that comes back is one they caused. So is one
+ * that answers a row's Retry — the file is still unreadable, and findAll
+ * fails the whole list (`answersRowRetry`).
  *
  * Keyed by trace ID, because each occurrence is its own appearance. The
  * contract's focus runs when the block appears; without the key, a second
@@ -214,7 +456,15 @@ function FirstRun({ root }: { root: string }) {
  * A new occurrence mounts a new block, which is also announced afresh as the
  * alert it is.
  */
-function ProjectListError({ traceId, location }: { traceId: string; location: string }) {
+function ProjectListError({
+  traceId,
+  location,
+  answersRowRetry,
+}: {
+  traceId: string;
+  location: string;
+  answersRowRetry: boolean;
+}) {
   const router = useRouter();
   const [retried, setRetried] = useState(false);
 
@@ -225,7 +475,7 @@ function ProjectListError({ traceId, location }: { traceId: string; location: st
       heading="Can't read the projects folder"
       description={location}
       traceId={traceId}
-      userInitiated={retried}
+      userInitiated={retried || answersRowRetry}
       action={{
         label: 'Retry',
         onAction: () => {
