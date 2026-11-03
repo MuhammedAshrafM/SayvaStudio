@@ -5,7 +5,9 @@
  * App Router navigations from Open and from Back or Forward are both client
  * side, so the navigation itself cannot say which one happened. Open says so
  * here, immediately before it navigates, and the Workspace Entry reads the
- * mark for its own Project and clears it, once.
+ * mark for its own Project and clears it, once. Create says so too: a
+ * successful Create opens the Project it made, and counts as an Open arrival
+ * (Create-then-Open, CO-2).
  *
  * The mark lives only in this module's memory: no URL parameter, hash,
  * storage or cookie (ADR-005 OP-01, and OP-08 chooses no browser storage).
@@ -15,7 +17,7 @@
 
 let arrivingAt: string | null = null;
 
-/** Open read the Project cleanly and is about to navigate to it. */
+/** Open read the Project cleanly, or Create made it, and either is about to navigate to it. */
 export function markOpenArrival(projectId: string): void {
   arrivingAt = projectId;
 }

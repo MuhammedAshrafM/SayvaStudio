@@ -272,6 +272,15 @@ It would make the enumeration reach twelve and appear to settle discrepancy #4, 
 - **Why a Server Action.** It is the only way this application already has for a Client Component to reach the server; the Create command uses one. Blueprint §6's route for reading Query results from the client, TanStack Query, is not a dependency here, and serving it would need a Route Handler outside the uses §6 lists for one.
 - **An exception, not a rule.** Blueprint §6 keeps Server Actions as the delivery mechanism for Command use cases, and this amendment does not change it. The exception covers only the Picker's `Open`, a client-triggered read that must finish before navigating. Any other Query reached through a Server Action needs its own decision.
 
+## Amendment — OP-11: Create hands off through the workspace URL
+
+**Approved 2026-10-31** by the project owner, with the Create-then-Open slice (CO-1 to CO-7, recorded in the roadmap's Phase 2 closures). §04 §3 already has creation open the new Project immediately. This amendment records how that hand-off reaches a workspace.
+
+- **Decision.** Create's result already carries the new Project's id (`CreateProjectResult`'s `created` branch). On success, the Picker marks the arrival with the existing Open-arrival mark and navigates directly to `/workspace/{projectId}`.
+- **The read stays where OP-02 puts it.** The workspace route resolves the Project through `openProjectUseCase` on that request, and that read is the authoritative check that the new Project opens. A Project that cannot be read shows the Workspace Entry's can't-read state. A Project that is not here returns to `/`, as for any workspace URL.
+- **No new abstraction.** There is no combined Create-and-Open use case, and Create makes no second read through OP-10's action. Create stays the Command and Open the Query. OP-08's validate-then-navigate remains the rule for a row's `Open`.
+- **Order.** The Picker's list re-scans before the navigation starts and the navigation waits for it, because the App Router discards a re-scan still pending when a navigation begins. Without that order, Back from the new Project would show a list without it.
+
 ## Status
 
 **Approved**, on explicit rulings from the project owner: OD-1 on 2026-10-01, and OD-2 to OD-8, the URL shape, the not-found announcement surface and the absence of a return control on 2026-10-03.

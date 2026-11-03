@@ -250,6 +250,16 @@ flowchart TD
 > - **Scope.** Nothing else from the Workspace Entry readiness review is decided here.
 > - **Implemented 2026-10-05.** The Application types and use case, and `projectOpenDeps()` in the Composition Root, are built and tested. Nothing calls them yet; the workspace route and its request-scoped resolver arrive with the route slice.
 
+> **Create-then-Open closure, 2026-10-31 — CO-1 to CO-7.** The Picker Open slice deferred this to its own slice (its Ruling 7). §04 §3 already reads "Creation opens the new Project immediately", so B1's temporary boundary lifts. The owner ruled how. Recorded in [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) **OP-11** and §04 §3.
+> - **CO-1 — direct navigation.** On `created`, the Picker navigates to `/workspace/${encodeURIComponent(projectId)}` with the id Create returned. It makes no second read through the Open action, and there is no combined Create-and-Open use case: Create stays the Command, Open the Query. The Workspace Entry route's own read is the authoritative check that the new Project opens.
+> - **CO-2 — an Open arrival.** The existing `markOpenArrival(projectId)` is reused, so the Workspace Entry focuses its `h1`, or its `Retry` when the Project cannot be read. There is no second mechanism.
+> - **CO-3 — open and busy.** The drawer stays open and `Create Project` stays busy until the Workspace Entry takes over. There is no early close, no focus back on New Project, and no list shown on the way. The submission guard holds throughout.
+> - **CO-4 — closed while in flight.** If the drawer is closed before the hand-off, a success opens nothing and marks nothing; the list re-scans so the Project appears. A later opening of the drawer is unaffected by the earlier submission.
+> - **CO-5 — gone before it resolves.** The workspace route returns to `/`, as for any workspace URL. Accepted as the existing limitation; the dead-workspace-URL announcement stays unruled.
+> - **CO-6 — re-scan before navigating.** Back from a new Project showed the list without it: the App Router restores the Picker from its cache, and a navigation discards a re-scan still in flight. So the list re-scans first, and the navigation waits for it to land.
+> - **CO-7 — no Playwright** in this slice. Verification stays as before: component tests and a recorded browser pass.
+> - **Implemented 2026-10-31.** The Create drawer's success path. No Application, Domain, Infrastructure, Server Action or route change.
+
 > **Still open in this phase:**
 > - `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".
 > - **Delete semantics are contradicted across canonical sources.** Domain Model §8 states "Delete is explicit and destructive"; the design's rule **R20** states "Soft delete by default. Impact preview computed server-side from the graph and shown before confirmation." Both are canonical. The implementation follows the Domain Model. Recorded as unresolved: `DeleteProject`, `ArchiveProject` and R20 are all unchanged, and archive is **not** assumed to be the soft delete.

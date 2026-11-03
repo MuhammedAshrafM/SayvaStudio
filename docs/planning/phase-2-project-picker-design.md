@@ -122,6 +122,17 @@ Each failed write is its own occurrence with its own trace ID, recorded the same
 
 > **Temporary slice boundary (B1).** Until the Open slice, a successful create closes the drawer and the picker re-scans, so the new Project appears in the list by the `updatedAt` descending rule (§5). Opening it arrives with the Open slice, and nothing hands it off before then. Focus then returns to the control that opened the drawer while that control still exists (A07). When it does not — a create begun from first-run, which the list replaces — no other focus target is introduced until the Open slice (B14).
 
+> **Amended 2026-10-31 (Create-then-Open closure, CO-1 to CO-7). B1 is lifted.** A successful create now opens the new Project immediately, from the header and from first-run alike:
+>
+> - **The drawer stays open** and `Create Project` stays busy until the Workspace Entry takes over. It does not close first, and the list is not shown on the way (CO-3).
+> - **The list re-scans first** and the navigation waits for it, so going Back from the new Project shows a list that includes it (CO-6).
+> - **It navigates to `/workspace/{projectId}`** with the id Create returned. There is no second read here: the Workspace Entry resolves the Project through the Open Query, like any arrival (CO-1, [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-11).
+> - **Focus is B14's successor:** the Workspace Entry's `h1` when the Project resolves, or its `Retry` when it cannot be read — exactly as after Open, because the arrival is marked as Open's (CO-2).
+> - **Closing the drawer while the write is in flight** — `Cancel` or `Esc` — opens nothing. The list still re-scans, so the new Project appears in it, and focus returns to the opener as on any close (CO-4).
+> - **A Project gone before its route resolves** returns to `/`, as any workspace URL does. No new announcement or surface is added (CO-5).
+>
+> A refused name and a failed write are unchanged (B13, B2).
+
 > **Not decided here — `Created → Active` has no trigger in any canonical source.** Domain Model §8 defers to §3 and §3 names none. This design shows no lifecycle state (recipe `columns`, finding ①), so it neither depends on that gap nor closes it.
 
 ### §4 — Open Project

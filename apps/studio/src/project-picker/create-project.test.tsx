@@ -1,25 +1,26 @@
-import { Suspense, use } from 'react';
+import { Suspense, startTransition, use, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { axe } from '@sayva/vitest-config/axe';
 import type { CreateProjectResult, ProjectListView } from '@sayva/application';
 import { SyButton, SyStateBlock } from '@sayva/design-system';
-import { isOpenArrival } from '../workspace-entry/open-arrival';
+import { clearOpenArrival, isOpenArrival } from '../workspace-entry/open-arrival';
 import { createProjectAction } from './create-project-action';
 import { openProjectAction } from './open-project-action';
 import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './project-picker.js';
 
 /**
  * The Create slice — Screens §04 §3 as closed by the Create decision closure
- * (B1–B15), driven through the real frame, drawer and frozen primitives.
+ * (B1–B15) and the Create-then-Open closure (CO-1 to CO-7), driven through
+ * the real frame, drawer and frozen primitives.
  *
  * Two seams, both at the edge of what jsdom can host. The Server Action is
  * replaced by a recorder: its real body is one call into the Create command,
  * which @sayva/application's own tests cover against the real contract, and
  * it reaches the server-only Composition Root. And `useRouter` is replaced,
- * because there is no App Router here; the re-scan contract is exactly
- * `router.refresh()`, and `push` is recorded so that opening a Project —
- * which this slice must not do — would show up.
+ * because there is no App Router here. The re-scan contract is exactly
+ * `router.refresh()` and opening is `router.push()`; where their order
+ * matters, `routed` below gives both the App Router's transition semantics.
  */
 
 const { refresh, push } = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
@@ -33,10 +34,13 @@ const action = vi.mocked(createProjectAction);
 const ROOT = 'C:/authoring/projects';
 const WHERE = `${ROOT}/3f2504e0-4f89-41d3-9a0c-0305e82c3301.sayva`;
 
-const created = (name: string): CreateProjectResult => ({
+/** The id `created()` gives the new Project unless a test names another. */
+const CREATED_ID = '3f2504e0-4f89-41d3-9a0c-0305e82c3301';
+
+const created = (name: string, id = CREATED_ID): CreateProjectResult => ({
   status: 'created',
   project: {
-    id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+    id,
     name,
     schemaVersion: 1,
     state: 'Created',
@@ -68,11 +72,99 @@ const picker = (view: ProjectListView) => (
 
 beforeEach(() => {
   action.mockReset();
-  refresh.mockClear();
-  push.mockClear();
+  refresh.mockReset();
+  push.mockReset();
 });
 afterEach(() => {
   vi.useRealTimers();
+  clearOpenArrival();
+});
+
+// --- the route, as the App Router serves it --------------------------------
+
+type Deferred<T> = { promise: Promise<T>; resolve: (value: T) => void };
+
+function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((done) => (resolve = done));
+  return { promise, resolve };
+}
+
+/** What the server answers a re-scan or a navigation with. */
+type Payload = { kind: 'picker'; view: ProjectListView } | { kind: 'workspace'; href: string };
+
+/**
+ * The route as the App Router serves it, so the hand-off's order can be
+ * watched rather than assumed.
+ *
+ * `router.refresh()` and `router.push()` each start a transition that renders
+ * the route from a new server payload — what the App Router itself does — so
+ * the screen already shown stays until that payload arrives. Each payload is
+ * a deferred this test resolves when it chooses. A `workspace` payload
+ * replaces the whole Picker, frame and drawer included, as navigating to
+ * `/workspace/{projectId}` does; a `picker` payload keeps the frame mounted
+ * and gives the list beneath it a new view.
+ */
+async function routed(view: ProjectListView) {
+  const rescans: Deferred<Payload>[] = [];
+  const navigations: { href: string; payload: Deferred<Payload> }[] = [];
+  let show!: (payload: Promise<Payload>) => void;
+
+  function Screen({ payload }: { payload: Promise<Payload> }) {
+    const shown = use(payload);
+    return shown.kind === 'workspace' ? <main aria-label="Workspace Entry" /> : picker(shown.view);
+  }
+  function Route() {
+    const [payload, setPayload] = useState(() =>
+      Promise.resolve<Payload>({ kind: 'picker', view }),
+    );
+    show = setPayload;
+    return (
+      <Suspense fallback={null}>
+        <Screen payload={payload} />
+      </Suspense>
+    );
+  }
+
+  refresh.mockImplementation(() => {
+    const payload = deferred<Payload>();
+    rescans.push(payload);
+    startTransition(() => show(payload.promise));
+  });
+  push.mockImplementation((href: string) => {
+    const payload = deferred<Payload>();
+    navigations.push({ href, payload });
+    startTransition(() => show(payload.promise));
+  });
+
+  await act(async () => {
+    render(<Route />);
+  });
+
+  return {
+    rescans,
+    navigations,
+    /** The pending re-scan answers with this list. */
+    rescanned: (next: ProjectListView) =>
+      act(async () => rescans.at(-1)!.resolve({ kind: 'picker', view: next })),
+    /** The pending navigation lands on the Workspace Entry. */
+    arrived: () =>
+      act(async () =>
+        navigations.at(-1)!.payload.resolve({ kind: 'workspace', href: navigations.at(-1)!.href }),
+      ),
+    /** The pending navigation ends back on the Picker — a redirect to `/` (CO-5). */
+    returned: (next: ProjectListView) =>
+      act(async () => navigations.at(-1)!.payload.resolve({ kind: 'picker', view: next })),
+  };
+}
+
+/** `listed` once a re-scan finds the created Project, newest first. */
+const listedWithCreated = (name = 'ArSL Curriculum', id = CREATED_ID): ProjectListView => ({
+  status: 'listed',
+  projects: [
+    { id, name, updatedAt: '2026-09-29T10:00:00.000Z', updatedAgo: '0m ago' },
+    ...(listed.status === 'listed' ? listed.projects : []),
+  ],
 });
 
 // --- helpers -------------------------------------------------------------
@@ -337,13 +429,26 @@ describe('a failed write (B2)', () => {
     expect(document.activeElement).toBe(secondRetry);
   });
 
-  it('a Retry that succeeds closes the drawer and re-scans', async () => {
-    await failOnce();
+  it('a Retry that succeeds opens the Project the same way: busy, re-scan, mark, navigate', async () => {
+    const route = await routed(listed);
+    openFromHeader();
+    type('ArSL Curriculum');
+    action.mockResolvedValueOnce(writeFailed('t-1'));
+    await submit();
     action.mockResolvedValueOnce(created('ArSL Curriculum'));
+
     await act(async () => press(within(drawer()).getByRole('button', { name: 'Retry' })));
 
-    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(drawer()).toBeTruthy();
+    expect(createButton().getAttribute('aria-busy')).toBe('true');
     expect(refresh).toHaveBeenCalledTimes(1);
+    expect(push).not.toHaveBeenCalled();
+
+    await route.rescanned(listedWithCreated());
+
+    expect(isOpenArrival(CREATED_ID)).toBe(true);
+    expect(push).toHaveBeenCalledWith(`/workspace/${CREATED_ID}`);
+    expect(action).toHaveBeenCalledTimes(2);
   });
 
   it('passes an accessibility check, failed', async () => {
@@ -355,75 +460,184 @@ describe('a failed write (B2)', () => {
   });
 });
 
-// --- success (B1, B14) -----------------------------------------------------------
+// --- success: Create then Open (CO-1 to CO-6) ------------------------------------
 
-describe('success — the temporary Create/Open boundary (B1)', () => {
-  it('closes the drawer and re-scans the list', async () => {
-    action.mockResolvedValue(created('ArSL Curriculum'));
-    render(picker(listed));
+describe('success — the new Project opens (Create-then-Open, CO-1 to CO-6)', () => {
+  /** Opens the drawer from the header, types a name and submits it; the write succeeds. */
+  async function createFromHeader(result = created('ArSL Curriculum')) {
+    const route = await routed(listed);
     openFromHeader();
-    type('ArSL Curriculum');
+    type(result.status === 'created' ? result.project.name : 'x');
+    action.mockResolvedValueOnce(result);
     await submit();
+    return route;
+  }
 
-    expect(screen.queryByRole('dialog')).toBeNull();
+  it('keeps the drawer open and Create Project busy while the list re-scans (CO-3)', async () => {
+    await createFromHeader();
+
+    expect(drawer()).toBeTruthy();
+    expect(createButton().getAttribute('aria-busy')).toBe('true');
+    expect(createButton().textContent).toBe('Create Project');
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
-  it('does not open the Project, or navigate anywhere', async () => {
-    action.mockResolvedValue(created('ArSL Curriculum'));
-    render(picker(listed));
-    openFromHeader();
-    await submit();
+  it('does not mark or navigate until the re-scan has landed (CO-6)', async () => {
+    await createFromHeader();
 
-    // Rows now carry Open (the Open slice), so its absence no longer proves
-    // anything. What B1 rules is that Create does not open: no Open read, no
-    // arrival mark, no navigation.
     expect(push).not.toHaveBeenCalled();
-    expect(vi.mocked(openProjectAction)).not.toHaveBeenCalled();
-    expect(isOpenArrival('3f2504e0-4f89-41d3-9a0c-0305e82c3301')).toBe(false);
+    expect(isOpenArrival(CREATED_ID)).toBe(false);
+    // The list beneath is still the one before the write.
+    expect(screen.queryByText('ArSL Curriculum')).toBeNull();
   });
 
-  it('returns focus to the header New Project that opened it (A07, B14)', async () => {
-    action.mockResolvedValue(created('ArSL Curriculum'));
-    render(picker(listed));
-    const opener = headerNewProject();
-    openFromHeader();
-    await submit();
-
-    expect(document.activeElement).toBe(opener);
-  });
-
-  it('from first-run, introduces no focus target once the list replaces the opener (B14)', async () => {
-    action.mockResolvedValue(created('ArSL Curriculum'));
-    const { rerender } = render(picker(firstRun));
-    const [wide] = screen.getAllByRole('status');
-    press(within(wide!).getByRole('button', { name: 'New Project' }));
-    await submit();
-
-    // The re-scan's answer: the list, which replaces first-run and its button.
-    rerender(picker(listed));
-    // Let anything deferred run first — a focus handed over on the next task
-    // is still an invented target.
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 0));
+  it('then marks the arrival as Open’s and navigates to the workspace URL, in that order', async () => {
+    const order: string[] = [];
+    const route = await createFromHeader();
+    const navigate = push.getMockImplementation()!;
+    push.mockImplementation((href: string) => {
+      // Recorded at the moment the navigation starts.
+      order.push(
+        `navigate ${href}; marked=${isOpenArrival(CREATED_ID)}; ` +
+          `listed=${screen.queryByText('ArSL Curriculum') !== null}`,
+      );
+      navigate(href);
     });
 
-    expect(document.activeElement).toBe(document.body);
-    expect(document.activeElement).not.toBe(headerNewProject());
+    await route.rescanned(listedWithCreated());
+
+    expect(order).toEqual([`navigate /workspace/${CREATED_ID}; marked=true; listed=true`]);
+    expect(push).toHaveBeenCalledTimes(1);
   });
 
-  it('opens a fresh drawer next time — nothing carried over', async () => {
-    action.mockResolvedValueOnce(invalidName).mockResolvedValueOnce(created('X'));
-    render(picker(listed));
+  it('opens by navigating only — no second read through the Open action (CO-1)', async () => {
+    const route = await createFromHeader();
+    await route.rescanned(listedWithCreated());
+
+    expect(vi.mocked(openProjectAction)).not.toHaveBeenCalled();
+    expect(action).toHaveBeenCalledTimes(1);
+  });
+
+  it('encodes the ProjectId into the URL, and marks the id itself', async () => {
+    const odd = 'a b/c?d#e';
+    const route = await createFromHeader(created('Odd', odd));
+
+    await route.rescanned(listedWithCreated('Odd', odd));
+
+    expect(push).toHaveBeenCalledWith('/workspace/a%20b%2Fc%3Fd%23e');
+    expect(isOpenArrival(odd)).toBe(true);
+  });
+
+  it('stays open and busy while navigating, and the Workspace Entry replaces it whole', async () => {
+    const route = await createFromHeader();
+    await route.rescanned(listedWithCreated());
+
+    // Navigating: nothing has closed the drawer or shown the list on its own.
+    expect(drawer()).toBeTruthy();
+    expect(createButton().getAttribute('aria-busy')).toBe('true');
+
+    await route.arrived();
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.queryByRole('heading', { level: 1, name: 'Sayva Studio' })).toBeNull();
+    expect(screen.getByRole('main', { name: 'Workspace Entry' })).toBeTruthy();
+  });
+
+  it('never hands focus back to New Project on the way — Create Project keeps it', async () => {
+    const route = await routed(listed);
+    const opener = headerNewProject();
     openFromHeader();
+    type('ArSL Curriculum');
+    action.mockResolvedValueOnce(created('ArSL Curriculum'));
     await submit();
-    type('X');
+    expect(document.activeElement).toBe(createButton());
+
+    await route.rescanned(listedWithCreated());
+    expect(document.activeElement).toBe(createButton());
+
+    await route.arrived();
+    expect(document.activeElement).not.toBe(opener);
+  });
+
+  describe('one Project per submission', () => {
+    it('refuses Create Project and ⌘Enter while the list re-scans', async () => {
+      await createFromHeader();
+
+      press(createButton());
+      fireEvent.keyDown(drawer(), { key: 'Enter', metaKey: true });
+      fireEvent.keyDown(drawer(), { key: 'Enter', ctrlKey: true });
+      await act(async () => {});
+
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('refuses Create Project and ⌘Enter while navigating', async () => {
+      const route = await createFromHeader();
+      await route.rescanned(listedWithCreated());
+
+      press(createButton());
+      fireEvent.keyDown(drawer(), { key: 'Enter', metaKey: true });
+      await act(async () => {});
+
+      expect(action).toHaveBeenCalledTimes(1);
+      expect(push).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('from first-run, the same hand-off', async () => {
+    const route = await routed(firstRun);
+    const [wide] = screen.getAllByRole('status');
+    press(within(wide!).getByRole('button', { name: 'New Project' }));
+    type('ArSL Curriculum');
+    action.mockResolvedValueOnce(created('ArSL Curriculum'));
     await submit();
 
-    openFromHeader();
-    expect((nameField() as HTMLInputElement).value).toBe('');
-    expect(nameField().getAttribute('aria-invalid')).toBeNull();
+    expect(drawer()).toBeTruthy();
+    expect(push).not.toHaveBeenCalled();
+
+    await route.rescanned(listedWithCreated());
+
+    expect(isOpenArrival(CREATED_ID)).toBe(true);
+    expect(push).toHaveBeenCalledWith(`/workspace/${CREATED_ID}`);
+  });
+
+  it('frees the drawer when the navigation ends back on the Picker (CO-5) — no new surface', async () => {
+    const route = await createFromHeader();
+    await route.rescanned(listedWithCreated());
+
+    // The Project was gone by the time its route resolved: `/` again.
+    await route.returned(listed);
+
+    expect(drawer()).toBeTruthy();
+    expect(createButton().getAttribute('aria-busy')).toBeNull();
     expect(within(drawer()).queryByRole('alert')).toBeNull();
+    expect(document.querySelector('[aria-live="assertive"]')!.textContent).toBe('');
+  });
+
+  it('passes an accessibility check while handing off', async () => {
+    const route = await createFromHeader();
+    await route.rescanned(listedWithCreated());
+    expect(await axe(document.body)).toHaveNoViolations();
+  });
+});
+
+describe('a refused name or a failed write never opens anything', () => {
+  it.each([
+    ['a refused name', invalidName],
+    ['a failed write', writeFailed('t-1')],
+  ])('%s: no re-scan, no mark, no navigation', async (_label, result) => {
+    await routed(listed);
+    openFromHeader();
+    type('anything');
+    action.mockResolvedValueOnce(result);
+    await submit();
+
+    expect(refresh).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    expect(isOpenArrival(CREATED_ID)).toBe(false);
+    expect(drawer()).toBeTruthy();
+    expect(createButton().getAttribute('aria-busy')).toBeNull();
   });
 });
 
@@ -458,6 +672,122 @@ describe('while the write is in flight', () => {
     await act(async () => settle(writeFailed('late')));
 
     expect(within(drawer()).queryByRole('alert')).toBeNull();
+  });
+});
+
+// --- closed while in flight (CO-4) -------------------------------------------
+
+describe('closed while the write is in flight — re-scan only (CO-4)', () => {
+  /** Submits from the header with the write held open; returns its settle. */
+  async function submitHeld(route: Awaited<ReturnType<typeof routed>>) {
+    const write = deferred<CreateProjectResult>();
+    action.mockReturnValueOnce(write.promise);
+    openFromHeader();
+    type('ArSL Curriculum');
+    press(createButton());
+    await act(async () => {});
+    return { route, write };
+  }
+
+  it.each([
+    ['Cancel', () => press(cancelButton())],
+    [
+      'Esc',
+      () => {
+        createButton().focus();
+        fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+      },
+    ],
+  ])(
+    'after %s, a success re-scans so the Project is listed, and opens nothing',
+    async (_label, dismiss) => {
+      const { route, write } = await submitHeld(await routed(listed));
+      const opener = headerNewProject();
+
+      dismiss();
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(document.activeElement).toBe(opener);
+
+      await act(async () => write.resolve(created('ArSL Curriculum')));
+      expect(refresh).toHaveBeenCalledTimes(1);
+      await route.rescanned(listedWithCreated());
+
+      expect(push).not.toHaveBeenCalled();
+      expect(isOpenArrival(CREATED_ID)).toBe(false);
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByText('ArSL Curriculum')).toBeTruthy();
+      expect(document.activeElement).toBe(opener);
+    },
+  );
+
+  it('closed while the list re-scans: the re-scan stands, nothing opens', async () => {
+    const route = await routed(listed);
+    openFromHeader();
+    type('ArSL Curriculum');
+    action.mockResolvedValueOnce(created('ArSL Curriculum'));
+    await submit();
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    // While the re-scan is in flight, the route is suspended: act must be awaited.
+    await act(async () => press(cancelButton()));
+    await route.rescanned(listedWithCreated());
+
+    expect(push).not.toHaveBeenCalled();
+    expect(isOpenArrival(CREATED_ID)).toBe(false);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(screen.getByText('ArSL Curriculum')).toBeTruthy();
+  });
+
+  it('leaves a later opening alone: idle, its own text, and nothing opened for it', async () => {
+    const { route, write } = await submitHeld(await routed(listed));
+    press(cancelButton());
+
+    // A new opening while the first write is still in flight.
+    openFromHeader();
+    expect(createButton().getAttribute('aria-busy')).toBeNull();
+    type('BSL Pilot 2');
+
+    await act(async () => write.resolve(created('ArSL Curriculum')));
+    await route.rescanned(listedWithCreated());
+
+    expect(drawer()).toBeTruthy();
+    expect((nameField() as HTMLInputElement).value).toBe('BSL Pilot 2');
+    expect(createButton().getAttribute('aria-busy')).toBeNull();
+    expect(push).not.toHaveBeenCalled();
+    expect(isOpenArrival(CREATED_ID)).toBe(false);
+  });
+
+  it('a later opening still creates and opens its own Project', async () => {
+    const { route, write } = await submitHeld(await routed(listed));
+    press(cancelButton());
+    openFromHeader();
+    type('BSL Pilot 2');
+    const second = '9b2c1e7a-5d3f-4a8e-9c61-0f4e2d7b8a13';
+    action.mockResolvedValueOnce(created('BSL Pilot 2', second));
+
+    await submit();
+    await act(async () => write.resolve(created('ArSL Curriculum')));
+    await route.rescanned(listedWithCreated('BSL Pilot 2', second));
+
+    expect(action).toHaveBeenCalledTimes(2);
+    expect(push).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith(`/workspace/${second}`);
+    expect(isOpenArrival(second)).toBe(true);
+    expect(isOpenArrival(CREATED_ID)).toBe(false);
+  });
+
+  it('opens a fresh drawer after Cancel — nothing carried over', async () => {
+    action.mockResolvedValueOnce(invalidName);
+    render(picker(listed));
+    openFromHeader();
+    await submit();
+    press(cancelButton());
+
+    openFromHeader();
+    expect((nameField() as HTMLInputElement).value).toBe('');
+    expect(nameField().getAttribute('aria-invalid')).toBeNull();
+    expect(within(drawer()).queryByRole('alert')).toBeNull();
+    expect(createButton().getAttribute('aria-busy')).toBeNull();
   });
 });
 

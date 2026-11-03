@@ -31,7 +31,8 @@ import {
  * Focus on arrival follows §04.1's focus table. It moves only when Open
  * caused the arrival — told apart by the in-memory mark Open sets before it
  * navigates (`open-arrival`), since Back and Forward are client-side
- * navigations too — or when the author's Retry succeeded:
+ * navigations too; a successful Create sets the same mark (CO-2) — or when
+ * the author's Retry succeeded:
  * - arrived from Open and resolved, or resolved after Retry: the h1;
  * - arrived from Open and can't read: Retry, by `SyStateBlock`'s own rule;
  * - a document load or a history navigation: nowhere.
