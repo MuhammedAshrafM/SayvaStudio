@@ -1,6 +1,6 @@
 # Project Picker — Design
 
-**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, 2026-09-28 for the future-`updatedAt` rule, and 2026-09-29 for the Create Project decision closure (B1–B15), and 2026-10-03 for the Open decisions (OD-1 to OD-8, [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md))
+**Status:** Canonical as `Sayva Studio Screens.dc.html` **§04**, status `specified-not-drawn` · answers [the commission](./phase-2-project-picker-design-commission.md) · amended 2026-09-24 for readiness rulings RB-2 to RB-6, 2026-09-28 for the future-`updatedAt` rule, and 2026-09-29 for the Create Project decision closure (B1–B15), and 2026-10-03 for the Open decisions (OD-1 to OD-8, [ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md)), and 2026-11-12 for the Duplicate Project closure (§7, states D1–D10)
 **Governed by:** [ADR-004](../adr/ADR-004-project-management-is-pre-shell.md) — the surface sits before `SyAppShell`
 **Authored:** 2026-09-14, on the design owner's instruction to execute the commission
 
@@ -55,10 +55,10 @@ All 21 contracted fields, in the design's own shape.
 | **`inspector`** | **None.** `SyInspector` is a deferred pattern, and a Project has six fields, two of which are shown. |
 | **`queues`** | **None.** Nothing here hands a cursor to anything. |
 | **`jobs`** | **None.** Create, open and duplicate are each a single small file operation. The design's rule is that cardinality decides sync vs job; the cardinality here is one. |
-| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file, and in the `panel` size inside the Create drawer when a write fails (§3, B2). Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **per occurrence** (RB-2) — see §6. |
-| **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. `New Project`'s stated reason reads **"Creating a project needs a window at least 900px wide."** See §8. |
+| **`states`** | `first-run` · `loading` · `error`, plus `error` in the `inline row` variant per bad file, and in the `panel` size inside the Create drawer when a write fails (§3, B2) and inside the Duplicate drawer when the source cannot be read or the copy cannot be written (§7, D7, D8). Three of `SyStateBlock`'s six — see §6 for why the other three are excluded rather than forgotten. Loading is named **"Studio is looking in {root}"** (RB-5). First-run's `New Project` action is deferred to the Create slice (RB-6). The error state's trace ID is **per occurrence** (RB-2) — see §6. |
+| **`responsive`** | One column at all four breakpoints. At `bp.sm` the surface is read-and-open only, with `New Project` and `Duplicate` disabled and a stated reason — the canonical `bp.sm` rule. `New Project`'s stated reason reads **"Creating a project needs a window at least 900px wide."** `Duplicate`'s reads **"Duplicating a project needs a window at least 900px wide."** (§7, D10). See §8. |
 | **`components`** | `SyButton` · `SyField` · `SyDrawer` · `SyStateBlock`. Four primitives, no patterns. |
-| **`screenSpecific`** | The four copy strings (§6, §4) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`, deferred to a later slice (§10, B8). |
+| **`screenSpecific`** | The Project Picker's screen-specific copy across first-run, list errors, Create and Duplicate drawers, and row-level actions and announcements (§3, §4, §6, §7) · the two-column row content · the workspace-root line in the header · the `updatedAt` presentation (§5) · the `N` shortcut for `New Project`, deferred to a later slice (§10, B8). |
 
 ---
 
@@ -230,6 +230,61 @@ Not prefilled with the source's name: names are not unique, so prefilling would 
 
 **The copy does not open.** Duplicating is an action performed *about* a Project, not an intent to start working in it — the opposite of create, and the distinction is deliberate. The list refreshes with the copy present and ordered first, since it has the newest `updatedAt`.
 
+> **Amended 2026-11-12 (Duplicate Project closure). Duplicate is specified in full and implemented.** §04 §7 now names ten Duplicate states, **D1–D10**. In this section those names mean those states — not the design decisions D1–D16 (**D4**, **D6** and the others) cited elsewhere in this document. The paragraphs above stand; this is what the closure adds.
+>
+> | State | When | What happens |
+> |---|---|---|
+> | **D1 — Row actions** | Every listed row, except one showing Open's can't-read error | `Open` (secondary `SyButton`), then `Duplicate` (ghost), so Tab reaches `Open`, then `Duplicate`. A row showing Open's can't-read error keeps that error in place of both. `Duplicate` keeps its visible label and no `aria-label` is added (Blocked dependencies 13). |
+> | **D2 — Drawer opens** | `Duplicate` activated | A right `SyDrawer`, the same form as Create's. Title **`Duplicate`**. One required `SyField`, **`Project name`**, empty: no name is prefilled or suggested, and the source's name is not shown. Footer: **`Cancel`** (secondary), **`Duplicate Project`** (primary). Focus enters the drawer panel, not the field, per `SyDrawer`. |
+> | **D3 — Invalid name** | Submitted with an empty name | **"Give the project a name."** on the field, shown and replaced by B13's rule. Checked before anything else: no source read, no write, no trace ID. |
+> | **D4 — Busy** | A valid name was submitted | The drawer stays open and keeps the name. `Duplicate Project` shows `SyButton`'s loading state — label kept, `aria-busy`, focus kept, activation ignored, never disabled — so neither a click nor `⌘Enter` submits again. `Cancel` stays available. |
+> | **D5 — Duplicated** | The copy was written | The drawer closes, then the list re-scans and the copy takes its place by `updatedAt` descending — normally first, unless another Project has a later `updatedAt`. Focus returns to the source row's `Duplicate` by A07, as on any close. Nothing opens or navigates, and nothing is announced. |
+> | **D6 — Source missing** | No file holds the source any more | The drawer stays open and `Duplicate Project` stays busy while the list re-scans. Once the re-scan has rendered a settled state — listed, first-run, or the list's own error ("Can't read the projects folder") — the drawer closes, and then **"Can't find that project"** is announced once in the Picker's existing assertive region (§4). Focus is never sent to a removed control; if the re-scan still lists the source, A07 returns focus to its `Duplicate`. No delay is added. |
+> | **D7 — Source can't be read** | The source's file exists and cannot be read | The drawer stays open and keeps the name. `SyStateBlock`'s `error`, `panel` size, below the field: **"Can't duplicate the project"**, the source's location, this occurrence's trace ID, and **`Retry`**, which takes focus because the author's submission caused it. Never shown on the field. The list is not re-scanned. |
+> | **D8 — Write failed** | The copy could not be written | As D7, with the location of the failed write. |
+> | **D9 — Retry** | `Retry` pressed in D7 or D8 | The whole operation again, with the name now in the field, from D3 onward. |
+> | **D10 — Below 900px** | Narrower than `bp.md` | The drawer cannot open. Every `Duplicate` is disabled, and `SyButton` gives each the reason **"Duplicating a project needs a window at least 900px wide."** While Projects are listed, the same sentence appears once, directly above the list, hidden from assistive technology (§8). Not in first-run, loading or error. The breakpoint is New Project's; none is added. |
+>
+> **The name comes first (D3).** Domain's name rule is reached the only way Domain offers it, so the command runs in this order:
+>
+> 1. `createProject` with the typed name and the current schema version, and no tags. Its result is discarded — never saved, and never the copy. A refused name ends here.
+> 2. The source is read, and classified as Open classifies it ([ADR-005](../adr/ADR-005-opening-a-project-the-workspace-url.md) OP-07): a malformed id or no file is *not here* (D6); a file that cannot be read is *can't read* (D7).
+> 3. A second `createProject` makes the copy, with the same name and the source's tags.
+> 4. The copy is written (D8 if that fails, D5 if it succeeds).
+>
+> The first call's extra id and clock reading are accepted, and no Domain API changes. Tracing follows [ADR-003](../adr/ADR-003-storage-mechanism-and-project-persistence.md) SR-11's Duplicate extension: D7 and D8 are traced once per occurrence; D3 and D6 never are.
+>
+> **What the copy is.**
+>
+> | | |
+> |---|---|
+> | Project ID | New |
+> | Name | The author's input, trimmed by Domain |
+> | Schema version | The current schema version, whatever version the source was read at |
+> | State | `Created` |
+> | Timestamps | New |
+> | Tags | Copied from the source |
+> | Notes | Not copied |
+> | Languages, Assets | Not copied — neither exists in this phase |
+> | Source file | Read once, never written: left byte-identical |
+>
+> **One drawer at a time.**
+>
+> - The Picker holds one drawer, Create or Duplicate.
+> - Activating the control for the drawer already open does nothing and keeps what was typed: `New Project`, from the header or first-run, while Create is open, or the same row's `Duplicate` while its drawer is.
+> - Any other drawer control replaces the open drawer with a fresh `SyDrawer`. Focus enters the new panel, and the replaced drawer does not return focus to its trigger.
+> - `Cancel`, `Esc`, replacement or navigating away ends a session. A result that arrives from an ended session changes nothing in any drawer, announces nothing and takes no focus. A copy that was written, or a source that has gone, still re-scans the list, so the list shows what is on disk.
+> - Create, its copy and Create-then-Open are unchanged, CO-4 included: a Create drawer that is replaced before its hand-off opens nothing.
+>
+> **Accessibility.**
+>
+> - Visible labels only: `Duplicate`, `Duplicate Project`, `Cancel`, `Retry`.
+> - Tab reaches `Open`, then `Duplicate`; `Enter` or `Space` activates; `Esc` closes the drawer and ends its session; `⌘Enter` submits `Duplicate Project`, as `SyDrawer` gives it.
+> - Errors are assertive, per `SyStateBlock`. "Can't find that project" uses the Picker's existing region and is announced once. There is no success announcement.
+> - 44px targets; disabled and error states are carried by text, never colour alone.
+>
+> **Not verified with a screen reader.** In D6, when the re-scan settles on the list's own error, two assertive announcements arrive close together: the list error's alert, then "Can't find that project". In a real browser on 2026-11-11 they were 8ms apart. Whether a screen reader conveys both, in order and intelligibly, has not been tested and remains open. The D6 order is not changed for it and no delay is added.
+
 **Delete — not designed. Blocked, exactly as the commission requires.**
 
 | Domain Model §8 (Frozen v1.1) | Design **R20** |
@@ -248,7 +303,7 @@ One column at all four breakpoints. The canonical breakpoint *meanings* are writ
 
 | | |
 |---|---|
-| `bp.sm` `< 900px` | **Read and open only.** `New Project` and `Duplicate` are disabled with a stated reason, per `SyButton`'s contract. This follows the canonical `bp.sm` rule — *"Read and review only; editors disabled with an explanation"* — rather than carving out an exception because this happens to be the surface where creating lives. `New Project`'s reason reads **"Creating a project needs a window at least 900px wide."** (B6). The header's `New Project` stays visible and disabled. First-run renders **no** action, and nothing stands in for it: `SyStateBlock`'s action has no disabled form, and its frozen contract is not widened to add one. |
+| `bp.sm` `< 900px` | **Read and open only.** `New Project` and `Duplicate` are disabled with a stated reason, per `SyButton`'s contract. This follows the canonical `bp.sm` rule — *"Read and review only; editors disabled with an explanation"* — rather than carving out an exception because this happens to be the surface where creating lives. `New Project`'s reason reads **"Creating a project needs a window at least 900px wide."** (B6). The header's `New Project` stays visible and disabled. Every row's `Duplicate` is disabled with the reason **"Duplicating a project needs a window at least 900px wide."**, which `SyButton` gives each one; while Projects are listed the sentence is also stated once, directly above the list, hidden from assistive technology as `New Project`'s visible reason is (§7, D10). First-run renders **no** action, and nothing stands in for it: `SyStateBlock`'s action has no disabled form, and its frozen contract is not widened to add one. |
 | `bp.md` `900–1279px` | Full behaviour. Right drawer. |
 | `bp.lg` `1280–1727px` | Full behaviour. The design target. |
 | `bp.xl` `≥ 1728px` | Full behaviour. One column still — the surface does not become multi-column at any width. |
@@ -362,7 +417,7 @@ Carried forward unresolved. None is decided by this design.
 | 10 | **A newer schema version versus an unreadable file.** Temporarily one category, *can't read*. | §4's newer-schema target treatment. | Architecture |
 | 11 | **A missing folder versus a missing Project; a permission failure versus a corrupt file.** Each pair shares one category. | Nothing now. | Architecture |
 | 12 | **The same Project open in two tabs.** Concurrent editing is not decided. | Nothing now — the picker edits nothing in a Project. | Project owner |
-| 13 | **Repeated `Open` labels.** Each row's `Open` keeps its visible label; whether it needs more is open. | Nothing now — no `aria-label` or new copy is added. | Design owner |
+| 13 | **Repeated `Open` and `Duplicate` labels.** Each row's `Open` and `Duplicate` keep their visible labels; whether they need more is open. Extended to `Duplicate` by the Duplicate Project closure (§7, D1). | Nothing now — no `aria-label` or new copy is added. | Design owner |
 | 14 | **Shell URLs.** Whether the shell's own routes carry the ProjectId. | The shell, not this surface. | Design owner + Architecture |
 
 **Withdrawn from this table since the first draft:** the `bp.xl` content-column maximum width, which is **not applicable** to a pre-shell surface rather than missing from it (§8). And item 7 above is a restatement: the first draft resolved the "saved" ambiguity as Rename, which no canonical source supports; it is now recorded as ambiguous and left open. And the error state's trace ID, added as item 8 by readiness ruling RB-2 and resolved by it on 2026-09-24 — see §6.

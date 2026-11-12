@@ -17,6 +17,7 @@ import type { ProjectListItem, ProjectListView } from '@sayva/application';
 import { SyButton, SyStateBlock } from '@sayva/design-system';
 import { clearOpenArrival, markOpenArrival } from '@/workspace-entry/open-arrival';
 import { CreateProjectDrawer } from './create-project-drawer';
+import { DuplicateProjectDrawer } from './duplicate-project-drawer';
 import { openProjectAction } from './open-project-action';
 
 /**
@@ -34,15 +35,13 @@ import { openProjectAction } from './open-project-action';
  * the inline-row error wraps (`INLINE_ROW_ERROR_WRAPS`).
  *
  * Two parts, because the header outlives the scan. `ProjectPickerFrame` is
- * the header and the Create drawer, rendered by the route's layout so it
- * stays mounted while the list loads, fails, retries and re-scans — which is
- * what lets a drawer opened from the header survive the list arriving (B15).
- * `ProjectPickerBody` and `ProjectPickerLoading` are the list's states,
- * rendered by the page and its loading boundary.
+ * the header and the one drawer — Create or Duplicate — rendered by the
+ * route's layout so it stays mounted while the list loads, fails, retries
+ * and re-scans — which is what lets a drawer survive the list arriving or
+ * changing beneath it (B15). `ProjectPickerBody` and `ProjectPickerLoading`
+ * are the list's states, rendered by the page and its loading boundary.
  *
- * Each row's one action is `Open` (§5, ADR-005 OP-08). Duplicate, the
- * design's other row action, is deliberately absent rather than disabled: it
- * arrives with its own slice.
+ * Each row's actions are `Open`, then `Duplicate` (§5, ADR-005 OP-08, D1).
  */
 
 /** The product's name — the header's heading. */
@@ -62,6 +61,10 @@ const OPEN = 'Open';
 const CANT_OPEN_THE_PROJECT = "Can't open the project";
 const CANT_FIND_THAT_PROJECT = "Can't find that project";
 const RETRY = 'Retry';
+
+/** A row's other action (§5, D1), and its stated reason below `bp.md` (D10). */
+const DUPLICATE = 'Duplicate';
+const DUPLICATE_NARROW_REASON = 'Duplicating a project needs a window at least 900px wide.';
 
 /**
  * How long an announcement stays in the live region before it is cleared.
@@ -98,6 +101,27 @@ function useOpenCreate(): OpenCreate {
   return openCreate;
 }
 
+/** Opens the Duplicate drawer for one Project, remembering which control did it (A07). */
+type OpenDuplicate = (projectId: string, opener: HTMLElement) => void;
+
+const OpenDuplicateContext = createContext<OpenDuplicate | null>(null);
+
+function useOpenDuplicate(): OpenDuplicate {
+  const openDuplicate = useContext(OpenDuplicateContext);
+  if (!openDuplicate) throw new Error('The Project Picker body renders inside ProjectPickerFrame.');
+  return openDuplicate;
+}
+
+/**
+ * The frame's one drawer: Create, or Duplicate for one Project. `session`
+ * numbers each opening, and keys the drawer, so every session mounts its own
+ * `SyDrawer` — its own trigger, its own focus entry — and a session that has
+ * ended can never reach the one that replaced it (DP-6).
+ */
+type DrawerSession =
+  | { readonly kind: 'create'; readonly session: number }
+  | { readonly kind: 'duplicate'; readonly session: number; readonly projectId: string };
+
 /** Announces, in the frame's live region, that an Open found no Project. */
 type AnnounceNotHere = () => void;
 
@@ -129,19 +153,44 @@ function useAnnounceNotHere(): AnnounceNotHere {
  *
  * Mounting the frame drops any arrival mark an earlier Open left behind
  * without arriving, so a later visit cannot mistake it for its own.
+ *
+ * One drawer at a time (DP-6). Activating the control whose drawer is
+ * already open does nothing, and keeps what was typed: New Project, from the
+ * header or first-run, while Create is open, or the same row's Duplicate
+ * while its drawer is. Any other drawer control replaces the open drawer,
+ * which ends that session as closing it would.
  */
 export function ProjectPickerFrame({ root, children }: { root: string; children: ReactNode }) {
   const headingId = useId();
-  const [creating, setCreating] = useState(false);
+  const [drawer, setDrawer] = useState<DrawerSession | null>(null);
   // The occurrence being announced, counted from 1; 0 while there is none.
   const [notFound, setNotFound] = useState(0);
   const openerRef = useRef<HTMLElement | null>(null);
+  const sessions = useRef(0);
 
-  const openCreate = useCallback<OpenCreate>((opener) => {
-    openerRef.current = opener;
-    setCreating(true);
-  }, []);
-  const closeCreate = useCallback(() => setCreating(false), []);
+  const openCreate = useCallback<OpenCreate>(
+    (opener) => {
+      if (drawer?.kind === 'create') return;
+      openerRef.current = opener;
+      sessions.current += 1;
+      setDrawer({ kind: 'create', session: sessions.current });
+    },
+    [drawer],
+  );
+  const openDuplicate = useCallback<OpenDuplicate>(
+    (projectId, opener) => {
+      if (drawer?.kind === 'duplicate' && drawer.projectId === projectId) return;
+      openerRef.current = opener;
+      sessions.current += 1;
+      setDrawer({ kind: 'duplicate', session: sessions.current, projectId });
+    },
+    [drawer],
+  );
+  // Only the session still open can close the drawer.
+  const closeDrawer = useCallback(
+    (session: number) => setDrawer((open) => (open?.session === session ? null : open)),
+    [],
+  );
   const announceNotHere = useCallback<AnnounceNotHere>(() => setNotFound((n) => n + 1), []);
 
   useEffect(() => {
@@ -163,14 +212,32 @@ export function ProjectPickerFrame({ root, children }: { root: string; children:
         <NewProject onOpen={openCreate} />
       </header>
       <OpenCreateContext.Provider value={openCreate}>
-        <AnnounceNotHereContext.Provider value={announceNotHere}>
-          {children}
-        </AnnounceNotHereContext.Provider>
+        <OpenDuplicateContext.Provider value={openDuplicate}>
+          <AnnounceNotHereContext.Provider value={announceNotHere}>
+            {children}
+          </AnnounceNotHereContext.Provider>
+        </OpenDuplicateContext.Provider>
       </OpenCreateContext.Provider>
       <div aria-live="assertive" aria-atomic="true" className="sr-only">
         {notFound > 0 ? <span key={notFound}>{CANT_FIND_THAT_PROJECT}</span> : null}
       </div>
-      <CreateProjectDrawer open={creating} onClose={closeCreate} triggerRef={openerRef} />
+      {drawer?.kind === 'create' ? (
+        <CreateProjectDrawer
+          key={drawer.session}
+          open
+          onClose={() => closeDrawer(drawer.session)}
+          triggerRef={openerRef}
+        />
+      ) : null}
+      {drawer?.kind === 'duplicate' ? (
+        <DuplicateProjectDrawer
+          key={drawer.session}
+          projectId={drawer.projectId}
+          onClose={() => closeDrawer(drawer.session)}
+          onNotHere={announceNotHere}
+          triggerRef={openerRef}
+        />
+      ) : null}
     </main>
   );
 }
@@ -295,6 +362,11 @@ type UnreadableRow = { readonly traceId: string; readonly location: string };
  * activation — its own `SyButton` loading state already does — and none is
  * disabled, since a disabled button needs a stated reason. The active one
  * keeps its label, is `aria-busy` and keeps focus.
+ *
+ * `Duplicate` follows `Open` on every row that shows one, so Tab reaches
+ * Open, then Duplicate (D1). A row replaced by Open's can't-read error shows
+ * neither. Below `bp.md` the list states Duplicate's reason once, above the
+ * rows, rather than beside each of them (D10).
  */
 function ProjectList({
   projects,
@@ -355,40 +427,76 @@ function ProjectList({
   }
 
   return (
-    <ul>
-      {projects.map((project) => {
-        const failure = unreadable[project.id];
-        return (
-          <li key={project.id}>
-            {failure ? (
-              <SyStateBlock
-                key={failure.traceId}
-                className={INLINE_ROW_ERROR_WRAPS}
-                state="error"
-                size="inline"
-                heading={CANT_OPEN_THE_PROJECT}
-                description={failure.location}
-                traceId={failure.traceId}
-                userInitiated
-                action={{ label: RETRY, onAction: () => retry(project.id) }}
-              />
-            ) : (
-              <>
-                {project.name} <time dateTime={project.updatedAt}>{project.updatedAgo}</time>{' '}
-                <SyButton
-                  ref={project.id === restored ? restoredOpen : undefined}
-                  variant="secondary"
-                  loading={pending && opening === project.id}
-                  onClick={() => open(project.id)}
-                >
-                  {OPEN}
-                </SyButton>
-              </>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <>
+      {/* D10: Duplicate's reason, stated once for the list. Each disabled
+          Duplicate already gives it to assistive technology, so this copy is
+          hidden from it, as New Project's is. */}
+      <p className="md:hidden" aria-hidden="true">
+        {DUPLICATE_NARROW_REASON}
+      </p>
+      <ul>
+        {projects.map((project) => {
+          const failure = unreadable[project.id];
+          return (
+            <li key={project.id}>
+              {failure ? (
+                <SyStateBlock
+                  key={failure.traceId}
+                  className={INLINE_ROW_ERROR_WRAPS}
+                  state="error"
+                  size="inline"
+                  heading={CANT_OPEN_THE_PROJECT}
+                  description={failure.location}
+                  traceId={failure.traceId}
+                  userInitiated
+                  action={{ label: RETRY, onAction: () => retry(project.id) }}
+                />
+              ) : (
+                <>
+                  {project.name} <time dateTime={project.updatedAt}>{project.updatedAgo}</time>{' '}
+                  <SyButton
+                    ref={project.id === restored ? restoredOpen : undefined}
+                    variant="secondary"
+                    loading={pending && opening === project.id}
+                    onClick={() => open(project.id)}
+                  >
+                    {OPEN}
+                  </SyButton>{' '}
+                  <DuplicateAction projectId={project.id} />
+                </>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </>
+  );
+}
+
+/**
+ * A row's Duplicate, in both of the forms §8 gives it (D10), as New Project
+ * has them: from `bp.md` up a ghost `SyButton` that opens the drawer, and
+ * below it the same button disabled, with its reason given to assistive
+ * technology by `SyButton`. The disabled form is wrapped so that its reason
+ * leaves the accessibility tree with it from `bp.md` up.
+ */
+function DuplicateAction({ projectId }: { projectId: string }) {
+  const openDuplicate = useOpenDuplicate();
+  return (
+    <>
+      <SyButton
+        className="max-md:hidden"
+        variant="ghost"
+        onClick={(event) => openDuplicate(projectId, event.currentTarget)}
+      >
+        {DUPLICATE}
+      </SyButton>
+      <span className="md:hidden">
+        <SyButton variant="ghost" disabled disabledReason={DUPLICATE_NARROW_REASON}>
+          {DUPLICATE}
+        </SyButton>
+      </span>
+    </>
   );
 }
 

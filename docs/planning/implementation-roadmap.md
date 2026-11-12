@@ -260,6 +260,20 @@ flowchart TD
 > - **CO-7 — no Playwright** in this slice. Verification stays as before: component tests and a recorded browser pass.
 > - **Implemented 2026-10-31.** The Create drawer's success path. No Application, Domain, Infrastructure, Server Action or route change.
 
+> **Duplicate Project closure, 2026-11-12 — D1–D10.** After Create-then-Open, Duplicate was the one remaining Phase 2 operation with a canonical design (§04 §7), but its result contract, states, copy and drawer sessions were unruled. The owner ruled them; the design owner authored them into §04 §7 as the ten states **D1–D10**, whose planning-side text is [§7 of the Picker design](./phase-2-project-picker-design.md). The tracing is recorded as [ADR-003](../adr/ADR-003-storage-mechanism-and-project-persistence.md) **SR-11**'s Duplicate extension.
+> - **Contract.** `duplicateProjectUseCase` changes in place. It returns `duplicated`, `invalid-name`, `write-failed`, `not-here` or `cant-read`, and rethrows anything else. The name is checked first, through a `createProject` whose result is discarded, so a refused name reads, writes and traces nothing; no Domain API changes. Then the source is read, and the copy is made and written: a new id and timestamps, the trimmed name, the current schema version, the source's tags and no notes. The source is left byte-identical.
+> - **Delivery.** A Server Action, `duplicate-project-action`, the ordinary path for a Command (Blueprint §6). The Composition Root gains `projectDuplicateDeps()`.
+> - **The surface.** A ghost `Duplicate` after each row's `Open`, and a Duplicate drawer composed from the same four primitives as Create's. The Picker holds one drawer at a time, each session mounted fresh and isolated from the next. Below 900px every `Duplicate` is disabled, with one shared reason above the list. The copy never opens.
+> - **Implemented 2026-11-11, verified 2026-11-12.**
+>   - 1,258 automated tests pass: domain 48, design system 652, application 106, infrastructure 115, studio 337. Format, lint, type check and the dependency graph pass. The production build passed in the implementation pass.
+>   - A break-it check of 19 deliberate mutations — validation order, the copy's fields, tracing, D1, D2, D5–D10 and session isolation — was caught 19 of 19, each file restored afterwards.
+>   - A real-browser pass covered D1–D7, D9, D10 at 899px and 900px, drawer sessions and late results, and an Open during a Duplicate. D8, a failed write, is covered by tests only: it could not be forced in the browser while the source stayed readable.
+>   - Create-then-Open was re-verified in the real browser through the shared drawer slot: one navigation, the h1 focused on arrival, and Back listing the new Project.
+> - **Still open.**
+>   - A real screen-reader pass. In D6, when the re-scan settles on the list's own error, two assertive announcements — the list error's alert, then "Can't find that project" — were observed 8ms apart. Whether both are conveyed is unverified. Neither the D6 order nor its announcements change for it.
+>   - The standalone export of §04 and the design inventory's re-export, both the design owner's.
+>   - Phase 2 is **not** frozen by this closure: Save, Delete and Archive remain open, below.
+
 > **Still open in this phase:**
 > - `ArchiveProject` appears in neither Architecture Blueprint §4's use-case table nor this phase's scope above, while this phase's manual checklist names archive. Unresolved, and deliberately not invented — see ADR-003's "Explicitly not decided here".
 > - **Delete semantics are contradicted across canonical sources.** Domain Model §8 states "Delete is explicit and destructive"; the design's rule **R20** states "Soft delete by default. Impact preview computed server-side from the graph and shown before confirmation." Both are canonical. The implementation follows the Domain Model. Recorded as unresolved: `DeleteProject`, `ArchiveProject` and R20 are all unchanged, and archive is **not** assumed to be the soft delete.

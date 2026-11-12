@@ -2,6 +2,7 @@ import 'server-only';
 
 import type {
   CreateProjectUseCaseDeps,
+  DuplicateProjectUseCaseDeps,
   OpenProjectUseCaseDeps,
   ProjectListUseCaseDeps,
   ProjectUseCaseDeps,
@@ -135,6 +136,21 @@ export function projectOpenDeps(): OpenProjectUseCaseDeps {
   return cachedOpenDeps;
 }
 
+let cachedDuplicateDeps: DuplicateProjectUseCaseDeps | undefined;
+
+/**
+ * The dependencies of the Duplicate command: the ordinary Project ones plus
+ * the failure tracer — ADR-003 SR-11's Duplicate extension.
+ *
+ * Its own set, for the reason Create's and Open's are: the tracer reaches
+ * each traced operation through that operation's dependencies. It is never
+ * merged into `projectUseCaseDeps()`.
+ */
+export function projectDuplicateDeps(): DuplicateProjectUseCaseDeps {
+  cachedDuplicateDeps ??= { ...projectUseCaseDeps(), tracer: createConsoleFailureTracer() };
+  return cachedDuplicateDeps;
+}
+
 /**
  * Test seam, not production API.
  *
@@ -148,4 +164,5 @@ export function resetCompositionRoot(): void {
   cachedListDeps = undefined;
   cachedCreateDeps = undefined;
   cachedOpenDeps = undefined;
+  cachedDuplicateDeps = undefined;
 }

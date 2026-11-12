@@ -18,11 +18,13 @@ import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './p
 
 const { refresh, push } = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push }) }));
-// Both Server Actions reach the server-only Composition Root, so both are
-// replaced here. create-project.test.tsx exercises Create;
-// open-project-action.test.ts runs Open's against a real workspace.
+// Every Server Action reaches the server-only Composition Root, so each is
+// replaced here. create-project.test.tsx exercises Create,
+// duplicate-project.test.tsx Duplicate; open-project-action.test.ts runs
+// Open's against a real workspace.
 vi.mock('./create-project-action', () => ({ createProjectAction: vi.fn() }));
 vi.mock('./open-project-action', () => ({ openProjectAction: vi.fn() }));
+vi.mock('./duplicate-project-action', () => ({ duplicateProjectAction: vi.fn() }));
 const openAction = vi.mocked(openProjectAction);
 
 afterEach(() => {
@@ -75,6 +77,14 @@ function describedBy(element: Element): string {
 /** The class list the frozen SyButton gives its secondary variant. */
 function classOfSecondaryButton(): string {
   const { container, unmount } = render(<SyButton variant="secondary">x</SyButton>);
+  const className = container.querySelector('button')!.className;
+  unmount();
+  return className;
+}
+
+/** The class list the frozen SyButton gives its ghost variant. */
+function classOfGhostButton(): string {
+  const { container, unmount } = render(<SyButton variant="ghost">x</SyButton>);
   const className = container.querySelector('button')!.className;
   unmount();
   return className;
@@ -163,12 +173,9 @@ describe('listed', () => {
   it('keeps the order the query decided (PP-04)', () => {
     render(picker(listed));
 
-    const names = screen.getAllByRole('listitem').map((item) => item.textContent);
-    expect(names).toEqual([
-      'ArSL Curriculum 1h ago Open',
-      'BSL Pilot 3d ago Open',
-      'ASL Foundations 2w ago Open',
-    ]);
+    // Each row begins with its Project's name; its actions follow (D1).
+    const names = screen.getAllByRole('listitem').map((item) => item.firstChild?.textContent);
+    expect(names).toEqual(['ArSL Curriculum', 'BSL Pilot', 'ASL Foundations']);
   });
 
   it('shows updatedAt as RB-3 relative time, with the machine value in <time datetime>', () => {
@@ -183,18 +190,93 @@ describe('listed', () => {
     ]);
   });
 
-  it('gives each row exactly one action, Open, as a secondary SyButton (§5)', () => {
-    // Duplicate, the design's other row action, is its own slice.
+  it('gives each row Open, a secondary SyButton, then Duplicate, a ghost one (§5, D1)', () => {
     const { container } = render(picker(listed));
     const secondary = classOfSecondaryButton();
+    const ghost = classOfGhostButton();
 
     for (const item of screen.getAllByRole('listitem')) {
-      const buttons = within(item).getAllByRole('button');
-      expect(buttons.map((b) => b.textContent)).toEqual(['Open']);
-      expect(buttons[0]!.className).toBe(secondary);
+      const [open, wide, narrow, ...rest] = within(item).getAllByRole('button');
+      expect(rest).toEqual([]);
+      expect(open!.textContent).toBe('Open');
+      expect(open!.className).toBe(secondary);
+      // Duplicate in both of §8's forms, as New Project has them (D10): the
+      // enabled one from bp.md up, the disabled one below it.
+      expect(wide!.textContent).toBe('Duplicate');
+      expect(wide!.className.startsWith(ghost)).toBe(true);
+      expect(wide!.className).toContain('max-md:hidden');
+      expect(wide!.hasAttribute('disabled')).toBe(false);
+      expect(narrow!.textContent).toBe('Duplicate');
+      expect(narrow!.hasAttribute('disabled')).toBe(true);
+      expect(narrow!.closest('.md\\:hidden')).not.toBeNull();
       expect(within(item).queryByRole('link')).toBeNull();
     }
     expect(container.querySelectorAll('[tabindex]')).toHaveLength(0);
+  });
+
+  it('puts Duplicate after Open in every row, so Tab reaches Open, then Duplicate (D1)', () => {
+    render(picker(listed));
+    const order = screen
+      .getAllByRole('button')
+      .filter((button) => button.closest('li') && !button.hasAttribute('disabled'))
+      .map((button) => `${button.closest('li')!.firstChild?.textContent} ${button.textContent}`);
+
+    expect(order).toEqual([
+      'ArSL Curriculum Open',
+      'ArSL Curriculum Duplicate',
+      'BSL Pilot Open',
+      'BSL Pilot Duplicate',
+      'ASL Foundations Open',
+      'ASL Foundations Duplicate',
+    ]);
+  });
+
+  it('keeps Duplicate’s visible label and adds no aria-label (blocked item 13)', () => {
+    render(picker(listed));
+    for (const duplicate of screen.getAllByRole('button', { name: 'Duplicate' })) {
+      expect(duplicate.hasAttribute('aria-label')).toBe(false);
+      expect(duplicate.textContent).toBe('Duplicate');
+    }
+  });
+
+  describe('below bp.md (D10)', () => {
+    const REASON = 'Duplicating a project needs a window at least 900px wide.';
+
+    it("gives every row's disabled Duplicate the stated reason, through SyButton", () => {
+      render(picker(listed));
+      const narrow = screen
+        .getAllByRole('button', { name: 'Duplicate' })
+        .filter((button) => button.hasAttribute('disabled'));
+
+      expect(narrow).toHaveLength(3);
+      for (const button of narrow) {
+        expect(describedBy(button)).toBe(REASON);
+        // The reason's node leaves the accessibility tree with its button from bp.md up.
+        const reasonNode = document.getElementById(button.getAttribute('aria-describedby')!)!;
+        expect(reasonNode.closest('.md\\:hidden')).not.toBeNull();
+      }
+    });
+
+    it('states the reason once, above the list, hidden from assistive technology', () => {
+      render(picker(listed));
+      const lines = [...document.querySelectorAll('p')].filter((p) => p.textContent === REASON);
+
+      expect(lines).toHaveLength(1);
+      const [line] = lines;
+      expect(line!.getAttribute('aria-hidden')).toBe('true');
+      expect(line!.className).toBe('md:hidden');
+      // Directly above the list.
+      expect(line!.nextElementSibling).toBe(screen.getByRole('list'));
+    });
+
+    it.each([
+      ['first-run', () => render(picker(firstRun))],
+      ['error', () => render(picker(failed))],
+      ['loading', () => render(loadingPicker())],
+    ] as const)('states it only while Projects are listed — not in %s', (_label, show) => {
+      show();
+      expect(screen.queryByText(REASON)).toBeNull();
+    });
   });
 
   it('passes an accessibility check', async () => {
@@ -370,15 +452,24 @@ describe('what this slice must not show — any state', () => {
     ['loading', () => render(loadingPicker())],
   ] as const;
 
-  it.each(every)('offers no Duplicate, Delete, Archive or Rename action (%s)', (_label, show) => {
+  it.each(every)('offers no Delete, Archive or Rename action (%s)', (_label, show) => {
     show();
     // Checked on the controls, not on all text: a Project's name is the
-    // author's content and may contain any of these words. New Project and
-    // Open are no longer on this list — their slices bring them.
+    // author's content and may contain any of these words. New Project,
+    // Open and Duplicate are no longer on this list — their slices bring them.
     const controls = [...screen.queryAllByRole('button'), ...screen.queryAllByRole('link')];
     for (const control of controls) {
-      expect(control.textContent).not.toMatch(/duplicate|delete|archive|rename/i);
+      expect(control.textContent).not.toMatch(/delete|archive|rename/i);
     }
+  });
+
+  it.each(every)('offers Duplicate only on a listed row (%s)', (label, show) => {
+    show();
+    const duplicates = screen.queryAllByRole('button', { name: 'Duplicate' });
+
+    // Each listed row carries both of D10's forms.
+    expect(duplicates).toHaveLength(label === 'listed' ? 6 : 0);
+    for (const duplicate of duplicates) expect(duplicate.closest('li')).not.toBeNull();
   });
 
   it.each(every)('offers Open only on a listed row (%s)', (label, show) => {
@@ -390,16 +481,25 @@ describe('what this slice must not show — any state', () => {
   });
 
   it.each(every)(
-    'disables nothing but the narrow New Project, which states its reason (%s)',
-    (_label, show) => {
+    "disables nothing but the narrow New Project and the rows' narrow Duplicates, each stating its reason (%s)",
+    (label, show) => {
       const { container } = show();
       const disabled = [...container.querySelectorAll('[disabled], [aria-disabled="true"]')];
 
-      // B6 is the one canonical disabled control; nothing else stands in for anything.
-      expect(disabled.map((control) => control.textContent)).toEqual(['New Project']);
+      // B6 and D10 are the canonical disabled controls; nothing else stands in for anything.
+      expect(disabled.map((control) => control.textContent)).toEqual(
+        label === 'listed'
+          ? ['New Project', 'Duplicate', 'Duplicate', 'Duplicate']
+          : ['New Project'],
+      );
       expect(describedBy(disabled[0]!)).toBe(
         'Creating a project needs a window at least 900px wide.',
       );
+      for (const duplicate of disabled.slice(1)) {
+        expect(describedBy(duplicate)).toBe(
+          'Duplicating a project needs a window at least 900px wide.',
+        );
+      }
     },
   );
 

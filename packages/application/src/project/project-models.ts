@@ -96,6 +96,30 @@ export type OpenProjectResult =
   | { readonly status: 'not-here' }
   | { readonly status: 'cant-read'; readonly traceId: string; readonly location: string };
 
+/**
+ * What the Duplicate command reports — the Duplicate Project closure's D1–D10
+ * (Screens §04 §7).
+ *
+ * Create's outcomes for the copy, and Open's for the source (ADR-005 OP-07):
+ *
+ * - `duplicated` — the copy was written. It carries the copy as a Response
+ *   Model, never the entity (AD-02).
+ * - `invalid-name` — Domain refused the name. Nothing was read or written.
+ * - `write-failed` — storage refused the copy's write. `location` is where
+ *   (ADR-003 SR-10) and `traceId` is which occurrence (SR-11's Duplicate
+ *   extension).
+ * - `not-here` — nothing answers to the source id: it is malformed, or no
+ *   file holds it. Absence, not failure, so it carries nothing.
+ * - `cant-read` — the source's file is there and cannot be read. `location`
+ *   and `traceId` as for `write-failed`.
+ */
+export type DuplicateProjectResult =
+  | { readonly status: 'duplicated'; readonly project: ProjectView }
+  | { readonly status: 'invalid-name' }
+  | { readonly status: 'write-failed'; readonly traceId: string; readonly location: string }
+  | { readonly status: 'not-here' }
+  | { readonly status: 'cant-read'; readonly traceId: string; readonly location: string };
+
 /** The one place a Domain entity becomes a Response Model. */
 export function toProjectView(project: Project): ProjectView {
   return {

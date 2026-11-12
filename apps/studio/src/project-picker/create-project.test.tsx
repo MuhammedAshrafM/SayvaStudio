@@ -26,9 +26,11 @@ import { ProjectPickerBody, ProjectPickerFrame, ProjectPickerLoading } from './p
 const { refresh, push } = vi.hoisted(() => ({ refresh: vi.fn(), push: vi.fn() }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh, push, replace: push }) }));
 vi.mock('./create-project-action', () => ({ createProjectAction: vi.fn() }));
-// The Picker's rows import the Open action, which reaches the same
-// server-only Composition Root. Open is not exercised here.
+// The Picker's rows import the Open action, and its frame the Duplicate
+// action, which reach the same server-only Composition Root. Neither is
+// exercised here.
 vi.mock('./open-project-action', () => ({ openProjectAction: vi.fn() }));
+vi.mock('./duplicate-project-action', () => ({ duplicateProjectAction: vi.fn() }));
 const action = vi.mocked(createProjectAction);
 
 const ROOT = 'C:/authoring/projects';

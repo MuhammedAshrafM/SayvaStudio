@@ -22,6 +22,7 @@ import {
   viewProjectListUseCase,
   type CreateProjectRequest,
   type CreateProjectUseCaseDeps,
+  type DuplicateProjectUseCaseDeps,
   type OpenProjectUseCaseDeps,
   type ProjectUseCaseDeps,
 } from './project-use-cases.js';
@@ -626,77 +627,281 @@ describe('SaveProject', () => {
   });
 });
 
-describe('DuplicateProject', () => {
-  it('gives the copy a new identity, never reusing the source id', async () => {
-    const { repository, project } = seeded();
-    const view = await duplicateProjectUseCase(deps({ projects: repository, ids: ids(UUID_B) }), {
-      id: project.id,
-      name: 'ArSL Curriculum (copy)',
+describe('DuplicateProject — the Duplicate command (Duplicate closure D1–D10)', () => {
+  const SOURCE_ID = UUID_A;
+  /** The id the name check's discarded Project draws, then the copy's. */
+  const CHECKED_ID = '9d4e1f2a-3b5c-4d6e-8f70-1a2b3c4d5e6f';
+  const COPY_ID = UUID_B;
+  const WHERE = `/workspace/${SOURCE_ID}.sayva`;
+
+  /**
+   * The source, as a repository would read it back: tags and notes both set,
+   * so what the copy keeps and what it drops are each visible.
+   */
+  const source = () =>
+    restoreProject({
+      id: SOURCE_ID,
+      name: 'ArSL Curriculum',
+      schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION,
+      state: 'Created',
+      createdAt: new Date('2026-09-01T10:00:00.000Z'),
+      updatedAt: new Date('2026-09-02T10:00:00.000Z'),
+      tags: ['arsl', 'pilot'],
+      notes: 'Reviewed by the deaf advisory group.',
     });
 
-    expect(view.id).toBe(UUID_B);
-    expect(view.id).not.toBe(project.id);
-  });
+  /**
+   * Everything the command touches, recorded in one sequence: each id drawn,
+   * each clock reading, each read and each write. Order is the contract here
+   * (D3), so it is observed rather than inferred from outcomes.
+   */
+  function duplicateDeps(
+    options: {
+      seed?: Project[];
+      findById?: ProjectRepository['findById'];
+      save?: ProjectRepository['save'];
+    } = {},
+  ) {
+    const events: string[] = [];
+    const traced: unknown[] = [];
+    const memory = inMemoryRepository(options.seed ?? [source()]);
+    const queue = [CHECKED_ID, COPY_ID];
+    const d: DuplicateProjectUseCaseDeps = {
+      projects: {
+        ...memory.repository,
+        findById: (id) => {
+          events.push('read');
+          return (options.findById ?? memory.repository.findById)(id);
+        },
+        save: (project) => {
+          events.push('write');
+          return (options.save ?? memory.repository.save)(project);
+        },
+      },
+      ids: {
+        newId: () => {
+          events.push('id');
+          return queue.shift() ?? COPY_ID;
+        },
+      },
+      clock: {
+        now: () => {
+          events.push('clock');
+          return new Date('2026-09-05T12:00:00.000Z');
+        },
+      },
+      tracer: {
+        trace: (failure: unknown) => {
+          traced.push(failure);
+          return `trace-${traced.length}`;
+        },
+      },
+    };
+    return { d, events, traced, memory };
+  }
 
-  it('leaves the source untouched', async () => {
-    const { repository, store, project } = seeded();
-    await duplicateProjectUseCase(deps({ projects: repository, ids: ids(UUID_B) }), {
-      id: project.id,
-      name: 'Copy',
+  const duplicated = async (name = 'ArSL Curriculum — Spring', id = SOURCE_ID) => {
+    const run = duplicateDeps();
+    const result = await duplicateProjectUseCase(run.d, { id, name });
+    if (result.status !== 'duplicated')
+      throw new Error(`expected duplicated, got ${result.status}`);
+    return { ...run, result, copy: run.memory.store.get(COPY_ID)! };
+  };
+
+  describe('the name comes first (D3)', () => {
+    it.each([[''], ['   ']])(
+      'refuses %j before anything is read: no read, no write, no trace',
+      async (name) => {
+        const { d, events, traced, memory } = duplicateDeps();
+        expect(await duplicateProjectUseCase(d, { id: SOURCE_ID, name })).toEqual({
+          status: 'invalid-name',
+        });
+        // Only the name check's own id: Domain mints it before the rule refuses.
+        expect(events).toEqual(['id']);
+        expect(traced).toEqual([]);
+        expect(memory.calls.save).toBe(0);
+      },
+    );
+
+    it('refuses the name even when the source is not there — invalid-name, not not-here', async () => {
+      const { d, events } = duplicateDeps({ seed: [] });
+      expect(await duplicateProjectUseCase(d, { id: SOURCE_ID, name: '' })).toEqual({
+        status: 'invalid-name',
+      });
+      expect(await duplicateProjectUseCase(d, { id: 'not-a-uuid', name: '' })).toEqual({
+        status: 'invalid-name',
+      });
+      expect(events).not.toContain('read');
     });
 
-    expect(store.get(project.id)?.name).toBe('ArSL Curriculum');
-    expect(store.size).toBe(2);
+    it('checks the name, then reads the source, then makes and writes the copy', async () => {
+      const { events } = await duplicated();
+      // The name check's Project (id, clock), the read, the copy (id, clock),
+      // its write — in that order and nothing more.
+      expect(events).toEqual(['id', 'clock', 'read', 'id', 'clock', 'write']);
+    });
+
+    it("discards the name check's Project: the copy is the second Project made", async () => {
+      const { result, memory } = await duplicated();
+      expect(result.project.id).toBe(COPY_ID);
+      expect(memory.store.has(CHECKED_ID)).toBe(false);
+      expect(memory.calls.save).toBe(1);
+    });
   });
 
-  it('gives the copy its own timestamps rather than the source’s history', async () => {
-    const { repository, project } = seeded();
-    const view = await duplicateProjectUseCase(
-      deps({
-        projects: repository,
-        ids: ids(UUID_B),
-        clock: clockAt('2026-09-05T12:00:00.000Z'),
-      }),
-      { id: project.id, name: 'Copy' },
+  describe('the copy (the closure’s copy table)', () => {
+    it('is a new entity: a new id, never the source’s', async () => {
+      const { result } = await duplicated();
+      expect(result.project.id).not.toBe(SOURCE_ID);
+    });
+
+    it('keeps the name Domain keeps — trimmed', async () => {
+      const { copy } = await duplicated('  ArSL Curriculum — Spring  ');
+      expect(copy.name).toBe('ArSL Curriculum — Spring');
+    });
+
+    it('gets its own timestamps, not the source’s history', async () => {
+      const { result } = await duplicated();
+      expect(result.project.createdAt).toBe('2026-09-05T12:00:00.000Z');
+      expect(result.project.updatedAt).toBe('2026-09-05T12:00:00.000Z');
+    });
+
+    it('starts in the Created state', async () => {
+      const { copy } = await duplicated();
+      expect(copy.state).toBe('Created');
+    });
+
+    it("copies the source's tags", async () => {
+      const { copy } = await duplicated();
+      expect(copy.metadata.tags).toEqual(['arsl', 'pilot']);
+    });
+
+    it('does not copy notes', async () => {
+      const { copy, result } = await duplicated();
+      expect(copy.metadata.notes).toBeUndefined();
+      expect('notes' in result.project).toBe(false);
+    });
+
+    it('is written at the current schema version, whatever the source was read at', async () => {
+      // At version 1 the source's version and the build's coincide, so a fake
+      // source holding another number is the only way to tell "written at the
+      // current version" from "copied from the source". Copying 0 would also
+      // fail Domain's own schema gate.
+      const older = { ...source(), schemaVersion: 0 };
+      const run = duplicateDeps({ seed: [older] });
+      const result = await duplicateProjectUseCase(run.d, { id: SOURCE_ID, name: 'Copy' });
+
+      expect(result).toMatchObject({
+        status: 'duplicated',
+        project: { schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
+      });
+    });
+
+    it('leaves the source exactly as it was: read, never written', async () => {
+      const original = source();
+      const run = duplicateDeps({ seed: [original] });
+      await duplicateProjectUseCase(run.d, { id: SOURCE_ID, name: 'Copy' });
+
+      expect(run.memory.store.get(SOURCE_ID)).toBe(original);
+      expect(run.memory.store.size).toBe(2);
+      expect(run.memory.calls.save).toBe(1);
+    });
+
+    it('reports the copy as a Response Model, serializable', async () => {
+      const { result, copy } = await duplicated();
+      expect(result).toEqual({ status: 'duplicated', project: toProjectView(copy) });
+      expect(JSON.parse(JSON.stringify(result))).toEqual(result);
+    });
+  });
+
+  describe('the source, as Open classifies it (OP-07)', () => {
+    it.each([['not-a-uuid'], [''], ['../../etc/passwd']])(
+      'answers not-here for a malformed id (%j), before any read and untraced',
+      async (id) => {
+        const { d, events, traced, memory } = duplicateDeps();
+        expect(await duplicateProjectUseCase(d, { id, name: 'Copy' })).toEqual({
+          status: 'not-here',
+        });
+        expect(events).not.toContain('read');
+        expect(traced).toEqual([]);
+        expect(memory.calls.save).toBe(0);
+      },
     );
 
-    expect(view.createdAt).toBe('2026-09-05T12:00:00.000Z');
-    expect(view.createdAt).not.toBe('2026-09-01T10:00:00.000Z');
+    it('answers not-here for a source no file holds, untraced, and writes nothing', async () => {
+      const { d, traced, memory } = duplicateDeps({ seed: [] });
+      expect(await duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' })).toEqual({
+        status: 'not-here',
+      });
+      expect(traced).toEqual([]);
+      expect(memory.calls.save).toBe(0);
+    });
+
+    it('answers cant-read with the location and one trace, and writes nothing', async () => {
+      const failure = new ProjectFileFailure('is not valid JSON', WHERE);
+      const { d, traced, memory } = duplicateDeps({ findById: () => Promise.reject(failure) });
+
+      expect(await duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' })).toEqual({
+        status: 'cant-read',
+        traceId: 'trace-1',
+        location: WHERE,
+      });
+      expect(traced).toEqual([failure]);
+      expect(memory.calls.save).toBe(0);
+    });
   });
 
-  it('carries the source schemaVersion, since the copy is the same format', async () => {
-    // Was `4` before ADR-003 SR-07 gave `schemaVersion` a compatibility rule;
-    // a version above CURRENT is now unconstructible, which is the point of
-    // the gate. At version 1 "carried from the source" and "defaulted to the
-    // current build" are indistinguishable, so which one a duplicate should
-    // get is a question a version 2 will have to answer — no source rules on
-    // it today, and this test does not decide it.
-    const source = createProject(
-      { name: 'X', schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION },
-      { ids: ids(UUID_A), clock: clockAt('2026-09-01T10:00:00.000Z') },
-    );
-    const memory = inMemoryRepository([source]);
-    const view = await duplicateProjectUseCase(
-      deps({ projects: memory.repository, ids: ids(UUID_B) }),
-      { id: source.id, name: 'Copy' },
-    );
-    expect(view.schemaVersion).toBe(source.schemaVersion);
+  describe('the write', () => {
+    it('answers write-failed with the location and one trace', async () => {
+      const failure = new ProjectFileFailure('could not be written', `/workspace/${COPY_ID}.sayva`);
+      const { d, traced } = duplicateDeps({ save: () => Promise.reject(failure) });
+
+      expect(await duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' })).toEqual({
+        status: 'write-failed',
+        traceId: 'trace-1',
+        location: `/workspace/${COPY_ID}.sayva`,
+      });
+      expect(traced).toEqual([failure]);
+    });
+
+    it('gives every failed attempt its own trace ID', async () => {
+      const { d } = duplicateDeps({
+        save: () => Promise.reject(new ProjectFileFailure('could not be written', WHERE)),
+      });
+      const first = await duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' });
+      const second = await duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' });
+
+      expect(first).toMatchObject({ traceId: 'trace-1' });
+      expect(second).toMatchObject({ traceId: 'trace-2' });
+    });
   });
 
-  it('requires a name for the copy', async () => {
-    const { repository, project } = seeded();
-    await expect(
-      duplicateProjectUseCase(deps({ projects: repository, ids: ids(UUID_B) }), {
-        id: project.id,
-        name: '',
-      }),
-    ).rejects.toThrow(/name is required/i);
-  });
+  describe('anything else is a defect', () => {
+    it('rethrows a read failure that is not the port contract, untraced', async () => {
+      const { d, traced } = duplicateDeps({ findById: () => Promise.reject(new Error('bug')) });
+      await expect(duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' })).rejects.toThrow(
+        'bug',
+      );
+      expect(traced).toEqual([]);
+    });
 
-  it('fails on an unknown source', async () => {
-    await expect(
-      duplicateProjectUseCase(deps(), { id: UUID_B, name: 'Copy' }),
-    ).rejects.toBeInstanceOf(ProjectNotFoundError);
+    it('rethrows a write failure that is not the port contract, untraced', async () => {
+      const { d, traced } = duplicateDeps({ save: () => Promise.reject(new Error('bug')) });
+      await expect(duplicateProjectUseCase(d, { id: SOURCE_ID, name: 'Copy' })).rejects.toThrow(
+        'bug',
+      );
+      expect(traced).toEqual([]);
+    });
+
+    it('rethrows a Domain failure other than the name rule from the name check', async () => {
+      const { d, traced, events } = duplicateDeps();
+      const broken = { ...d, ids: { newId: () => 'not-a-uuid' } };
+      await expect(
+        duplicateProjectUseCase(broken, { id: SOURCE_ID, name: 'Copy' }),
+      ).rejects.toBeInstanceOf(DomainError);
+      expect(events).not.toContain('read');
+      expect(traced).toEqual([]);
+    });
   });
 });
 
@@ -737,10 +942,15 @@ describe('the use cases hold ports, not adapters', () => {
     const opened = await openProjectUseCase({ ...d, tracer: untraced }, { id: created.id });
     expect(opened.status).toBe('opened');
     await saveProjectUseCase(d, { id: created.id, name: 'One renamed' });
-    const copy = await duplicateProjectUseCase(d, { id: created.id, name: 'Two' });
+    const copied = await duplicateProjectUseCase(
+      { ...d, tracer: untraced },
+      { id: created.id, name: 'Two' },
+    );
+    if (copied.status !== 'duplicated')
+      throw new Error(`expected duplicated, got ${copied.status}`);
     expect(await listProjectsUseCase(d)).toHaveLength(2);
 
-    await deleteProjectUseCase(d, { id: copy.id });
+    await deleteProjectUseCase(d, { id: copied.project.id });
     expect(await listProjectsUseCase(d)).toHaveLength(1);
   });
 });

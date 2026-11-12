@@ -16,6 +16,7 @@ import {
   ProjectNotFoundError,
   toProjectView,
   type CreateProjectResult,
+  type DuplicateProjectResult,
   type OpenProjectResult,
   type ProjectListView,
   type ProjectView,
@@ -289,29 +290,92 @@ export type DuplicateProjectRequest = {
 };
 
 /**
- * Command. Copies a Project under a fresh identity.
+ * What the Duplicate command needs: the ordinary Project dependencies plus
+ * the tracer — ADR-003 SR-11's Duplicate extension. Its own type, like
+ * Create's and Open's, so the tracer reaches this command through its own
+ * dependencies and never through `ProjectUseCaseDeps` as a whole.
+ */
+export type DuplicateProjectUseCaseDeps = ProjectUseCaseDeps & { tracer: FailureTracer };
+
+/**
+ * Command. Copies a Project under a fresh identity, reporting one of the five
+ * outcomes the Duplicate closure defines (D1–D10, Screens §04 §7), in this
+ * order:
  *
- * The copy is a genuinely new entity: a new `ProjectId` and new timestamps,
- * never the source's. Domain Model §5 forbids reusing an id, and a copy
- * that carried the original's `createdAt` would be claiming a history it
- * does not have.
+ * 1. The name, before anything is read (D3). Domain's name rule is applied
+ *    the only way Domain offers it — by `createProject` — with the name and
+ *    the current schema version and nothing from the source. That Project is
+ *    discarded: it is never saved and never becomes the copy. A refused name
+ *    is `invalid-name`, with no file read, no write and no trace. The extra
+ *    id and clock reading it costs were accepted with the closure.
+ * 2. The source, as Open classifies it (ADR-005 OP-07, OP-09). An id
+ *    `isProjectId` rejects is `not-here` before any read; `findById`
+ *    answering `null` is `not-here`; neither is traced. `ProjectFileFailure`
+ *    is `cant-read`, traced once.
+ * 3. The copy: a second `createProject`, with the same name and the source's
+ *    `tags`. A new `ProjectId` and new timestamps, never the source's —
+ *    Domain Model §5 forbids reusing an id, and a copy carrying the
+ *    original's `createdAt` would claim a history it does not have. Written
+ *    at `CURRENT_PROJECT_SCHEMA_VERSION`, whatever version the source was
+ *    read at, because this build is the one writing it — the closure's copy
+ *    table, as B9 has it for Create. `notes` is not copied: `createProject`
+ *    takes none.
+ * 4. The write. `ProjectFileFailure` is `write-failed`, traced once.
  *
- * Only the Project record is copied, which is the whole of it in this
- * phase — Phase 2's freeze point has a Project as "correctly still an empty
- * shell — no Language yet". Duplicating owned Languages and Assets becomes
- * real work when those aggregates exist.
+ * Anything else is a defect and is rethrown untraced. The source is only
+ * read, so it is left exactly as it was. Only the Project record is copied,
+ * which is the whole of it in this phase — Languages and Assets become real
+ * work when those aggregates exist.
  */
 export async function duplicateProjectUseCase(
-  deps: ProjectUseCaseDeps,
+  deps: DuplicateProjectUseCaseDeps,
   request: DuplicateProjectRequest,
-): Promise<ProjectView> {
-  const source = await load(deps, request.id);
+): Promise<DuplicateProjectResult> {
+  const factory = { ids: deps.ids, clock: deps.clock };
+
+  try {
+    createProject({ name: request.name, schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION }, factory);
+  } catch (error) {
+    if (error instanceof ProjectNameRequiredError) return { status: 'invalid-name' };
+    throw error;
+  }
+
+  if (!isProjectId(request.id)) return { status: 'not-here' };
+
+  let source: Project | null;
+  try {
+    source = await deps.projects.findById(toProjectId(request.id));
+  } catch (failure) {
+    if (!(failure instanceof ProjectFileFailure)) throw failure;
+    return {
+      status: 'cant-read',
+      traceId: deps.tracer.trace(failure),
+      location: failure.location,
+    };
+  }
+  if (source === null) return { status: 'not-here' };
+
   const copy = createProject(
-    { name: request.name, schemaVersion: source.schemaVersion, tags: source.metadata.tags },
-    { ids: deps.ids, clock: deps.clock },
+    {
+      name: request.name,
+      schemaVersion: CURRENT_PROJECT_SCHEMA_VERSION,
+      tags: source.metadata.tags,
+    },
+    factory,
   );
-  await deps.projects.save(copy);
-  return toProjectView(copy);
+
+  try {
+    await deps.projects.save(copy);
+  } catch (failure) {
+    if (!(failure instanceof ProjectFileFailure)) throw failure;
+    return {
+      status: 'write-failed',
+      traceId: deps.tracer.trace(failure),
+      location: failure.location,
+    };
+  }
+
+  return { status: 'duplicated', project: toProjectView(copy) };
 }
 
 // --- DeleteProject --------------------------------------------------------

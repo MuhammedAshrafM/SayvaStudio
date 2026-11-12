@@ -224,6 +224,17 @@ Rejected because it makes every format change break every existing Project with 
   - **The three traced failure categories** are now the Project-list read, the Create write and the Open read. This supersedes the Create extension's scope above. Nothing else calls the tracer.
   - **Unchanged guarantees:** one trace ID per failure occurrence; never the file path; never Next.js's `digest`; never persisted. It is still not a logging system.
   - **Unchanged wiring rule:** as with Create, the tracer reaches each traced operation through that operation's own dependencies, never through `ProjectUseCaseDeps` as a whole.
+- **Extended 2026-11-12 (Duplicate Project closure, states D1–D10 of Screens §04 §7).** A failed Duplicate is traced, in addition to the Project-list read, the Create write and the Open read.
+  - **What counts:** reading the source fails with the port's failure contract (SR-10), which is `cant-read`, or writing the copy does, which is `write-failed`. Each occurrence is traced once, so a `Retry` that fails again is a new occurrence with a new trace ID.
+  - **Never traced:** `invalid-name`, because the name is checked before the source is read and nothing is read or written, and `not-here` — a malformed source id or no file — which is absence, not failure.
+  - **The four traced failure categories** are now the Project-list read, the Create write, the Open read and the Duplicate, its source read and its write together. This supersedes the Open extension's scope above. Nothing else calls the tracer.
+  - **Wiring:** through `DuplicateProjectUseCaseDeps` and the Composition Root's `projectDuplicateDeps()`, never `ProjectUseCaseDeps` as a whole. The guarantees above are unchanged: one trace ID per occurrence, never the file path, never Next.js's `digest`, never persisted.
+  - **What a Duplicate reads and writes**, recorded here because its order is what keeps a refused name untraced:
+    1. Domain's name rule first, through `createProject` with the typed name and `CURRENT_PROJECT_SCHEMA_VERSION`. That Project is discarded — never saved, and never the copy. A refused name stops here. The extra id and clock reading are accepted; no Domain API changes.
+    2. The source, read once through `findById`. It is never written, so its file is left byte-identical.
+    3. The copy, from a second `createProject`: a new `ProjectId` and new timestamps; the typed name as Domain keeps it, trimmed; `CURRENT_PROJECT_SCHEMA_VERSION`, whatever version the source was read at; and the source's tags. Notes are not copied. Languages and Assets do not exist in this phase, so nothing of theirs is copied.
+    4. One `save` of the copy: one new `.sayva` file, written atomically (SR-06).
+  - **Implemented 2026-11-11.**
 
 ## Status
 

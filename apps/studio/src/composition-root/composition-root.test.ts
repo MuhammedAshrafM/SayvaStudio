@@ -3,10 +3,15 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createProjectUseCase, openProjectUseCase } from '@sayva/application';
+import {
+  createProjectUseCase,
+  duplicateProjectUseCase,
+  openProjectUseCase,
+} from '@sayva/application';
 import {
   WORKSPACE_ROOT_ENV,
   projectCreateDeps,
+  projectDuplicateDeps,
   projectListDeps,
   projectOpenDeps,
   projectUseCaseDeps,
@@ -93,6 +98,63 @@ describe('Composition Root — the Open dependency set (ADR-005 OP-09, ADR-003 S
     expect(diagnostics).not.toHaveBeenCalled();
 
     const unreadable = await openProjectUseCase(projectOpenDeps(), { id: corruptId });
+    if (unreadable.status !== 'cant-read')
+      throw new Error(`expected cant-read, got ${unreadable.status}`);
+    expect(unreadable.location).toBe(corruptFile);
+    expect(diagnostics).toHaveBeenCalledTimes(1);
+    expect(diagnostics.mock.calls[0]?.[0]).toBe(`Trace ID ${unreadable.traceId}`);
+  });
+});
+
+describe('Composition Root — the Duplicate dependency set (ADR-003 SR-11)', () => {
+  it('gives Duplicate a tracer, and never gives the base set one', () => {
+    expect(projectDuplicateDeps().tracer).toEqual({ trace: expect.any(Function) });
+    expect('tracer' in projectUseCaseDeps()).toBe(false);
+  });
+
+  it("builds Duplicate's set from the base set's adapters", () => {
+    const base = projectUseCaseDeps();
+    const duplicate = projectDuplicateDeps();
+    expect(duplicate.projects).toBe(base.projects);
+    expect(duplicate.ids).toBe(base.ids);
+    expect(duplicate.clock).toBe(base.clock);
+  });
+
+  it("keeps Duplicate's set its own — not the list query's, Create's or Open's", () => {
+    const duplicate = projectDuplicateDeps();
+    for (const other of [projectListDeps(), projectCreateDeps(), projectOpenDeps()]) {
+      expect(duplicate).not.toBe(other);
+      expect(duplicate.tracer).not.toBe(other.tracer);
+    }
+  });
+
+  it('memoises the set, and resetCompositionRoot clears it', () => {
+    const before = projectDuplicateDeps();
+    expect(projectDuplicateDeps()).toBe(before);
+    resetCompositionRoot();
+    expect(projectDuplicateDeps()).not.toBe(before);
+  });
+
+  it('composes Duplicate end to end against a real workspace', async () => {
+    const created = await createProjectUseCase(projectCreateDeps(), { name: 'ArSL Curriculum' });
+    if (created.status !== 'created') throw new Error(`expected created, got ${created.status}`);
+    const diagnostics = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const copied = await duplicateProjectUseCase(projectDuplicateDeps(), {
+      id: created.project.id,
+      name: 'ArSL Curriculum — Spring',
+    });
+    if (copied.status !== 'duplicated')
+      throw new Error(`expected duplicated, got ${copied.status}`);
+    expect(copied.project.id).not.toBe(created.project.id);
+
+    const corruptId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';
+    const corruptFile = path.join(root, `${corruptId}.sayva`);
+    await writeFile(corruptFile, '{ not json', 'utf8');
+    const unreadable = await duplicateProjectUseCase(projectDuplicateDeps(), {
+      id: corruptId,
+      name: 'Copy',
+    });
     if (unreadable.status !== 'cant-read')
       throw new Error(`expected cant-read, got ${unreadable.status}`);
     expect(unreadable.location).toBe(corruptFile);
